@@ -3,6 +3,34 @@
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 versi mengikuti [SemVer](https://semver.org/lang/id/).
 
+## [1.0.0] — 2026-11-13
+
+**Rilis publik pertama.** Kode yang sama dengan versi pengembangan internal
+1.7.6, dilabeli ulang sebagai 1.0.0 untuk rilis GitHub.
+
+### Fitur
+
+- Papan tombol berhalaman (kolom 3-6, baris 2-4) dengan ikon, warna, dan varian.
+- Aksi: pintasan papan ketik, mengetik teks, buka aplikasi/berkas/tautan,
+  permintaan HTTP, kontrol media, pindah halaman, urutan aksi, tindakan jendela,
+  volume sistem, daya komputer, mikrofon, soundboard, dan aksi bersyarat.
+- **Soundboard**: unggah berkas atau tautan, volume dan perangkat output per suara.
+- **Ikon asli aplikasi** diekstrak otomatis saat menambah aplikasi terpasang.
+- **Widget** jam, tanggal, dan lagu yang sedang diputar.
+- **Tambah cepat**, pemindai aplikasi terpasang, perekam pintasan.
+- Kunci tata letak, seret & lepas, impor/ekspor papan (JSON).
+- Profil otomatis, penanda status, tray icon, mulai otomatis.
+- Klien Remote (PWA) untuk ponsel/tablet, dipasangkan lewat kode QR, bisa
+  dipasang sebagai aplikasi bila tersedia HTTPS.
+- Mode terang/gelap, riwayat aktivitas, daftar perangkat, bahasa ID/EN.
+
+### Distribusi
+
+- **Portabel**: `KumiDeck-1.0.0-portable.zip` - ekstrak, lalu klik dua kali
+  `Buka KumiDeck.cmd`. Server berjalan tanpa konsol, UI terbuka di jendela
+  aplikasi sendiri (tanpa bilah alamat/tab), tray icon tersedia.
+- Tanpa dependensi runtime; cukup Windows 10/11.
+
 ## [1.7.6] — 2026-11-13
 
 ### Ditambahkan
@@ -485,7 +513,7 @@ versi mengikuti [SemVer](https://semver.org/lang/id/).
   container sendiri (ukuran kini mengikuti `container-type: size`).
 - Jumlah kolom papan desktop menyesuaikan lebar jendela (3/4/5).
 
-## [1.0.0] — 2026-11-12
+## [0.9.0] — 2026-11-12
 
 Rilis awal.
 
@@ -495,6 +523,7 @@ Rilis awal.
 - Pasangkan Android dengan kode QR + kode 8 karakter.
 - Penyunting di desktop, riwayat aktivitas, daftar perangkat.
 - Tema terang/gelap, Kumi Design System v1.1.0.
+
 
 
 
