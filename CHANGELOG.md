@@ -3,7 +3,25 @@
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 versi mengikuti [SemVer](https://semver.org/lang/id/).
 
-## [2.0.0] — 2026-11-13
+## [2.0.1] - 2026-11-13
+
+### Diperbaiki
+
+- **Soundboard: suara dari tautan `http`/`https` kini benar-benar bisa
+  diputar.** Pemutar media WPF (`MediaPlayer`) menolak membuka URL jaringan
+  (`Only site-of-origin pack URIs are supported for media`), sehingga suara
+  bertipe tautan selalu gagal. Kini tautan diunduh lebih dulu ke cache lokal
+  (`data\suara\tautan\<hash>.<ekstensi>`, batas 40 MB, cache lebih dari 30 hari
+  dibersihkan otomatis) lalu diputar dari berkas lokal itu. Sumber yang
+  dilaporkan ke UI tetap URL aslinya. Pesan galat dalam Bahasa Indonesia:
+  HTTP 403, melebihi 40 MB, bukan berkas audio, host tidak ditemukan, atau
+  unduhan terlalu lama.
+- **`.gitignore`**: aturan `data/` juga mengabaikan folder sumber
+  `native/KumiDeck/Data/` (`DeckStore.cs`, `DeckNormalizer.cs`, `Models.cs`),
+  sehingga repo publik tidak dapat dibangun (`CS0246`). Diganti menjadi
+  `/data/` agar hanya folder data pengguna di akar yang diabaikan.
+
+## [2.0.0] - 2026-11-13
 
 **Aplikasi native Windows 11.** Backend Node.js digantikan aplikasi C#
 (.NET 10 + WPF + WebView2) yang membawa seluruh UI `public/` di dalam satu

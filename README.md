@@ -13,9 +13,10 @@ konsol, dan tanpa peramban `--app`. Antarmukanya tetap UI web KumiDeck
 
 Rilis siap pakai tersedia di halaman **Releases**:
 
-- **Pemasang:** `KumiDeck-2.0.0-setup.exe` — pasang, lalu jalankan KumiDeck dari
+- **Pemasang:** `KumiDeck-<versi>-setup.exe` (mis. `KumiDeck-2.0.1-setup.exe`) —
+  pasang, lalu jalankan KumiDeck dari
   menu Mulai. Bisa juga membuat pintasan Desktop dan mulai otomatis.
-- **Portabel (tanpa pemasangan):** `KumiDeck-2.0.0-portabel.zip` — ekstrak,
+- **Portabel (tanpa pemasangan):** `KumiDeck-<versi>-portabel.zip` — ekstrak,
   lalu klik dua kali **`Jalankan KumiDeck.cmd`** (atau `KumiDeck.exe`).
 
 Sidik jari berkas rilis ada di `SHA256.txt`.
