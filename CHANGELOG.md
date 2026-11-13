@@ -3,6 +3,22 @@
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 versi mengikuti [SemVer](https://semver.org/lang/id/).
 
+## [1.7.4] — 2026-11-13
+
+### Diubah
+
+- **Versi portabel dijadikan jalur utama**: ZIP berisi `KumiDeck.exe`, folder
+  `public`/`assets`, `BACA-INI.txt`, dan peluncur **`Jalankan KumiDeck.cmd`** —
+  cukup diekstrak lalu dijalankan, tanpa pemasangan dan tanpa admin.
+- `BACA-INI.txt` diperbarui: langkah menjalankan, tautan Remote (istilah
+  "Pasangkan Remote"), letak folder `data`, dan catatan SmartScreen.
+- `CONTRACT.md` tidak lagi ikut ke paket portabel (dokumen internal).
+
+### Catatan
+
+- Installer tetap tersedia sebagai alternatif (`KumiDeck-Setup-<versi>.exe`).
+- Uji: ZIP diekstrak ke folder kosong lalu dijalankan → `/api/state` 200,
+  `/` 200, `data\deck.json` dibuat di samping exe, versi exe 1.7.4.
 ## [1.7.3] — 2026-11-13
 
 ### Diperbaiki
@@ -443,6 +459,7 @@ Rilis awal.
 - Pasangkan Android dengan kode QR + kode 8 karakter.
 - Penyunting di desktop, riwayat aktivitas, daftar perangkat.
 - Tema terang/gelap, Kumi Design System v1.1.0.
+
 
 
 
