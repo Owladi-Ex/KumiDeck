@@ -1561,21 +1561,43 @@ function mulaiServer() {
   console.log("");
 
   if (process.env.KD_OPEN === "1") {
-    try {
-      spawn("cmd.exe", ["/c", "start", "", "http://localhost:" + PORT], {
-        detached: true,
-        stdio: "ignore",
-        windowsHide: true,
-      }).unref();
-    } catch (err) {
-      /* diabaikan */
-    }
+    bukaPeramban("http://localhost:" + PORT);
   }
   });
 }
 
 
 
+/* ------------------------------------------------------- buka peramban --- */
+/* Membuka URL dengan aman. Chrome yang diluncurkan langsung dari proses ini
+   (mis. lewat `cmd /c start`) bisa gagal dengan "Exception Breakpoint
+   0x80000003" ketika proses induk berada di job object/lingkungan terbatas.
+   Karena itu URL dibuka lewat explorer.exe yang melepas proses dari job induk,
+   dengan cadangan `cmd /c start`, lalu Start-Process PowerShell. */
+function bukaPeramban(url) {
+  if (!url) return false;
+  const percobaan = [
+    () => spawn("explorer.exe", [url], { detached: true, stdio: "ignore", windowsHide: true }),
+    () => spawn("rundll32.exe", ["url.dll,FileProtocolHandler", url], { detached: true, stdio: "ignore", windowsHide: true }),
+    () => spawn("cmd.exe", ["/c", "start", "", url], { detached: true, stdio: "ignore", windowsHide: true }),
+  ];
+  for (const jalankan of percobaan) {
+    try {
+      const anak = jalankan();
+      anak.on("error", () => {});
+      anak.unref();
+      return true;
+    } catch (err) {
+      /* coba cara berikutnya */
+    }
+  }
+  try {
+    console.log("[kumideck] Peramban tidak dapat dibuka otomatis. Buka manual: " + url);
+  } catch (err) {
+    /* diabaikan */
+  }
+  return false;
+}
 function tutup() {
   console.log("\n[kumideck] menyimpan deck dan berhenti…");
   simpanDeck(deck);
@@ -1594,6 +1616,8 @@ function finishTutup() {
 }
 process.on("SIGINT", tutup);
 process.on("SIGTERM", tutup);
+
+
 
 
 

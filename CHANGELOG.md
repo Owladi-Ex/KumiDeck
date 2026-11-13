@@ -3,6 +3,19 @@
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 versi mengikuti [SemVer](https://semver.org/lang/id/).
 
+## [1.7.5] — 2026-11-13
+
+### Diperbaiki
+
+- **Peramban tidak lagi dibuka lewat `cmd /c start`.** Bila aplikasi berjalan di
+  lingkungan proses terbatas (job object), Chrome yang diluncurkan dengan cara
+  itu bisa berhenti dengan **"Exception Breakpoint 0x80000003"**. URL kini
+  dibuka lewat `explorer.exe`, dengan cadangan `rundll32` dan `cmd start`, dan
+  kegagalan membuka peramban tidak lagi menghentikan aplikasi.
+- Paket portabel menambah **`Jalankan Tanpa Peramban.cmd`** (menjalankan dengan
+  `KD_OPEN=0`) untuk mesin yang perambannya tetap bermasalah; buka
+  `http://localhost:4173` manual.
+- `BACA-INI.txt` memuat catatan troubleshooting error Breakpoint tersebut.
 ## [1.7.4] — 2026-11-13
 
 ### Diubah
@@ -459,6 +472,7 @@ Rilis awal.
 - Pasangkan Android dengan kode QR + kode 8 karakter.
 - Penyunting di desktop, riwayat aktivitas, daftar perangkat.
 - Tema terang/gelap, Kumi Design System v1.1.0.
+
 
 
 
