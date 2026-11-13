@@ -1,7 +1,9 @@
 # Berkas yang tidak ikut disimpan di repositori (publik)
 
 # Data lokal pengguna: kode pasangan, papan, ikon unggahan, suara, sertifikat TLS
-data/
+# (garis miring di depan = hanya folder data/ di akar repo; folder Data/ di
+# dalam kode -- native/KumiDeck/Data -- tetap ikut repositori.)
+/data/
 
 # --- Internal / rencana rilis (tidak untuk konsumsi publik) ---
 scripts/
