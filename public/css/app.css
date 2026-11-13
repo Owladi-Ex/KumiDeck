@@ -1,0 +1,745 @@
+/* ================================================== Kontras tombol ====== */
+/* Temuan review: `.kumi-btn--soft` hanya 3,07–4,34:1 dan `.kumi-btn--danger`
+   di mode gelap 2,25:1 (teks putih di atas merah muda terang). Perbaikan di
+   lapisan aplikasi supaya Kumi Design System tidak diubah. Ditaruh di app.css
+   karena dipakai UI desktop DAN remote. */
+.kumi-btn--soft {
+  color: var(--kumi-fg);
+}
+
+[data-kumi-theme="dark"] .kumi-btn--danger,
+[data-kumi-theme="dark"] .kumi-btn--danger:hover,
+[data-kumi-theme="dark"] .kumi-btn--danger:focus-visible {
+  /* Di gelap, --kumi-danger adalah merah muda terang; teks harus gelap. */
+  color: var(--kumi-ink-surface);
+}
+
+/* ============================================ Overlay & urutan Tab ====== */
+/* Overlay tertutup memakai opacity 0 + pointer-events none, tetapi anak-anaknya
+   MASIH bisa difokus Tab (banyak kontrol tak terlihat). `visibility` memindahkan
+   mereka dari urutan fokus tanpa mematikan transisi opacity. */
+.kumi-overlay:not(.is-open) {
+  visibility: hidden;
+}
+
+.kumi-overlay.is-open {
+  visibility: visible;
+}
+/* KumiDeck — gaya papan tombol (dipakai UI desktop dan UI Android).
+   Hanya memakai token --kumi-*; tidak ada warna/jarak mentah, sesuai
+   panduan Kumi Design System. Nilai px hanya untuk skala mikro (garis 1px,
+   lebar bingkai QR) yang tidak punya token. */
+
+/* ============================================================ 1. Papan === */
+.kd-deck {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kumi-space-2);
+  min-width: 0;
+}
+
+.kd-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--kd-cols, 5), minmax(0, 1fr));
+  gap: var(--kumi-space-1);
+  min-width: 0;
+}
+
+.kd-grid--besar {
+  gap: var(--kumi-space-2);
+}
+
+/* ============================================================ 2. Tombol === */
+.kd-key {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--kumi-space-1);
+  aspect-ratio: 1 / 1;
+  /* Skala ikon/label mengikuti ukuran tombol itu sendiri. `size` dipakai
+     (bukan `inline-size`) supaya cqi anak-anak mengacu ke tombol, dan
+     aspect-ratio tetap menentukan tingginya. Padding tidak boleh memakai cqi
+     pada elemen kontainer itu sendiri — ia akan mengacu ke viewport. */
+  container-type: size;
+  padding: var(--kumi-space-1);
+  margin: 0;
+  border: 1px solid var(--kumi-line);
+  border-radius: var(--kumi-r-sm);
+  background: var(--kumi-tile);
+  color: var(--kumi-fg);
+  font-family: var(--kumi-font-body);
+  text-align: center;
+  cursor: pointer;
+  appearance: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: var(--kumi-shadow-1);
+  transition: transform var(--kumi-dur-fast) var(--kumi-ease),
+    box-shadow var(--kumi-dur-fast) var(--kumi-ease),
+    background-color var(--kumi-dur-fast) var(--kumi-ease),
+    border-color var(--kumi-dur-fast) var(--kumi-ease);
+}
+
+.kd-key:hover {
+  border-color: var(--kumi-line-strong);
+  transform: translateY(-1px);
+}
+
+.kd-key:active {
+  transform: translateY(0);
+}
+
+.kd-key:focus-visible,
+.kd-key:focus {
+  outline: 2px solid var(--kumi-accent);
+  outline-offset: 2px;
+  box-shadow: var(--kumi-shadow-focus);
+}
+
+.kd-key.is-pressed {
+  transform: scale(0.965);
+  border-color: var(--kumi-accent);
+  box-shadow: 0 0 0 4px rgba(var(--kumi-accent-rgb), 0.22);
+}
+
+.kd-key__icon {
+  display: grid;
+  place-items: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  color: inherit;
+}
+
+/* Ikon Kumi berbasis font-size (1em), jadi ukurannya ikut wadah tombol. */
+.kd-key__glyph {
+  font-size: clamp(16px, 30cqi, 44px);
+  width: 1em;
+  height: 1em;
+}
+
+.kd-key__label {
+  flex: 0 0 auto;
+  max-width: 100%;
+  font-size: clamp(11px, 12cqi, 16px);
+  line-height: 1.22;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  color: inherit;
+  opacity: 0.92;
+}
+
+/* Slot kosong = ajakan mengisi, bukan tombol kerja. */
+.kd-key--empty {
+  border-style: dashed;
+  border-color: var(--kumi-line-strong);
+  background: transparent;
+  box-shadow: none;
+  color: var(--kumi-fg-muted);
+  cursor: default;
+}
+
+.kd-key--empty:disabled {
+  opacity: 0.7;
+}
+
+.kd-key--empty:hover {
+  transform: none;
+  border-color: var(--kumi-line-strong);
+}
+
+.kd-key__plus {
+  position: relative;
+  width: 26cqi;
+  height: 26cqi;
+  min-width: 14px;
+  min-height: 14px;
+}
+
+.kd-key__plus::before,
+.kd-key__plus::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  background: currentColor;
+  border-radius: var(--kumi-r-pill);
+  opacity: 0.5;
+}
+
+.kd-key__plus::before {
+  width: 100%;
+  height: 1.5px;
+}
+
+.kd-key__plus::after {
+  height: 100%;
+  width: 1.5px;
+}
+
+/* Varian warna: mengubah permukaan, bukan menambah dekorasi. */
+.kd-key--tint {
+  background: var(--kumi-tint);
+  border-color: transparent;
+}
+
+.kd-key--accent {
+  background: var(--kumi-accent);
+  border-color: transparent;
+  color: var(--kumi-ink-fg);
+}
+
+.kd-key--lime {
+  background: var(--kumi-lime);
+  border-color: transparent;
+  color: var(--kumi-ink);
+}
+
+.kd-key--dark {
+  background: var(--kumi-ink-surface);
+  border-color: transparent;
+  color: var(--kumi-ink-fg);
+}
+
+.kd-key--tint .kd-key__label,
+.kd-key--accent .kd-key__label,
+.kd-key--lime .kd-key__label,
+.kd-key--dark .kd-key__label {
+  opacity: 1;
+}
+
+/* ===================================================== 2b. Widget ========= */
+/* Tombol widget: menampilkan data, bukan tombol kerja. Tetap bisa difokus dan
+   dibaca pembaca layar, tetapi tidak bereaksi seperti tombol biasa. */
+.kd-key--widget {
+  cursor: default;
+  gap: 2px;
+  /* Catatan: padding tidak boleh memakai cqi di elemen kontainer itu sendiri —
+     nilainya akan mengacu ke viewport, bukan ke tombol. */
+  padding: 6px;
+  overflow: hidden;
+}
+
+.kd-key--widget:hover {
+  transform: none;
+  border-color: var(--kumi-line);
+}
+
+.kd-key--widget:active {
+  transform: none;
+}
+
+.kd-key--widget.is-pressed,
+.kd-key--widget.kena-aksi {
+  transform: none;
+  animation: none;
+  border-color: var(--kumi-line);
+  box-shadow: var(--kumi-shadow-1);
+}
+
+.kd-key__widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(2px, 1cqi, 6px);
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+}
+
+.kd-key__nilai {
+  font-family: var(--kumi-font-head);
+  /* Ukuran mengikuti sisi terkecil tombol supaya tetap terbaca di potret
+     (tombol tinggi) maupun lanskap (tombol pendek). */
+  font-size: clamp(13px, min(26cqi, 34cqb), 34px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+  max-width: 100%;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+
+.kd-key__sub {
+  font-size: clamp(10px, min(11cqi, 15cqb), 13px);
+  line-height: 1.25;
+  color: inherit;
+  opacity: 0.72;
+  max-width: 100%;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+
+/* Widget media butuh teks lebih kecil karena berisi judul lagu. */
+.kd-key--widget[data-widget="media"] .kd-key__nilai {
+  font-family: var(--kumi-font-body);
+  font-size: clamp(11px, min(13cqi, 22cqb), 17px);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.kd-key--widget[data-widget="tanggal"] .kd-key__nilai {
+  font-size: clamp(12px, min(17cqi, 26cqb), 22px);
+  line-height: 1.2;
+}
+
+/* Penanda mode sunting: tombol bisa diklik untuk mengubah isinya.
+   Ukurannya mengikuti tombol (cqi) dengan batas bawah yang tetap terbaca. */
+.kd-key__badge {
+  position: absolute;
+  top: clamp(6px, 5cqi, 10px);
+  right: clamp(6px, 5cqi, 10px);
+  width: clamp(22px, 17cqi, 28px);
+  height: clamp(22px, 17cqi, 28px);
+  display: grid;
+  place-items: center;
+  border-radius: var(--kumi-r-pill);
+  background: var(--kumi-accent);
+  color: var(--kumi-ink-fg);
+  box-shadow: var(--kumi-shadow-1);
+}
+
+/* Pada tombol bervarian aksen (biru), lencana dibalik agar tetap terlihat. */
+.kd-key--accent .kd-key__badge {
+  background: var(--kumi-ink-fg);
+  color: var(--kumi-accent);
+}
+
+.kd-key__badge svg {
+  width: 1em;
+  height: 1em;
+  font-size: clamp(12px, 10cqi, 16px);
+}
+
+.kd-key--sunting {
+  cursor: pointer;
+}
+
+.kd-key--sunting:hover {
+  border-color: var(--kumi-accent);
+}
+
+.kd-key.kena-aksi {
+  animation: kd-kedip var(--kumi-dur) var(--kumi-ease);
+}
+
+@keyframes kd-kedip {
+  0% {
+    box-shadow: 0 0 0 0 rgba(var(--kumi-accent-rgb), 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 12px rgba(var(--kumi-accent-rgb), 0);
+  }
+}
+
+/* ========================================================= 3. Navigasi === */
+.kd-pages {
+  display: flex;
+  align-items: center;
+  gap: var(--kumi-space-1);
+  flex-wrap: wrap;
+}
+
+.kd-pages__label {
+  color: var(--kumi-fg-muted);
+  font-size: var(--kumi-text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-right: var(--kumi-space-1);
+}
+
+/* ========================================================== 4. Status === */
+.kd-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--kumi-text-xs);
+  color: var(--kumi-fg-muted);
+}
+
+.kd-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--kumi-r-pill);
+  background: var(--kumi-line-strong);
+  flex: none;
+}
+
+.kd-status.is-online .kd-status__dot {
+  background: var(--kumi-ok);
+}
+
+.kd-status.is-online {
+  color: var(--kumi-fg);
+}
+
+.kd-status.is-offline .kd-status__dot {
+  background: var(--kumi-danger);
+}
+
+.kd-status.is-offline {
+  color: var(--kumi-danger);
+}
+
+/* ========================================================= 5. Pasangan === */
+.kd-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--kumi-space-2);
+  align-items: center;
+}
+
+.kd-pair__kode {
+  font-family: var(--kumi-font-mono);
+  font-size: var(--kumi-text-xl);
+  letter-spacing: 0.12em;
+  color: var(--kumi-fg);
+}
+
+.kd-qr {
+  display: block;
+  width: 100%;
+  max-width: 168px;
+  /* Atribut width/height 320 pada <img> membuat gambar terdistorsi bila hanya
+     lebarnya dibatasi; kunci rasio 1:1 agar pemindai tetap bisa membacanya. */
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  border-radius: var(--kumi-r-sm);
+  border: 1px solid var(--kumi-line);
+  padding: 8px;
+  background: var(--kumi-tile);
+}
+
+.kd-qr svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.kd-tautan {
+  font-family: var(--kumi-font-mono);
+  font-size: var(--kumi-text-xs);
+  color: var(--kumi-fg-muted);
+  word-break: break-all;
+}
+
+.kd-device {
+  display: flex;
+  align-items: center;
+  gap: var(--kumi-space-2);
+  padding: 10px 0;
+  border-top: 1px solid var(--kumi-line);
+}
+
+.kd-device:first-child {
+  border-top: 0;
+}
+
+.kd-device__nama {
+  font-size: var(--kumi-text-sm);
+  font-weight: 500;
+  color: var(--kumi-fg);
+}
+
+.kd-device__meta {
+  font-size: var(--kumi-text-xs);
+  color: var(--kumi-fg-muted);
+}
+
+/* Aktivitas: waktu di kiri, isi di kanan, jejak aksi terbaru. */
+.kd-aktivitas__waktu {
+  font-family: var(--kumi-font-mono);
+  font-size: var(--kumi-text-xs);
+  color: var(--kumi-fg-muted);
+  flex: none;
+  width: 44px;
+}
+
+.kd-aktivitas__isi {
+  min-width: 0;
+  flex: 1;
+}
+
+.kd-aktivitas__judul {
+  font-size: var(--kumi-text-sm);
+  color: var(--kumi-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kd-aktivitas__meta {
+  font-size: var(--kumi-text-xs);
+  color: var(--kumi-fg-muted);
+}
+
+/* ============================================================ 6. Lain === */
+.kd-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--kumi-space-1);
+  padding: var(--kumi-space-3) var(--kumi-space-2);
+  color: var(--kumi-fg-muted);
+}
+
+.kd-pilih-ikon {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: var(--kumi-space-1);
+  max-height: 216px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--kumi-line);
+  border-radius: var(--kumi-r-sm);
+  background: var(--kumi-surface-2);
+}
+
+.kd-pilih-ikon__item {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 1px solid transparent;
+  border-radius: var(--kumi-r-xs);
+  background: transparent;
+  color: var(--kumi-fg-muted);
+  cursor: pointer;
+  font-size: var(--kumi-text-lg);
+  transition: background-color var(--kumi-dur-fast) var(--kumi-ease),
+    color var(--kumi-dur-fast) var(--kumi-ease),
+    border-color var(--kumi-dur-fast) var(--kumi-ease);
+}
+
+.kd-pilih-ikon__item:hover {
+  background: var(--kumi-tile);
+  color: var(--kumi-fg);
+}
+
+.kd-pilih-ikon__item:focus-visible {
+  outline: 2px solid var(--kumi-accent);
+  outline-offset: 1px;
+}
+
+.kd-pilih-ikon__item[aria-pressed="true"] {
+  background: var(--kumi-tint);
+  border-color: var(--kumi-accent);
+  color: var(--kumi-fg);
+}
+
+.kd-pratinjau {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: var(--kumi-r-sm);
+  border: 1px solid var(--kumi-line);
+  background: var(--kumi-tile);
+}
+
+.kd-hint {
+  font-size: var(--kumi-text-xs);
+  color: var(--kumi-fg-muted);
+  line-height: 1.5;
+}
+
+.kd-hint--mono {
+  font-family: var(--kumi-font-mono);
+  word-break: break-word;
+}
+
+.kd-garis {
+  border: 0;
+  border-top: 1px solid var(--kumi-line);
+  margin: var(--kumi-space-2) 0;
+}
+
+/* ================================================== 7. Tata letak page === */
+.kd-bilah {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kumi-space-2);
+  flex-wrap: wrap;
+}
+
+/* ========================================================= 8. Remote === */
+/* Halaman Android: satu layar penuh, tanpa gulir halaman, tombol besar. */
+.kd-remote {
+  margin: 0;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--kumi-canvas);
+  color: var(--kumi-fg);
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.kd-remote__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kumi-space-2);
+  padding: var(--kumi-space-2) var(--kumi-space-2) var(--kumi-space-1);
+  flex: none;
+}
+
+.kd-remote__judul {
+  font-family: var(--kumi-font-head);
+  font-size: var(--kumi-text-base);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.kd-remote__main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--kumi-space-2);
+  overflow: hidden;
+}
+
+.kd-remote__main .kd-grid {
+  width: 100%;
+  --kd-cols: 3;
+}
+
+.kd-remote__main .kd-key {
+  border-radius: var(--kumi-r-md);
+}
+
+.kd-remote__foot {
+  flex: none;
+  padding: var(--kumi-space-1) var(--kumi-space-2)
+    max(var(--kumi-space-2), env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: var(--kumi-space-1);
+}
+
+.kd-remote__foot .kd-pages {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.kd-remote__foot .kd-pages::-webkit-scrollbar {
+  display: none;
+}
+
+.kd-remote__kaki {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kumi-space-2);
+  font-size: var(--kumi-text-xs);
+  color: var(--kumi-fg-muted);
+}
+
+/* Layar pasangkan perangkat & galat koneksi memakai lebar baca yang tenang. */
+.kd-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: var(--kumi-space-2);
+  background: var(--kumi-canvas);
+  overflow-y: auto;
+}
+
+.kd-layer[hidden] {
+  display: none;
+}
+
+.kd-layer__isi {
+  width: 100%;
+  max-width: 380px;
+  background: var(--kumi-tile);
+  border: 1px solid var(--kumi-line);
+  border-radius: var(--kumi-r-md);
+  padding: var(--kumi-space-3);
+  box-shadow: var(--kumi-shadow-2);
+}
+
+/* ======================================================== 9. Tanggap === */
+@media (max-width: 900px) {
+  .kd-grid {
+    --kd-cols: 4;
+  }
+}
+
+@media (max-width: 560px) {
+  .kd-grid {
+    --kd-cols: 3;
+  }
+
+  .kd-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .kd-qr {
+    max-width: 132px;
+  }
+}
+
+/* Remote dalam mode lanskap: tombol lebih lega, halaman lebih tinggi. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .kd-remote__head {
+    padding-top: 6px;
+    padding-bottom: 4px;
+  }
+
+  .kd-remote__foot {
+    padding-top: 4px;
+  }
+
+  .kd-remote__main .kd-key {
+    border-radius: var(--kumi-r-sm);
+  }
+}
+
+/* ============================================ 10. Gerak & aksesibilitas === */
+@media (prefers-reduced-motion: reduce) {
+  .kd-key,
+  .kd-pilih-ikon__item {
+    transition: none;
+  }
+
+  .kd-key:hover {
+    transform: none;
+  }
+
+  .kd-key.is-pressed {
+    transform: none;
+  }
+
+  .kd-key.kena-aksi {
+    animation: none;
+  }
+}
+

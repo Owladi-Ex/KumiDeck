@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#eeede8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>KumiDeck — papan tombol</title>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="KumiDeck">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/icons/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="stylesheet" href="kumi/css/kumi.css">
+  <link rel="stylesheet" href="kumi/css/components.css">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/remote.css">
+</head>
+<body class="kumi-page kd-remote" data-kd-platform="android">
+  <!-- ============================== KEPALA ============================== -->
+  <header class="kd-remote__head">
+    <div class="kd-remote__identitas">
+      <span class="kumi-label" id="nama-papan">KumiDeck</span>
+      <h1 class="kd-remote__judul" id="judul-halaman">Papan tombol</h1>
+    </div>
+    <div class="kd-remote__aksi">
+      <span class="kd-status" id="status-koneksi" role="status">
+        <span class="kd-status__dot" aria-hidden="true"></span>
+        <span id="status-teks">Menyambung…</span>
+      </span>
+      <button
+        class="kumi-btn kumi-btn--ghost kumi-btn--icon kumi-btn--sm"
+        type="button"
+        data-kumi-toggle-theme
+        aria-label="Ganti tema"
+      >
+        <svg class="kumi-icon" aria-hidden="true" data-ikon-tema><use href="#i-moon"></use></svg>
+      </button>
+      <button
+        class="kumi-btn kumi-btn--ghost kumi-btn--icon kumi-btn--sm"
+        type="button"
+        id="btn-setelan"
+        data-kumi-open="lapis-setelan"
+        aria-label="Pengaturan perangkat"
+      >
+        <svg class="kumi-icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ======================= PETUNJUK LAYAR UTAMA ====================== -->
+  <div class="kd-remote__banner" id="banner-pasang" hidden>
+    <div class="kd-remote__banner-teks">
+      <strong class="kd-remote__banner-judul">Tambahkan ke layar utama</strong>
+      <span class="kd-hint">Buka menu peramban, lalu pilih “Tambahkan ke layar utama”.</span>
+    </div>
+    <button
+      class="kumi-btn kumi-btn--ghost kumi-btn--icon kumi-btn--sm"
+      type="button"
+      id="btn-tutup-banner"
+      aria-label="Tutup petunjuk layar utama"
+    >
+      <svg class="kumi-icon" aria-hidden="true"><use href="#i-close"></use></svg>
+    </button>
+  </div>
+
+  <!-- =============================== PAPAN ============================== -->
+  <main class="kd-remote__main">
+    <div class="kd-remote__memuat" id="memuat">
+      <span class="kumi-spinner" aria-hidden="true"></span>
+      <span>Memuat papan…</span>
+    </div>
+
+    <div class="kd-empty kd-remote__kosong" id="papan-kosong" hidden>
+      <svg class="kumi-icon kumi-icon--lg" aria-hidden="true"><use href="#i-circle-dashed"></use></svg>
+      <strong>Halaman ini belum punya tombol</strong>
+      <span class="kd-hint">Tambahkan tombol dari layar komputer, lalu kembali ke sini.</span>
+    </div>
+
+    <div
+      class="kd-grid"
+      id="papan"
+      aria-label="Papan tombol"
+      aria-busy="true"
+      hidden
+    ></div>
+  </main>
+
+  <!-- =============================== KAKI =============================== -->
+  <footer class="kd-remote__foot">
+    <div class="kd-pages" id="daftar-halaman" role="tablist" aria-label="Halaman papan"></div>
+    <div class="kd-remote__kaki">
+      <span class="kd-hint kd-remote__halaman" id="penghitung-halaman">Memuat halaman…</span>
+      <span class="kd-hint">Ketuk tombol untuk menjalankan aksi.</span>
+    </div>
+  </footer>
+
+  <!-- =========================== LAPIS PASANGAN ======================== -->
+  <div class="kd-layer" id="lapis-pasangan" hidden>
+    <div class="kd-layer__isi">
+      <span class="kumi-label">Koneksi</span>
+      <h2 class="kumi-h3" id="judul-pasangan">Pasangkan perangkat</h2>
+      <p class="kumi-text kumi-text--sm kumi-muted kd-remote__pasang-teks">
+        Pindai kode QR di layar komputer, atau ketik kode 8 karakter yang tampil di sana.
+      </p>
+
+      <form class="kumi-stack kd-remote__form" id="form-pasangan" novalidate>
+        <div class="kumi-field">
+          <label class="kumi-field__label" for="input-kode">Kode pasangan</label>
+          <input
+            class="kumi-input kd-remote__kode"
+            id="input-kode"
+            name="kode"
+            type="text"
+            inputmode="text"
+            autocomplete="one-time-code"
+            autocapitalize="characters"
+            spellcheck="false"
+            maxlength="12"
+            placeholder="abcd-efgh"
+            aria-describedby="hint-kode galat-pasangan"
+          >
+          <span class="kumi-field__hint" id="hint-kode">
+            8 karakter, huruf besar atau kecil, tanda hubung opsional.
+          </span>
+          <span class="kumi-field__error" id="galat-pasangan" role="alert" hidden></span>
+        </div>
+        <button class="kumi-btn kumi-btn--primary kumi-btn--block" type="submit" id="btn-pasangkan">
+          Pasangkan
+        </button>
+      </form>
+
+      <p class="kd-hint kd-remote__pasang-kaki">
+        Ponsel dan komputer harus berada di jaringan Wi-Fi yang sama.
+      </p>
+    </div>
+  </div>
+
+  <!-- ============================ LAPIS GALAT ========================== -->
+  <div class="kd-layer" id="lapis-galat" hidden>
+    <div class="kd-layer__isi">
+      <span class="kumi-label">Koneksi</span>
+      <h2 class="kumi-h3">Papan tidak dapat dimuat</h2>
+      <p class="kumi-text kumi-text--sm kumi-muted kd-remote__pasang-teks" id="galat-pesan">
+        Server tidak menjawab. Pastikan KumiDeck masih berjalan di komputer.
+      </p>
+      <div class="kumi-row kd-remote__lapis-aksi">
+        <button class="kumi-btn kumi-btn--primary" type="button" id="btn-coba-lagi">
+          Coba lagi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================== PENGATURAN ============================ -->
+  <div class="kumi-overlay" id="lapis-setelan" aria-hidden="true">
+    <div class="kumi-modal" role="dialog" aria-modal="true" aria-labelledby="judul-setelan">
+      <div class="kumi-modal__head">
+        <div>
+          <span class="kumi-label">Ponsel</span>
+          <h2 class="kumi-h3" id="judul-setelan">Pengaturan perangkat</h2>
+        </div>
+        <button
+          class="kumi-btn kumi-btn--icon kumi-btn--ghost"
+          type="button"
+          data-kumi-close
+          aria-label="Tutup"
+        >
+          <svg class="kumi-icon" aria-hidden="true"><use href="#i-close"></use></svg>
+        </button>
+      </div>
+
+      <div class="kumi-stack kd-remote__setelan">
+        <button class="kumi-btn kumi-btn--soft kumi-btn--block" type="button" data-kumi-toggle-theme>
+          <svg class="kumi-icon" aria-hidden="true" data-ikon-tema><use href="#i-moon"></use></svg>
+          Ganti tema
+        </button>
+
+        <div class="kumi-field">
+          <label class="kumi-field__label" for="pilih-bahasa-remote">Bahasa</label>
+          <select class="kumi-select" id="pilih-bahasa-remote">
+            <option value="id">Bahasa Indonesia</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+
+        <div class="kumi-field">
+          <span class="kumi-field__label">Info perangkat</span>
+          <span class="kd-hint kd-hint--mono" id="info-perangkat">—</span>
+        </div>
+
+        <div class="kumi-field">
+          <span class="kumi-field__label">Aktivitas terakhir</span>
+          <span class="kd-hint" id="info-aktivitas">Belum ada aktivitas.</span>
+        </div>
+
+        <button class="kumi-btn kumi-btn--danger kumi-btn--block" type="button" id="btn-putuskan">
+          Putuskan pasangan
+        </button>
+        <span class="kumi-field__hint">
+          Setelah diputus, masukkan kembali kode pasangan dari layar komputer untuk menyambung lagi.
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <script src="kumi/js/kumi.js"></script>
+  <script src="js/bahasa.js"></script>
+  <script src="js/bahasa-tambahan.js"></script>
+  <script src="js/core.js"></script>
+  <script src="js/remote.js"></script>
+</body>
+</html>
+
+
+

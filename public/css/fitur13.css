@@ -1,0 +1,338 @@
+
+/* ================================================= 3. Kunci tata letak === */
+:root {
+  --kd-warna-latar: var(--kumi-tile);
+}
+
+/* Warna khusus (#19): latar & teks dari input color, menimpa varian Kumi. */
+.kd-key[data-warna="kustom"] {
+  background: var(--warna-bg);
+  color: var(--warna-fg, var(--kumi-fg));
+  border-color: transparent;
+}
+
+.kd-key[data-warna="kustom"] .kd-key__label {
+  opacity: 1;
+}
+
+/* Penanda status (#20): garis aksen + titik menyala saat aplikasi cocok. */
+.kd-key[data-tanda]::after {
+  content: "";
+  position: absolute;
+  left: clamp(6px, 5cqi, 10px);
+  bottom: clamp(6px, 5cqi, 10px);
+  width: clamp(7px, 6cqi, 10px);
+  height: clamp(7px, 6cqi, 10px);
+  border-radius: var(--kumi-r-pill);
+  background: var(--kumi-line-strong);
+  opacity: 0;
+  transition: opacity var(--kumi-dur-fast) var(--kumi-ease);
+}
+
+.kd-key[data-tanda].is-aktif::after {
+  opacity: 1;
+  background: var(--kumi-lime);
+  box-shadow: 0 0 0 3px rgba(217, 242, 91, 0.28);
+}
+
+.kd-key[data-tanda].is-aktif {
+  border-color: var(--kumi-accent);
+}
+
+/* Kunci tata letak (#1). */
+.kd-kunci-aktif .kd-key--sunting,
+.kd-kunci-aktif .kd-key--empty {
+  cursor: not-allowed;
+}
+
+.kd-kunci-aktif .kd-key--sunting .kd-key__badge {
+  display: none;
+}
+
+.kd-kunci-aktif #btn-tambah-cepat,
+.kd-kunci-aktif #btn-kelola-halaman {
+  display: none;
+}
+
+/* Seret & lepas (#2). */
+.kd-key[data-indeks] {
+  cursor: pointer;
+}
+
+.kd-sunting .kd-key[data-indeks] {
+  cursor: grab;
+}
+
+.kd-key.seret-aktif {
+  opacity: 0.45;
+}
+
+.kd-key.seret-sasaran {
+  outline: 2px dashed var(--kumi-accent);
+  outline-offset: 2px;
+}
+
+/* Bilah kecil di sisi kartu Perangkat untuk ekspor/impor. */
+.kd-berbagi {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kd-berbagi .kumi-btn {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+/* Editor: warna khusus & ikon kustom. */
+.kd-warna-kustom {
+  display: flex;
+  align-items: center;
+  gap: var(--kumi-space-1);
+  flex-wrap: wrap;
+  margin-top: var(--kumi-space-1);
+}
+
+.kd-warna-kustom__label {
+  font-size: var(--kumi-text-xs);
+  color: var(--kumi-fg-muted);
+}
+
+.kd-warna {
+  width: 44px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--kumi-line);
+  border-radius: var(--kumi-r-xs);
+  background: var(--kumi-surface-2);
+  cursor: pointer;
+}
+
+.kd-pilih-ikon__item img {
+  width: 60%;
+  height: 60%;
+  object-fit: contain;
+}
+
+.kd-pilih-ikon__item--kustom {
+  position: relative;
+}
+
+.kd-pilih-ikon__item--kustom::after {
+  content: "";
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--kumi-r-pill);
+  background: var(--kumi-accent);
+}
+
+.kd-sakelar-teks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.kd-otomatis .kd-editor-baris {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr) auto;
+}
+
+@media (max-width: 720px) {
+  .kd-otomatis .kd-editor-baris {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+/* ================================================= 1. Soundboard ======== */
+.kd-suara-alat {
+  display: flex;
+  align-items: center;
+  gap: var(--kumi-space-1);
+  flex-wrap: wrap;
+  margin-bottom: var(--kumi-space-2);
+}
+
+.kd-suara-alat__label {
+  font-size: var(--kumi-text-xs);
+  color: var(--kumi-fg-muted);
+}
+
+.kd-suara-alat .kumi-select {
+  flex: 1 1 220px;
+  min-height: 40px;
+}
+
+.kd-suara-daftar {
+  list-style: none;
+  margin: 0 0 var(--kumi-space-2);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 232px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.kd-suara-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--kumi-line);
+  border-radius: var(--kumi-r-sm);
+  background: var(--kumi-surface-2);
+  transition: border-color var(--kumi-dur-fast) var(--kumi-ease);
+}
+
+.kd-suara-item:hover {
+  border-color: var(--kumi-line-strong);
+}
+
+.kd-suara-item__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--kumi-r-xs);
+  background: transparent;
+  color: var(--kumi-fg);
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--kumi-font-body);
+}
+
+.kd-suara-item__main:hover {
+  background: var(--kumi-tile);
+}
+
+.kd-suara-item__main:focus-visible {
+  outline: 2px solid var(--kumi-accent);
+  outline-offset: 1px;
+}
+
+.kd-suara-item__ikon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--kumi-r-xs);
+  background: var(--kumi-tint);
+  color: var(--kumi-accent);
+  font-size: var(--kumi-text-base);
+}
+
+.kd-suara-item__teks {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.kd-suara-item__nama {
+  font-size: var(--kumi-text-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kd-suara-item__meta {
+  font-size: var(--kumi-text-xs);
+  color: var(--kumi-fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* ============================ Sakelar kepala halaman (seragam) ========== */
+/* Suara, tema, tray, dan kunci memakai satu pola: tombol ikon yang sama,
+   `aria-pressed="true"` berarti fitur sedang AKTIF, dan keadaan aktif selalu
+   ditandai warna aksen + latar tint. Ikonnya berganti sendiri per keadaan. */
+.kd-toggle {
+  position: relative;
+  color: var(--kumi-fg-muted);
+  transition:
+    color var(--kumi-dur-fast) var(--kumi-ease),
+    background-color var(--kumi-dur-fast) var(--kumi-ease),
+    border-color var(--kumi-dur-fast) var(--kumi-ease),
+    transform var(--kumi-dur-fast) var(--kumi-ease);
+}
+
+.kd-toggle:hover {
+  color: var(--kumi-fg);
+}
+
+.kd-toggle:active {
+  transform: scale(0.96);
+}
+
+.kd-toggle:focus-visible {
+  outline: 2px solid var(--kumi-accent);
+  outline-offset: 2px;
+}
+
+.kd-toggle[aria-pressed="true"] {
+  color: var(--kumi-accent);
+  border-color: var(--kumi-accent);
+  background: var(--kumi-tint);
+}
+
+.kd-toggle .kumi-icon {
+  width: 18px;
+  height: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kd-toggle,
+  .kd-toggle:hover,
+  .kd-toggle:active {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ======================================== Pemilih ikon: judul bagian ===== */
+.kd-pilih-ikon__judul {
+  grid-column: 1 / -1;
+  font-size: var(--kumi-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--kumi-fg-muted);
+  padding: 4px 2px 0;
+}
+
+/* Sakelar tema TIDAK memakai tanda aktif biru: ia hanya mengganti tampilan,
+   bukan menyalakan fitur. Ikonnya tetap berganti bulan/matahari. */
+.kd-toggle[data-kumi-toggle-theme],
+.kd-toggle[data-kumi-toggle-theme][aria-pressed="true"],
+.kd-toggle[data-kumi-toggle-theme]:hover,
+.kd-toggle[data-kumi-toggle-theme][aria-pressed="true"]:hover {
+  /* Tema hanya ikon: tanpa bingkai sama sekali, di keadaan apa pun. */
+  color: var(--kumi-fg);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.kd-toggle[data-kumi-toggle-theme]:hover .kumi-icon {
+  opacity: 0.72;
+}
+
+.kd-toggle[data-kumi-toggle-theme]:hover {
+  color: var(--kumi-fg);
+  background: var(--kumi-tile);
+}
+
+

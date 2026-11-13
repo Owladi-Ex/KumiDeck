@@ -1,0 +1,20 @@
+# Berkas yang tidak ikut disimpan di repositori
+
+# Data lokal pengguna: kode pasangan, papan, ikon unggahan, suara, sertifikat TLS
+data/
+
+# Hasil build rilis (dibuat ulang oleh rilis.cmd / buat-exe.cmd)
+_rilis/
+_exe/
+build/
+
+# Dependensi build (hanya dipakai saat membuat .exe, dipasang otomatis)
+node_modules/
+package-lock.json
+
+# Berkas sistem & sementara
+Thumbs.db
+desktop.ini
+.DS_Store
+*.log
+*.tmp

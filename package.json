@@ -1,0 +1,33 @@
+{
+  "name": "kumideck",
+  "version": "1.7.0",
+  "private": true,
+  "type": "module",
+  "description": "Papan tombol (stream deck) lokal dengan klien Android lewat web, memakai Kumi Design System.",
+  "keywords": [
+    "stream-deck",
+    "remote-control",
+    "android",
+    "windows",
+    "kumi"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "test": "node server/qr.test.js && node server/apps.test.js && node server/appicons.test.js && node server/audio.test.js",
+    "test:qr": "node server/qr.test.js",
+    "test:apps": "node server/apps.test.js",
+    "rilis": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rilis.ps1",
+    "exe": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/buat-exe.ps1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "postject": "^1.0.0-alpha.6",
+    "rcedit": "^5.0.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+

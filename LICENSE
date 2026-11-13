@@ -1,0 +1,35 @@
+# Lisensi
+
+MIT License
+
+Copyright (c) 2026 KumiDeck
+
+Izin diberikan, tanpa biaya, kepada siapa pun yang memperoleh salinan
+perangkat lunak ini dan berkas dokumentasi terkait ("Perangkat Lunak"), untuk
+menggunakan Perangkat Lunak tanpa batasan, termasuk tanpa batas hak untuk
+menggunakan, menyalin, memodifikasi, menggabungkan, menerbitkan, mendistribusikan,
+mensublisensikan, dan/atau menjual salinan Perangkat Lunak, dan untuk
+mengizinkan orang yang menerima Perangkat Lunak untuk melakukan hal yang sama,
+dengan ketentuan:
+
+Pemberitahuan hak cipta di atas dan pemberitahuan izin ini harus disertakan
+dalam semua salinan atau bagian substansial dari Perangkat Lunak.
+
+PERANGKAT LUNAK INI DISEDIAKAN "SEBAGAIMANA ADANYA", TANPA JAMINAN APA PUN,
+BAIK TERSURAT MAUPUN TERSIRAT, TERMASUK NAMUN TIDAK TERBATAS PADA JAMINAN
+KELAYAKAN UNTUK DIPERDAGANGKAN, KESESUAIAN UNTUK TUJUAN TERTENTU, DAN
+TIDAK MELANGGAR HAK. DALAM KEADAAN APA PUN PENULIS ATAU PEMEGANG HAK CIPTA
+TIDAK BERTANGGUNG JAWAB ATAS KLAIM, KERUSAKAN, ATAU TANGGUNG JAWAB LAIN,
+BAIK DALAM TINDAKAN KONTRAK, PERBUATAN MELAWAN HUKUM, MAUPUN LAINNYA, YANG
+TIMBUL DARI, DARI, ATAU BERKAITAN DENGAN PERANGKAT LUNAK INI ATAU PENGGUNAAN
+ATAU TRANSAKSI LAIN DALAM PERANGKAT LUNAK INI.
+
+---
+
+## Komponen pihak ketiga
+
+- **Kumi Design System v1.1.0** — sistem desain yang disertakan di
+  `public/kumi/`. Font **Inter** dan **Space Grotesk** berlisensi
+  SIL Open Font License 1.1 (aman untuk produk komersial, boleh di-host sendiri).
+- Tidak ada pustaka JavaScript pihak ketiga; seluruh kode server dan klien
+  memakai Node.js dan API peramban bawaan.

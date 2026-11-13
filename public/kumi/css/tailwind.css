@@ -1,0 +1,62 @@
+/* ==========================================================================
+   KUMI DESIGN SYSTEM — tailwind.css (opsional, untuk Tailwind CSS v4)
+   Menjembatani token Kumi ke utility Tailwind, sehingga class yang sudah ada
+   di app kamu (bg-accent, text-muted, rounded-lg, …) otomatis memakai Kumi.
+   --------------------------------------------------------------------------
+   Cara pakai di src/styles.css app kamu:
+
+     @import "tailwindcss";
+     @import "kumi-ds/css/kumi.css";      // token --kumi-*
+     @import "kumi-ds/css/components.css"; // komponen .kumi-* (opsional)
+     @import "kumi-ds/css/tailwind.css";   // jembatan ini
+
+   Kalau app kamu sudah punya blok @theme sendiri, cukup ganti nilai di blok
+   itu dengan var(--kumi-…): satu file, seluruh app langsung ikut berubah.
+   ========================================================================== */
+
+@theme {
+  /* ---------------------------------------------------------- warna ------ */
+  --color-canvas: var(--kumi-canvas); /* latar halaman */
+  --color-tile: var(--kumi-tile); /* permukaan kartu */
+  --color-surface: var(--kumi-surface);
+  --color-surface-2: var(--kumi-surface-2);
+  --color-ink: var(--kumi-ink); /* gelap brand (#17171B) */
+  --color-ink-surface: var(--kumi-ink-surface);
+  --color-fg: var(--kumi-fg); /* teks (ikut tema) */
+  --color-muted: var(--kumi-fg-muted);
+  --color-line: var(--kumi-line);
+  --color-accent: var(--kumi-accent);
+  --color-lime: var(--kumi-lime);
+  --color-tint: var(--kumi-tint);
+  --color-ok: var(--kumi-ok);
+  --color-warn: var(--kumi-warn);
+  --color-danger: var(--kumi-danger);
+
+  /* ------------------------------------------------------- tipografi ----- */
+  --font-head: var(--kumi-font-head);
+  --font-body: var(--kumi-font-body);
+  --font-sans: var(--kumi-font-body);
+  --font-mono: var(--kumi-font-mono);
+
+  /* ----------------------------------------------------------- radius ---- */
+  /* Kumi: 8 input · 16 tombol · 24 kartu dalam · 32 tile · 999 badge */
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-2xl: 32px;
+  --radius-pill: 999px;
+
+  /* --------------------------------------------------------- bayangan ---- */
+  --shadow-soft: 0 1px 2px rgba(23, 23, 27, 0.06);
+  --shadow-float: 0 26px 50px -26px rgba(23, 23, 27, 0.45);
+  --shadow-focus: 0 0 0 4px rgba(var(--kumi-accent-rgb), 0.18);
+
+  /* ------------------------------------------------------------ gerak ---- */
+  --ease-kumi: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-kumi-soft: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Supaya varian `dark:` Tailwind mengikuti atribut Kumi. */
+@custom-variant dark (&:where([data-kumi-theme="dark"], [data-kumi-theme="dark"] *));

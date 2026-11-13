@@ -1,0 +1,1061 @@
+/* ==========================================================================
+   KUMI DESIGN SYSTEM — components.css
+   Komponen siap pakai, semua berawalan .kumi- agar tidak menabrak class app.
+   Butuh kumi.css (token) dimuat lebih dulu.
+   --------------------------------------------------------------------------
+   Cheat sheet:
+     Tile     .kumi-tile  + data-kumi-theme="dark|lime|tint|accent"
+     Tombol   .kumi-btn   + --primary --dark --ghost --soft --danger, --sm --lg
+     Badge    .kumi-badge + --lime --tint --accent --ok --warn --danger + .kumi-dot
+     Input    .kumi-field > .kumi-field__label + .kumi-input
+     Chip     .kumi-chip (+ .is-active), dibungkus .kumi-chip-group
+     Kartu    .kumi-card, .kumi-icon-box, .kumi-divider
+     Data     .kumi-stat, .kumi-progress, .kumi-list, .kumi-empty
+     Lain     .kumi-switch .kumi-avatar .kumi-skeleton .kumi-toast .kumi-modal
+   ========================================================================== */
+
+/* =============================================================== 1. Tile === */
+.kumi-tile {
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: var(--kumi-tile);
+  color: var(--kumi-fg);
+  border: 1px solid transparent;
+  border-radius: var(--kumi-r-lg);
+  padding: var(--kumi-pad);
+  transition: transform var(--kumi-dur) var(--kumi-ease),
+    box-shadow var(--kumi-dur) var(--kumi-ease),
+    border-color var(--kumi-dur-fast) var(--kumi-ease-soft),
+    background var(--kumi-dur-fast) var(--kumi-ease-soft);
+}
+
+/* Tile memotong isinya supaya sudut membulat tetap rapi. Dengan overflow: clip
+   + margin, tinta huruf yang ber-line-height rapat (mis. judul besar) dan
+   bayangan tombol boleh sedikit keluar, jadi tidak "terpotong" di tepi tile.
+   Browser lama tetap memakai overflow: hidden.
+   Komponen yang mengatur overflow sendiri (mis. .kumi-marquee) dikecualikan
+   supaya pemotongan tidak menimpa perilaku gulirnya. */
+@supports (overflow: clip) {
+  .kumi-tile:not(.kumi-marquee):not(.kumi-tile--clip):not(.kumi-tile--no-clip) {
+    overflow: clip;
+    overflow-clip-margin: 6px;
+  }
+}
+
+/* Balikkan ke pemotongan ketat — pakai kalau tile berisi gambar/video yang
+   sudutnya harus rapi. */
+.kumi-tile--clip {
+  overflow: hidden !important;
+  overflow-clip-margin: 0 !important;
+}
+
+/* Kalau tile berisi dropdown/menu atau efek yang boleh keluar tepi
+   (mis. .kumi-glow), matikan pemotongan. Ditulis setelah blok @supports
+   supaya tidak tertimpa. */
+.kumi-tile--no-clip {
+  overflow: visible;
+}
+
+/* Tile besar untuk hero: ruang napas lebih lega. */
+.kumi-tile--hero {
+  padding: clamp(28px, 4vw, 52px);
+}
+
+.kumi-tile--pad-sm {
+  padding: var(--kumi-space-2);
+}
+
+.kumi-tile--pad-lg {
+  padding: var(--kumi-space-4);
+}
+
+/* Permukaan alternatif. Berlaku untuk .kumi-tile maupun .kumi-card. */
+.kumi-tile[data-kumi-theme="dark"],
+.kumi-card[data-kumi-theme="dark"] {
+  background: var(--kumi-ink-surface);
+  color: var(--kumi-ink-fg);
+  --kumi-fg: var(--kumi-ink-fg);
+  --kumi-fg-muted: var(--kumi-ink-muted);
+  --kumi-line: rgba(255, 255, 255, 0.16);
+  --kumi-tile: var(--kumi-ink-surface-2);
+}
+
+.kumi-tile[data-kumi-theme="lime"],
+.kumi-card[data-kumi-theme="lime"] {
+  background: var(--kumi-lime);
+  color: var(--kumi-ink);
+  --kumi-fg: var(--kumi-ink);
+  --kumi-fg-muted: rgba(23, 23, 27, 0.72);
+  --kumi-line: rgba(23, 23, 27, 0.18);
+  --kumi-tile: #ffffff;
+}
+
+.kumi-tile[data-kumi-theme="tint"],
+.kumi-card[data-kumi-theme="tint"] {
+  background: var(--kumi-tint);
+  color: var(--kumi-fg);
+}
+
+.kumi-tile[data-kumi-theme="accent"],
+.kumi-card[data-kumi-theme="accent"] {
+  background: var(--kumi-accent);
+  color: #fff;
+  --kumi-fg: #ffffff;
+  --kumi-fg-muted: rgba(255, 255, 255, 0.82);
+  --kumi-line: rgba(255, 255, 255, 0.25);
+  --kumi-tile: rgba(255, 255, 255, 0.14);
+}
+
+.kumi-tile--dashed {
+  background: transparent;
+  border: 2px dashed var(--kumi-line);
+}
+
+.kumi-tile--dashed:hover {
+  border-color: var(--kumi-accent);
+}
+
+.kumi-tile--hover:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--kumi-shadow-2);
+}
+
+/* Tile yang bisa diklik seluruhnya */
+.kumi-tile--link {
+  display: block;
+  cursor: pointer;
+}
+
+.kumi-tile--link:focus-visible {
+  outline: 2px solid var(--kumi-accent);
+  outline-offset: 3px;
+}
+
+/* Sorotan yang mengikuti kursor (butuh kumi.js atau isi --kumi-mx/-my) */
+.kumi-spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    340px circle at var(--kumi-mx, 50%) var(--kumi-my, 50%),
+    rgba(var(--kumi-accent-rgb), 0.22),
+    transparent 68%
+  );
+  transition: opacity var(--kumi-dur-fast) var(--kumi-ease-soft);
+}
+
+.kumi-spotlight:hover::after {
+  opacity: 1;
+}
+
+.kumi-tile[data-kumi-theme="dark"].kumi-spotlight::after,
+.kumi-tile[data-kumi-theme="accent"].kumi-spotlight::after {
+  background: radial-gradient(
+    340px circle at var(--kumi-mx, 50%) var(--kumi-my, 50%),
+    rgba(255, 255, 255, 0.18),
+    transparent 66%
+  );
+}
+
+/* Kilau melintas saat hover */
+.kumi-shine::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 45%;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-16deg);
+  transition: left 0.9s var(--kumi-ease);
+}
+
+.kumi-shine:hover::before {
+  left: 120%;
+}
+
+/* Miring 3D (butuh kumi.js atau isi --kumi-rx/-ry).
+   Elemen yang sekaligus .kumi-reveal diabaikan di sini karena aturan reveal
+   sudah menyertakan var kemiringannya — supaya animasi masuk tidak tertimpa. */
+.kumi-tilt:not(.kumi-reveal) {
+  transform: perspective(1000px) rotateX(var(--kumi-rx, 0deg))
+    rotateY(var(--kumi-ry, 0deg));
+  transition: transform var(--kumi-dur) var(--kumi-ease);
+}
+
+/* ============================================================ 2. Tombol === */
+.kumi-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 24px;
+  border: 2px solid transparent;
+  border-radius: var(--kumi-r-sm);
+  background: transparent;
+  color: var(--kumi-fg);
+  font-family: var(--kumi-font-body);
+  font-size: var(--kumi-text-sm);
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: transform var(--kumi-dur-fast) var(--kumi-ease),
+    background var(--kumi-dur-fast) var(--kumi-ease-soft),
+    border-color var(--kumi-dur-fast) var(--kumi-ease-soft),
+    color var(--kumi-dur-fast) var(--kumi-ease-soft),
+    box-shadow var(--kumi-dur-fast) var(--kumi-ease-soft);
+}
+
+.kumi-btn svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  transition: transform var(--kumi-dur-fast) var(--kumi-ease);
+}
+
+.kumi-btn:hover {
+  transform: translateY(-2px);
+}
+
+.kumi-btn:active {
+  transform: translateY(0) scale(0.985);
+}
+
+.kumi-btn:disabled,
+.kumi-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.kumi-btn--primary {
+  background: var(--kumi-accent);
+  color: #fff;
+  box-shadow: 0 14px 30px -14px rgba(var(--kumi-accent-rgb), 0.9);
+}
+
+.kumi-btn--primary:hover svg {
+  transform: translate(2px, -2px);
+}
+
+.kumi-btn--dark {
+  background: var(--kumi-ink-surface);
+  color: #fff;
+}
+
+.kumi-btn--ghost {
+  border-color: currentColor;
+}
+
+/* Catatan: latar memakai *tint* dari currentColor, bukan `currentColor` penuh.
+   Dulu `background: currentColor; color: var(--kumi-canvas)` membuat latar
+   DAN teks/ikon sama-sama berwarna canvas, jadi tombol terlihat hilang saat
+   ditekan. Dengan color-mix, warna teks, garis, dan ikon tidak pernah berubah
+   sehingga tetap terbaca di tema terang/gelap maupun di tile dark/lime/tint/accent. */
+.kumi-btn--ghost:hover {
+  background: rgba(128, 128, 128, 0.18); /* cadangan kalau color-mix tak didukung */
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.kumi-btn--ghost:active {
+  background: rgba(128, 128, 128, 0.26);
+  background: color-mix(in srgb, currentColor 24%, transparent);
+}
+
+.kumi-btn--soft {
+  background: rgba(var(--kumi-accent-rgb), 0.12);
+  color: var(--kumi-accent);
+}
+
+.kumi-btn--soft:hover {
+  background: rgba(var(--kumi-accent-rgb), 0.2);
+}
+
+.kumi-btn--danger {
+  background: var(--kumi-danger);
+  color: #fff;
+}
+
+.kumi-btn--sm {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: var(--kumi-text-xs);
+  border-radius: 12px;
+  gap: 6px;
+}
+
+.kumi-btn--sm svg {
+  width: 16px;
+  height: 16px;
+}
+
+.kumi-btn--lg {
+  min-height: 56px;
+  padding: 0 28px;
+  font-size: var(--kumi-text-base);
+}
+
+.kumi-btn--icon {
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 14px;
+}
+
+.kumi-btn--block {
+  width: 100%;
+}
+
+.kumi-btn.is-loading {
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+.kumi-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: kumi-spin 0.8s linear infinite;
+}
+
+/* ============================================================= 3. Badge === */
+.kumi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: var(--kumi-r-pill);
+  font-size: var(--kumi-text-xs);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  background: rgba(var(--kumi-accent-rgb), 0.14);
+  color: var(--kumi-accent);
+}
+
+.kumi-badge--lime {
+  background: var(--kumi-lime);
+  color: var(--kumi-ink);
+}
+
+.kumi-badge--tint {
+  background: var(--kumi-tint);
+  color: var(--kumi-fg);
+}
+
+.kumi-badge--accent {
+  background: var(--kumi-accent);
+  color: #fff;
+}
+
+.kumi-badge--ok { background: rgba(21, 127, 90, 0.14); color: var(--kumi-ok); }
+.kumi-badge--warn { background: rgba(180, 83, 9, 0.14); color: var(--kumi-warn); }
+.kumi-badge--danger { background: rgba(194, 50, 31, 0.14); color: var(--kumi-danger); }
+
+.kumi-tile[data-kumi-theme="dark"] .kumi-badge {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+/* Titik status dengan denyut */
+.kumi-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: currentColor;
+  animation: kumi-pulse 2.2s ease-out infinite;
+}
+
+.kumi-dot--solid {
+  animation: none;
+}
+
+/* ============================================================== 4. Chip === */
+.kumi-chip-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kumi-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--kumi-line);
+  border-radius: var(--kumi-r-pill);
+  background: var(--kumi-tile);
+  color: var(--kumi-fg);
+  font-family: var(--kumi-font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--kumi-dur-fast) var(--kumi-ease),
+    background var(--kumi-dur-fast) var(--kumi-ease-soft),
+    color var(--kumi-dur-fast) var(--kumi-ease-soft),
+    border-color var(--kumi-dur-fast) var(--kumi-ease-soft);
+}
+
+.kumi-chip:hover {
+  transform: translateY(-2px);
+  border-color: var(--kumi-accent);
+}
+
+.kumi-chip.is-active,
+.kumi-chip[aria-pressed="true"] {
+  background: var(--kumi-ink-surface);
+  border-color: var(--kumi-ink-surface);
+  color: #fff;
+}
+
+.kumi-chip__count {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--kumi-r-pill);
+  background: rgba(23, 23, 27, 0.09);
+}
+
+.kumi-chip.is-active .kumi-chip__count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ======================================= 5. Kartu dalam, ikon, pemisah === */
+.kumi-card {
+  background: var(--kumi-tile);
+  color: var(--kumi-fg);
+  border-radius: var(--kumi-r-md);
+  padding: var(--kumi-space-2);
+}
+
+.kumi-card--flat {
+  background: var(--kumi-surface-2);
+}
+
+.kumi-card--bordered {
+  border: 1px solid var(--kumi-line);
+  background: transparent;
+}
+
+.kumi-card--hover {
+  transition: transform var(--kumi-dur-fast) var(--kumi-ease),
+    box-shadow var(--kumi-dur-fast) var(--kumi-ease-soft);
+}
+
+.kumi-card--hover:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--kumi-shadow-2);
+}
+
+.kumi-icon-box {
+  width: 60px;
+  height: 60px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--kumi-r-md);
+  font-size: 27px;
+  line-height: 1;
+  background: rgba(var(--kumi-accent-rgb), 0.14);
+  color: var(--kumi-accent);
+  transition: transform var(--kumi-dur) var(--kumi-ease),
+    border-radius var(--kumi-dur) var(--kumi-ease);
+}
+
+.kumi-icon-box--sm {
+  width: 44px;
+  height: 44px;
+  font-size: 20px;
+  border-radius: 14px;
+}
+
+.kumi-icon-box--lg {
+  width: 72px;
+  height: 72px;
+  font-size: 32px;
+}
+
+.kumi-tile[data-kumi-theme="dark"] .kumi-icon-box {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.kumi-tile[data-kumi-theme="lime"] .kumi-icon-box,
+.kumi-tile[data-kumi-theme="tint"] .kumi-icon-box {
+  background: rgba(23, 23, 27, 0.9);
+  color: var(--kumi-lime);
+}
+
+.kumi-tile:hover .kumi-icon-box--lift {
+  transform: translateY(-4px) rotate(-6deg) scale(1.06);
+}
+
+.kumi-divider {
+  height: 1px;
+  border: 0;
+  margin: var(--kumi-space-2) 0;
+  background: var(--kumi-line);
+}
+
+.kumi-divider--strong {
+  background: currentColor;
+  opacity: 0.18;
+}
+
+/* ============================================== 6. Statistik & progress == */
+.kumi-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kumi-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kumi-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kumi-stat__value {
+  font-family: var(--kumi-font-head);
+  font-size: var(--kumi-text-2xl);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.kumi-stat__label {
+  font-size: var(--kumi-text-xs);
+  color: var(--kumi-fg-muted);
+}
+
+.kumi-progress {
+  position: relative;
+  height: 10px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--kumi-r-pill);
+  background: var(--kumi-surface-2);
+}
+
+.kumi-progress__bar {
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: var(--kumi-accent);
+  transition: width var(--kumi-dur-slow) var(--kumi-ease);
+}
+
+.kumi-progress__bar--lime { background: var(--kumi-lime); }
+.kumi-progress__bar--ok { background: var(--kumi-ok); }
+.kumi-progress__bar--warn { background: var(--kumi-warn); }
+.kumi-progress__bar--danger { background: var(--kumi-danger); }
+
+/* ====================================================== 7. Kontrol form === */
+.kumi-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kumi-space-1);
+}
+
+.kumi-field__label {
+  font-size: var(--kumi-text-xs);
+  font-weight: 600;
+}
+
+.kumi-field__hint {
+  font-size: 12px;
+  color: var(--kumi-fg-muted);
+}
+
+.kumi-field__error {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--kumi-danger);
+}
+
+.kumi-input,
+.kumi-select,
+.kumi-textarea {
+  width: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 0 16px;
+  border: 1px solid var(--kumi-line-strong);
+  border-radius: 12px;
+  background: var(--kumi-surface-2);
+  color: var(--kumi-fg);
+  font-family: var(--kumi-font-body);
+  font-size: var(--kumi-text-sm);
+  transition: border-color var(--kumi-dur-fast) var(--kumi-ease-soft),
+    box-shadow var(--kumi-dur-fast) var(--kumi-ease-soft),
+    background var(--kumi-dur-fast) var(--kumi-ease-soft);
+}
+
+.kumi-textarea {
+  min-height: 120px;
+  padding: 14px 16px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.kumi-input::placeholder,
+.kumi-textarea::placeholder {
+  color: var(--kumi-fg-muted);
+  opacity: 0.8;
+}
+
+.kumi-input:focus,
+.kumi-select:focus,
+.kumi-textarea:focus {
+  outline: none;
+  border-color: var(--kumi-accent);
+  background: var(--kumi-tile);
+  box-shadow: var(--kumi-shadow-focus);
+}
+
+.kumi-input[aria-invalid="true"],
+.kumi-textarea[aria-invalid="true"] {
+  border-color: var(--kumi-danger);
+}
+
+.kumi-input:disabled,
+.kumi-select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.kumi-select {
+  appearance: none;
+  padding-right: 44px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 21px) 21px, calc(100% - 15px) 21px;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+/* Input dengan ikon di dalam */
+.kumi-input-icon {
+  position: relative;
+}
+
+.kumi-input-icon svg {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  color: var(--kumi-fg-muted);
+  pointer-events: none;
+}
+
+.kumi-input-icon .kumi-input {
+  padding-left: 44px;
+}
+
+/* Sakelar on/off */
+.kumi-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 52px;
+  height: 30px;
+  flex: none;
+  margin: 0;
+  border: 0;
+  border-radius: var(--kumi-r-pill);
+  background: var(--kumi-line-strong);
+  cursor: pointer;
+  transition: background var(--kumi-dur-fast) var(--kumi-ease-soft);
+}
+
+.kumi-switch::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform var(--kumi-dur-fast) var(--kumi-ease);
+}
+
+.kumi-switch:checked {
+  background: var(--kumi-accent);
+}
+
+.kumi-switch:checked::after {
+  transform: translateX(22px);
+}
+
+/* Kotak centang */
+.kumi-check {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  margin: 0;
+  border: 1px solid var(--kumi-line-strong);
+  border-radius: var(--kumi-r-xs);
+  background: var(--kumi-surface-2);
+  cursor: pointer;
+  transition: background var(--kumi-dur-fast) var(--kumi-ease-soft),
+    border-color var(--kumi-dur-fast) var(--kumi-ease-soft);
+}
+
+.kumi-check:checked {
+  background: var(--kumi-accent);
+  border-color: var(--kumi-accent);
+}
+
+.kumi-check:checked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: no-repeat center / 14px 14px
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 13 4.5 4.5L19 7'/%3E%3C/svg%3E");
+}
+
+/* ============================================================ 8. Avatar === */
+.kumi-avatar {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(var(--kumi-accent-rgb), 0.14);
+  color: var(--kumi-accent);
+  font-family: var(--kumi-font-head);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+}
+
+.kumi-avatar--circle { border-radius: 50%; }
+.kumi-avatar--sm { width: 34px; height: 34px; font-size: 13px; border-radius: 11px; }
+.kumi-avatar--lg { width: 60px; height: 60px; font-size: 20px; border-radius: var(--kumi-r-md); }
+.kumi-avatar--ink { background: var(--kumi-ink-surface); color: var(--kumi-lime); }
+
+/* ========================================================== 9. Skeleton === */
+.kumi-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--kumi-surface-2);
+  min-height: 14px;
+}
+
+.kumi-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--kumi-accent-rgb), 0.12),
+    transparent
+  );
+  animation: kumi-skeleton 1.4s infinite;
+}
+
+@keyframes kumi-skeleton {
+  100% { transform: translateX(100%); }
+}
+
+/* ============================================================== 10. List == */
+.kumi-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--kumi-space-1);
+}
+
+.kumi-list__item {
+  display: flex;
+  align-items: center;
+  gap: var(--kumi-space-2);
+  min-height: 64px;
+  padding: 12px 16px;
+  border-radius: var(--kumi-r-sm);
+  background: var(--kumi-tile);
+  color: var(--kumi-fg);
+  text-align: left;
+  transition: transform var(--kumi-dur-fast) var(--kumi-ease),
+    background var(--kumi-dur-fast) var(--kumi-ease-soft),
+    box-shadow var(--kumi-dur-fast) var(--kumi-ease-soft);
+}
+
+.kumi-list__item--interactive {
+  cursor: pointer;
+}
+
+.kumi-list__item--interactive:hover {
+  transform: translateX(4px);
+  box-shadow: var(--kumi-shadow-1);
+}
+
+.kumi-list__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.kumi-list__title {
+  font-weight: 600;
+  font-size: var(--kumi-text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kumi-list__meta {
+  font-size: 12.5px;
+  color: var(--kumi-fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ========================================================= 11. Kosong ===== */
+.kumi-empty {
+  display: grid;
+  place-items: center;
+  gap: var(--kumi-space-1);
+  padding: var(--kumi-space-4) var(--kumi-space-2);
+  text-align: center;
+  border: 2px dashed var(--kumi-line);
+  border-radius: var(--kumi-r-lg);
+  color: var(--kumi-fg-muted);
+}
+
+.kumi-empty__icon {
+  font-size: 32px;
+}
+
+/* ==================================================== 12. Toast & modal == */
+.kumi-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(90vw, 420px);
+  padding: 14px 22px;
+  border-radius: var(--kumi-r-pill);
+  background: var(--kumi-ink-surface);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transform: translate(-50%, 24px);
+  pointer-events: none;
+  transition: opacity var(--kumi-dur-fast) var(--kumi-ease-soft),
+    transform var(--kumi-dur) var(--kumi-ease);
+}
+
+.kumi-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.kumi-toast__dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--kumi-lime);
+}
+
+.kumi-toast--ok .kumi-toast__dot { background: var(--kumi-lime); }
+.kumi-toast--danger .kumi-toast__dot { background: var(--kumi-danger); }
+
+.kumi-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--kumi-space-2);
+  background: rgba(15, 15, 20, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--kumi-dur-fast) var(--kumi-ease-soft);
+}
+
+.kumi-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.kumi-modal {
+  width: min(520px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  padding: var(--kumi-pad);
+  border-radius: var(--kumi-r-lg);
+  background: var(--kumi-tile);
+  color: var(--kumi-fg);
+  box-shadow: var(--kumi-shadow-2);
+  transform: translateY(16px) scale(0.98);
+  transition: transform var(--kumi-dur) var(--kumi-ease);
+}
+
+.kumi-overlay.is-open .kumi-modal {
+  transform: none;
+}
+
+.kumi-modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--kumi-space-2);
+  margin-bottom: var(--kumi-space-2);
+}
+
+.kumi-modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: var(--kumi-space-3);
+}
+
+/* ========================================================= 13. Utilitas === */
+.kumi-muted { color: var(--kumi-fg-muted); }
+.kumi-accent { color: var(--kumi-accent); }
+.kumi-mono { font-family: var(--kumi-font-mono); font-variant-ligatures: none; }
+.kumi-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kumi-center { text-align: center; }
+.kumi-mt-auto { margin-top: auto; }
+.kumi-w-full { width: 100%; }
+
+.kumi-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--kumi-line-strong) transparent;
+}
+
+.kumi-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.kumi-scroll::-webkit-scrollbar-thumb {
+  background: var(--kumi-line-strong);
+  border-radius: var(--kumi-r-pill);
+}
+
+/* ============================================================= 14. Ikon === */
+/* Ikon datar (garis 1.75, ujung membulat) — bukan emoji.
+   Pakai:  <svg class="kumi-icon" aria-hidden="true"><use href="#i-nama"/></svg>
+   Ukuran bawaan 1em, jadi ikut font-size induknya. Cara ini membuat ikon
+   otomatis pas di dalam .kumi-icon-box, .kumi-avatar, dan .kumi-empty__icon.
+   Nama lengkap ada di README.md dan bagian "Ikon" pada galeri. */
+.kumi-icon {
+  width: 1em;
+  height: 1em;
+  flex: none;
+  display: block;
+  color: inherit;
+}
+
+/* Ukuran tetap, kalau tidak ingin ikut ukuran teks. */
+.kumi-icon--xs { width: 14px; height: 14px; }
+.kumi-icon--sm { width: 16px; height: 16px; }
+.kumi-icon--md { width: 20px; height: 20px; }
+.kumi-icon--lg { width: 24px; height: 24px; }
+.kumi-icon--xl { width: 32px; height: 32px; }
+.kumi-icon--2xl { width: 44px; height: 44px; }
+
+/* Kalau ikon dipakai menyatu di dalam baris teks (bukan flex/grid). */
+.kumi-icon--inline {
+  display: inline-block;
+  vertical-align: -0.14em;
+}
+
+/* Ikon yang menyatu dengan teks (judul, label, badge, chip, tombol). */
+.kumi-h1 > .kumi-icon,
+.kumi-h2 > .kumi-icon,
+.kumi-h3 > .kumi-icon,
+.kumi-display > .kumi-icon,
+.kumi-text > .kumi-icon,
+.kumi-text--sm > .kumi-icon,
+.kumi-label > .kumi-icon,
+.kumi-badge > .kumi-icon,
+.kumi-chip > .kumi-icon,
+.kumi-btn > .kumi-icon,
+.kumi-list__title > .kumi-icon {
+  display: inline-block;
+  vertical-align: -0.14em;
+}
+
+/* Ikon yang bertukar mengikuti tema: hanya satu yang tampil. Taruh dua ikon
+   berdampingan, lalu tandai mana untuk tema terang dan mana untuk tema gelap.
+   Mis. tombol ganti tema:
+     <button data-kumi-toggle-theme>
+       <svg class="kumi-icon kumi-icon--on-light">…</svg>
+       <svg class="kumi-icon kumi-icon--on-dark">…</svg>
+     </button>
+   Aturan ini sengaja ditaruh SETELAH `.kumi-btn > .kumi-icon` dan memakai dua
+   class (spesifisitas 0,2,0) supaya `display`-nya menang. */
+.kumi-icon.kumi-icon--on-dark { display: none; }
+
+/* Mode gelap dikenali dari data-kumi-theme maupun data-theme (lihat kumi.css). */
+[data-kumi-theme="dark"] .kumi-icon.kumi-icon--on-light,
+[data-theme="dark"] .kumi-icon.kumi-icon--on-light { display: none; }
+
+[data-kumi-theme="dark"] .kumi-icon.kumi-icon--on-dark,
+[data-theme="dark"] .kumi-icon.kumi-icon--on-dark { display: inline-block; }
+
+/* Scope terang di dalam halaman gelap: kembalikan ikon terang. */
+.kumi-scope[data-kumi-theme="light"] .kumi-icon.kumi-icon--on-light,
+.kumi-scope[data-theme="light"] .kumi-icon.kumi-icon--on-light { display: inline-block; }
+
+.kumi-scope[data-kumi-theme="light"] .kumi-icon.kumi-icon--on-dark,
+.kumi-scope[data-theme="light"] .kumi-icon.kumi-icon--on-dark { display: none; }
+
+/* Ikon yang bertukar mengikuti keadaan suara (nyala/mati). Atribut
+   data-kumi-sound ada di <html> dan diurus kumi.js.
+     <button data-kumi-toggle-sound>
+       <svg class="kumi-icon kumi-icon--sound-on">…</svg>
+       <svg class="kumi-icon kumi-icon--sound-off">…</svg>
+     </button> */
+.kumi-icon.kumi-icon--sound-off { display: none; }
+
+[data-kumi-sound="off"] .kumi-icon.kumi-icon--sound-on { display: none; }
+[data-kumi-sound="off"] .kumi-icon.kumi-icon--sound-off { display: inline-block; }
+
+/* Di dalam kotak ikon dan avatar, ukuran diatur oleh wadahnya. */
+.kumi-avatar .kumi-icon {
+  width: 52%;
+  height: 52%;
+}
+
+/* Ikon dalam tombol: aturan svg milik tombol sudah mengatur 18px / 16px
+   (.kumi-btn svg, .kumi-btn--sm svg), jadi tidak perlu diubah di sini. */
+

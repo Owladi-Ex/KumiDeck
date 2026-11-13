@@ -1,0 +1,309 @@
+/* KumiDeck — tata letak tambahan untuk UI Android (remote).
+   app.css sudah memuat kerangka .kd-remote, .kd-grid, .kd-key, .kd-pages,
+   .kd-status, .kd-layer. Berkas ini hanya menambah tata letak khas layar
+   ponsel: kepala ringkas, papan yang mengisi sisa tinggi, banner petunjuk,
+   dan penanda aksi ditolak. Hanya token --kumi-*; tanpa warna mentah. */
+
+/* ====================================================== 1. Dasar layar === */
+/* Atribut hidden harus menang atas aturan display milik kelas. */
+.kd-remote [hidden] {
+  display: none !important;
+}
+
+/* ============================================================ 2. Kepala === */
+.kd-remote__identitas {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.kd-remote__identitas .kumi-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.kd-remote__judul {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.kd-remote__aksi {
+  display: flex;
+  align-items: center;
+  gap: var(--kumi-space-1);
+  flex: none;
+}
+
+/* ================================================== 3. Banner petunjuk === */
+.kd-remote__banner {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--kumi-space-2);
+  margin: 0 var(--kumi-space-2) var(--kumi-space-1);
+  padding: var(--kumi-space-1) var(--kumi-space-2);
+  border: 1px solid var(--kumi-line);
+  border-radius: var(--kumi-r-sm);
+  background: var(--kumi-surface-2);
+}
+
+.kd-remote__banner-teks {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.kd-remote__banner-judul {
+  font-size: var(--kumi-text-xs);
+  font-weight: 600;
+  color: var(--kumi-fg);
+}
+
+.kd-remote__banner .kumi-btn {
+  flex: none;
+}
+
+/* ============================================================= 4. Papan === */
+.kd-remote__main {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: var(--kumi-space-1);
+  padding: var(--kumi-space-1) var(--kumi-space-2);
+}
+
+/* Papan mengisi sisa tinggi; tiap baris minimal 56px agar tombol tetap
+   nyaman disentuh. Bila layar sangat pendek, papan menggulir sendiri —
+   halaman tetap tidak ikut menggulir. */
+.kd-remote__main .kd-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  grid-auto-rows: minmax(56px, 1fr);
+}
+
+.kd-remote__main .kd-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.kd-remote__main .kd-key {
+  aspect-ratio: auto;
+  min-height: 56px;
+}
+
+/* Ikon mengikuti sisi terkecil tombol. Di lanskap, tombol lebar tetapi rendah,
+   jadi ukuran ikon tidak boleh hanya mengacu ke lebar (cqi). */
+.kd-remote .kd-key__glyph {
+  font-size: clamp(14px, min(30cqi, 48cqb), 40px);
+}
+
+/* Keadaan memuat awal: satu pesan tenang, bukan papan kosong. */
+.kd-remote__memuat {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--kumi-space-2);
+  color: var(--kumi-fg-muted);
+  font-size: var(--kumi-text-sm);
+}
+
+.kd-remote__memuat .kumi-spinner {
+  width: var(--kumi-space-3);
+  height: var(--kumi-space-3);
+  border-width: 2px;
+}
+
+/* Keadaan kosong: pengingat bahwa papan diisi dari komputer. */
+.kd-remote__kosong {
+  flex: none;
+  padding: var(--kumi-space-2);
+  font-size: var(--kumi-text-sm);
+}
+
+/* ============================================================= 5. Kaki === */
+.kd-remote__kaki {
+  gap: var(--kumi-space-1);
+}
+
+.kd-remote__halaman {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--kumi-fg);
+}
+
+.kd-remote__kaki .kd-hint {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.kd-remote__foot .kumi-chip {
+  flex: none;
+}
+
+/* ================================================= 6. Lapis pasangan === */
+.kd-remote__pasang-teks {
+  margin-top: var(--kumi-space-1);
+}
+
+.kd-remote__form {
+  margin-top: var(--kumi-space-2);
+}
+
+.kd-remote__kode {
+  font-family: var(--kumi-font-mono);
+  font-size: var(--kumi-text-lg);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.kd-remote__pasang-kaki,
+.kd-remote__lapis-aksi {
+  margin-top: var(--kumi-space-2);
+}
+
+/* ==================================================== 7. Pengaturan === */
+.kd-remote__setelan {
+  gap: var(--kumi-space-2);
+}
+
+/* ================================================== 8. Aksi ditolak === */
+/* Getaran singkat: hanya dipakai saat aksi gagal, bukan hiasan. */
+.kd-key.is-ditolak {
+  border-color: var(--kumi-danger);
+  animation: kd-remote-getar 0.4s var(--kumi-ease);
+}
+
+@keyframes kd-remote-getar {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
+  }
+}
+
+/* ================================================= 8b. Ponsel pendek === */
+/* Layar tegak pendek (mis. 320×568): rapatkan kaki supaya 5 baris tombol
+   tetap muat tanpa menggulir papan. */
+@media (orientation: portrait) and (max-height: 660px) {
+  .kd-remote__foot {
+    padding-top: 0;
+    padding-bottom: var(--kumi-space-1);
+  }
+
+  .kd-remote__foot .kumi-chip {
+    min-height: 34px;
+    padding: 0 10px;
+    font-size: var(--kumi-text-xs);
+  }
+
+  .kd-remote__kaki .kd-hint:last-child {
+    display: none;
+  }
+
+  .kd-remote__main .kd-grid {
+    grid-auto-rows: minmax(48px, 1fr);
+  }
+
+  .kd-remote__main .kd-key {
+    min-height: 48px;
+    padding: 4px;
+    gap: 2px;
+  }
+
+  .kd-remote__main .kd-key__label {
+    font-size: var(--kumi-text-xs);
+    -webkit-line-clamp: 1;
+  }
+}
+
+/* ================================================== 9. Lanskap === */
+/* Layar pendek: rapatkan kepala/kaki dan hilangkan baris penjelas banner
+   supaya papan tetap mendapat ruang. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .kd-remote__head {
+    padding-top: var(--kumi-space-1);
+    padding-bottom: 0;
+  }
+
+  .kd-remote__banner .kd-hint {
+    display: none;
+  }
+
+  .kd-remote__foot {
+    padding-top: 0;
+    padding-bottom: var(--kumi-space-1);
+  }
+
+  /* Layar sangat pendek: rapatkan papan dan tombol halaman supaya 3 baris
+     tombol tetap muat tanpa menggulir. */
+  .kd-remote__main {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .kd-remote__main .kd-grid {
+    grid-auto-rows: minmax(44px, 1fr);
+    gap: 4px;
+  }
+
+  .kd-remote__main .kd-key {
+    min-height: 44px;
+    padding: 4px;
+    gap: 2px;
+    border-radius: var(--kumi-r-sm);
+  }
+
+  .kd-remote__main .kd-key__label {
+    font-size: var(--kumi-text-xs);
+    -webkit-line-clamp: 1;
+  }
+
+  .kd-remote__foot .kumi-chip {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: var(--kumi-text-xs);
+  }
+
+  .kd-remote__kaki .kd-hint:last-child {
+    display: none;
+  }
+}
+
+/* ================================================= 10. Gerak redup === */
+@media (prefers-reduced-motion: reduce) {
+  .kd-key.is-ditolak {
+    animation: none;
+    border-color: var(--kumi-danger);
+  }
+}
+
+/* Banner informasi (mis. syarat HTTPS untuk memasang PWA di Android). */
+.kd-remote__banner--info {
+  border-color: var(--kumi-warn);
+  background: var(--kumi-tile);
+}
+
+.kd-remote__banner--info .kd-remote__banner-judul {
+  color: var(--kumi-fg);
+}

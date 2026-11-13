@@ -1,0 +1,1083 @@
+/* ==========================================================================
+   KUMI DESIGN SYSTEM — kumi.css
+   Fondasi: font, token warna, tipografi, jarak/radius, layout, animasi.
+   --------------------------------------------------------------------------
+   Aman di-import ke app yang sudah jalan:
+     • Semua token diberi awalan --kumi-* supaya tidak menabrak token app.
+     • Aturan elemen memakai :where() (spesifisitas 0) supaya style app menang.
+     • Latar/teks halaman penuh hanya aktif bila <body> diberi .kumi-page.
+   Diambil dari "Design System Kumi" (kanvas #EEEDE8, ink #17171B,
+   aksen #3D5AFE, lime #D9F25B, tint #E4E9FF; radius 8/16/24/32/999;
+   jarak 8/16/32/48; heading Space Grotesk, isi Inter).
+   ========================================================================== */
+
+/* ------------------------------------------------------------ 1. Font ------ */
+/* Space Grotesk & Inter (variable, subset latin) — lisensi SIL Open Font.
+   Di-host sendiri supaya aman dari CSP "font-src 'self'" dan tanpa request
+   ke Google. Ukuran total ± 69 KB. */
+
+@font-face {
+  font-family: "Kumi Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../fonts/inter-latin.woff2") format("woff2-variations"),
+    url("../fonts/inter-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Kumi Space Grotesk";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("../fonts/space-grotesk-latin.woff2") format("woff2-variations"),
+    url("../fonts/space-grotesk-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---------------------------------------------------------- 2. Token -------- */
+:root {
+  /* Warna inti (light) */
+  --kumi-ink: #17171b; /* teks utama + permukaan gelap */
+  --kumi-accent: #3d5afe;
+  --kumi-accent-rgb: 61, 90, 254;
+  --kumi-lime: #d9f25b;
+  --kumi-tint: #e4e9ff;
+  --kumi-canvas: #eeede8; /* latar halaman */
+  --kumi-tile: #ffffff; /* permukaan kartu */
+  --kumi-surface: #ffffff; /* alias --kumi-tile */
+  --kumi-surface-2: #f5f4ef; /* permukaan bertingkat di dalam tile */
+  --kumi-muted: #5c5c66;
+  --kumi-line: #d8d6ce;
+  --kumi-line-strong: #bdbbb2;
+  --kumi-ok: #157f5a;
+  --kumi-warn: #b45309;
+  --kumi-danger: #c2321f;
+
+  /* Permukaan & teks gelap (kartu "ink") */
+  --kumi-ink-surface: #17171b;
+  --kumi-ink-surface-2: #24242c;
+  --kumi-ink-fg: #ffffff;
+  --kumi-ink-muted: #b7b7c2;
+
+  /* Teks aktif */
+  --kumi-fg: var(--kumi-ink);
+  --kumi-fg-muted: var(--kumi-muted);
+
+  /* Palet data (untuk grafik di css/charts.css). Seri 1 = warna aksen. */
+  --kumi-series-1: #3d5afe;
+  --kumi-series-2: #17171b;
+  --kumi-series-3: #0f9d8f;
+  --kumi-series-4: #d97f06;
+  --kumi-series-5: #7c3aed;
+  --kumi-series-6: #db2777;
+
+  /* Latar hidup (wallpaper) — lihat bagian ".kumi-bg" */
+  --kumi-bg-blob-1: rgba(var(--kumi-accent-rgb), 0.75);
+  --kumi-bg-blob-2: rgba(217, 242, 91, 0.85);
+  --kumi-bg-blob-3: rgba(228, 233, 255, 0.95);
+  --kumi-bg-blob-opacity: 0.55;
+  --kumi-bg-blob-blend: normal;
+  --kumi-bg-blur: 90px;
+  --kumi-bg-grid-line: rgba(23, 23, 27, 0.055);
+  --kumi-bg-grid-size: 64px;
+  --kumi-bg-grain-opacity: 0.04;
+
+  /* Radius — 8 input kecil · 16 tombol · 24 kartu dalam · 32 tile · 999 badge */
+  --kumi-r-xs: 8px;
+  --kumi-r-sm: 16px;
+  --kumi-r-md: 24px;
+  --kumi-r-lg: 32px;
+  --kumi-r-pill: 999px;
+
+  /* Jarak — 8 rapat · 16 antar tile · 32 padding tile · 48 margin halaman */
+  --kumi-space-1: 8px;
+  --kumi-space-2: 16px;
+  --kumi-space-3: 32px;
+  --kumi-space-4: 48px;
+  --kumi-gap: 16px;
+  --kumi-pad: 32px;
+  --kumi-page: 48px;
+
+  /* Tipografi */
+  --kumi-font-head: "Kumi Space Grotesk", "Space Grotesk", "Segoe UI",
+    system-ui, sans-serif;
+  --kumi-font-body: "Kumi Inter", "Inter", "Segoe UI", system-ui,
+    -apple-system, sans-serif;
+  --kumi-font-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas,
+    monospace;
+
+  /* Skala teks */
+  --kumi-text-xs: 13px;
+  --kumi-text-sm: 15px;
+  --kumi-text-base: 16px;
+  --kumi-text-lg: 18px;
+  --kumi-text-xl: 24px;
+  --kumi-text-2xl: 28px;
+  --kumi-text-3xl: 48px;
+  --kumi-text-4xl: 72px;
+
+  /* Bayangan */
+  --kumi-shadow-1: 0 1px 2px rgba(23, 23, 27, 0.06);
+  --kumi-shadow-2: 0 26px 50px -26px rgba(23, 23, 27, 0.45);
+  --kumi-shadow-focus: 0 0 0 4px rgba(var(--kumi-accent-rgb), 0.18);
+
+  /* Gerak */
+  --kumi-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --kumi-ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --kumi-dur-fast: 0.3s;
+  --kumi-dur: 0.5s;
+  --kumi-dur-slow: 0.85s;
+}
+
+/* Mode gelap: aktif kalau root memakai data-kumi-theme="dark" ATAU
+   data-theme="dark" (kebiasaan app yang sudah ada). Bisa juga dipasang pada
+   satu subtree lewat class .kumi-scope.
+   Warna permukaan tile diatur terpisah di components.css. */
+.kumi-scope[data-kumi-theme="dark"],
+:root[data-kumi-theme="dark"],
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --kumi-canvas: #0e0e11;
+  --kumi-tile: #191920;
+  --kumi-surface: #191920;
+  --kumi-surface-2: #23232c;
+  --kumi-muted: #9c9ca8;
+  --kumi-line: #2b2b34;
+  --kumi-line-strong: #3c3c47;
+  --kumi-ok: #4ecfa1;
+  --kumi-warn: #f2b35a;
+  --kumi-danger: #ff8a9a;
+  --kumi-tint: #1d2340;
+
+  --kumi-ink-surface: #23232c;
+  --kumi-ink-surface-2: #2c2c36;
+  --kumi-ink-fg: #ffffff;
+  --kumi-ink-muted: #b7b7c2;
+
+  --kumi-fg: #f4f4f6;
+  --kumi-fg-muted: #9c9ca8;
+
+  /* Palet data versi gelap: dinaikkan kecerahannya agar tetap terbaca. */
+  --kumi-series-1: #7c93ff;
+  --kumi-series-2: #e9e9f2;
+  --kumi-series-3: #35cbbd;
+  --kumi-series-4: #f0b352;
+  --kumi-series-5: #a78bfa;
+  --kumi-series-6: #f472b6;
+
+  --kumi-shadow-2: 0 26px 50px -26px rgba(0, 0, 0, 0.85);
+
+  /* Wallpaper versi gelap: lebih redup, dan blob menyatu dengan latar. */
+  --kumi-bg-blob-opacity: 0.35;
+  --kumi-bg-blob-blend: screen;
+  --kumi-bg-grid-line: rgba(255, 255, 255, 0.05);
+  --kumi-bg-grain-opacity: 0.06;
+}
+
+/* Paksa terang walau sistem gelap. */
+[data-kumi-theme="light"] {
+  color-scheme: light;
+}
+
+.kumi-scope[data-kumi-theme="light"],
+:root[data-kumi-theme="light"] {
+  color-scheme: light;
+  --kumi-canvas: #eeede8;
+  --kumi-tile: #ffffff;
+  --kumi-surface: #ffffff;
+  --kumi-surface-2: #f5f4ef;
+  --kumi-muted: #5c5c66;
+  --kumi-line: #d8d6ce;
+  --kumi-line-strong: #bdbbb2;
+  --kumi-tint: #e4e9ff;
+  --kumi-fg: #17171b;
+  --kumi-fg-muted: #5c5c66;
+  --kumi-series-1: #3d5afe;
+  --kumi-series-2: #17171b;
+  --kumi-series-3: #0f9d8f;
+  --kumi-series-4: #d97f06;
+  --kumi-series-5: #7c3aed;
+  --kumi-series-6: #db2777;
+}
+
+/* ------------------------------------------------------ 3. Dasar halaman ---- */
+/* Semua selektor elemen pakai :where() = spesifisitas 0, jadi style milik app
+   kamu selalu menang tanpa perlu !important. */
+
+/* box-sizing: border-box di seluruh subtree .kumi-page. Spesifisitas 0, jadi
+   app kamu tetap bisa menimpanya. Tanpa ini, max-width + padding membuat
+   halaman melebar dan muncul gulir horizontal. */
+:where(.kumi-page, .kumi-page *, .kumi-page *::before, .kumi-page *::after) {
+  box-sizing: border-box;
+}
+
+:where(.kumi-page) {
+  margin: 0;
+  background: var(--kumi-canvas);
+  color: var(--kumi-fg);
+  font-family: var(--kumi-font-body);
+  font-size: var(--kumi-text-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Catatan: efek dekoratif yang sengaja keluar dari kotaknya (mis. .kumi-glow)
+   sebaiknya ditaruh di dalam tile — .kumi-tile sudah memotong overflow-nya,
+   jadi halaman tidak ikut melebar. Kalau butuh keluar tepi, pakai
+   .kumi-tile--no-clip dan pastikan wadah halamannya memangkas sumbu-x. */
+
+:where(.kumi-page h1, .kumi-page h2, .kumi-page h3, .kumi-page h4) {
+  font-family: var(--kumi-font-head);
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+:where(.kumi-page p) {
+  margin: 0;
+}
+
+:where(.kumi-page a) {
+  color: inherit;
+}
+
+:where(.kumi-page code) {
+  font-family: var(--kumi-font-mono);
+  font-size: 0.88em;
+  background: rgba(var(--kumi-accent-rgb), 0.12);
+  color: var(--kumi-accent);
+  border-radius: var(--kumi-r-xs);
+  padding: 2px 6px;
+}
+
+:where(.kumi-page) ::selection {
+  background: var(--kumi-lime);
+  color: var(--kumi-ink);
+}
+
+/* Skala judul siap pakai */
+.kumi-display {
+  font-family: var(--kumi-font-head);
+  font-size: clamp(40px, 6vw, var(--kumi-text-4xl));
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.kumi-h1 {
+  font-family: var(--kumi-font-head);
+  font-size: clamp(30px, 4vw, var(--kumi-text-3xl));
+  line-height: 1.08;
+  font-weight: 700;
+  margin: 0;
+}
+
+.kumi-h2 {
+  font-family: var(--kumi-font-head);
+  font-size: clamp(24px, 3vw, var(--kumi-text-2xl));
+  line-height: 1.2;
+  font-weight: 700;
+  margin: 0;
+}
+
+.kumi-h3 {
+  font-family: var(--kumi-font-head);
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 700;
+  margin: 0;
+}
+
+.kumi-label {
+  font-size: var(--kumi-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--kumi-fg-muted);
+}
+
+.kumi-text {
+  font-size: var(--kumi-text-sm);
+  line-height: 1.6;
+  color: var(--kumi-fg-muted);
+}
+
+.kumi-text--sm {
+  font-size: var(--kumi-text-xs);
+}
+
+.kumi-text--strong {
+  color: var(--kumi-fg);
+  font-weight: 600;
+}
+
+.kumi-link {
+  color: var(--kumi-accent);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(var(--kumi-accent-rgb), 0.35);
+  transition: border-color var(--kumi-dur-fast) var(--kumi-ease-soft);
+}
+
+.kumi-link:hover {
+  border-bottom-color: var(--kumi-accent);
+}
+
+/* ---------------------------- 4. Latar hidup (wallpaper bergerak) ---------- */
+/* Opsional. Bentuknya mengikuti halaman utama: tiga gumpalan warna yang
+   mengapung perlahan, grid halus yang memudar, butiran (grain), dan cahaya
+   yang mengikuti kursor. Semua di dalam satu elemen, drop-in seperti ini:
+
+     <div class="kumi-bg" aria-hidden="true" data-kumi-cursor-glow>
+       <span class="kumi-bg__blob kumi-bg__blob--1"></span>
+       <span class="kumi-bg__blob kumi-bg__blob--2"></span>
+       <span class="kumi-bg__blob kumi-bg__blob--3"></span>
+       <span class="kumi-bg__grid"></span>
+       <span class="kumi-bg__grain"></span>
+     </div>
+
+   Simpan tepat di awal <body>. Warna & kepekatannya bisa diatur lewat token
+   --kumi-bg-*. Tidak ada elemen ini = tidak ada efek, jadi aman dibiarkan. */
+
+.kumi-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  contain: layout paint;
+}
+
+/* Kalau ingin wallpaper hanya mengisi satu section, bungkus dengan
+   .kumi-bg-wrap dan ubah positioning-nya jadi lokal. */
+.kumi-bg--local {
+  position: absolute;
+}
+
+.kumi-bg__blob {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  filter: blur(var(--kumi-bg-blur));
+  opacity: var(--kumi-bg-blob-opacity);
+  mix-blend-mode: var(--kumi-bg-blob-blend);
+  will-change: transform;
+}
+
+.kumi-bg__blob--1 {
+  width: 46vw;
+  height: 46vw;
+  top: -12vw;
+  left: -8vw;
+  background: radial-gradient(circle at 30% 30%, var(--kumi-bg-blob-1), transparent 70%);
+  animation: kumi-bg-float-1 26s var(--kumi-ease-soft) infinite;
+}
+
+.kumi-bg__blob--2 {
+  width: 40vw;
+  height: 40vw;
+  top: 18vw;
+  right: -12vw;
+  background: radial-gradient(circle at 60% 40%, var(--kumi-bg-blob-2), transparent 70%);
+  animation: kumi-bg-float-2 32s var(--kumi-ease-soft) infinite;
+}
+
+.kumi-bg__blob--3 {
+  width: 38vw;
+  height: 38vw;
+  bottom: -14vw;
+  left: 22vw;
+  background: radial-gradient(circle at 50% 50%, var(--kumi-bg-blob-3), transparent 70%);
+  animation: kumi-bg-float-3 38s var(--kumi-ease-soft) infinite;
+}
+
+.kumi-bg__grid {
+  position: absolute;
+  inset: -2px;
+  background-image: linear-gradient(var(--kumi-bg-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--kumi-bg-grid-line) 1px, transparent 1px);
+  background-size: var(--kumi-bg-grid-size) var(--kumi-bg-grid-size);
+  mask-image: radial-gradient(circle at 50% 30%, #000 0%, transparent 78%);
+  -webkit-mask-image: radial-gradient(circle at 50% 30%, #000 0%, transparent 78%);
+}
+
+/* Butiran halus supaya latar tidak terlihat datar. */
+.kumi-bg__grain {
+  position: absolute;
+  inset: 0;
+  opacity: var(--kumi-bg-grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes kumi-bg-float-1 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(6vw, 8vh, 0) scale(1.12); }
+}
+
+@keyframes kumi-bg-float-2 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
+  50% { transform: translate3d(-7vw, 12vh, 0) scale(0.92); }
+}
+
+@keyframes kumi-bg-float-3 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(0.95); }
+  50% { transform: translate3d(10vw, -9vh, 0) scale(1.1); }
+}
+
+/* Cahaya yang mengikuti kursor. Dibuat otomatis oleh kumi.js kalau ada
+   atribut data-kumi-cursor-glow pada .kumi-bg (atau <body>). */
+.kumi-cursor-glow {
+  position: fixed;
+  top: -180px;
+  left: -180px;
+  z-index: 0;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(var(--kumi-accent-rgb), 0.28), transparent 62%);
+  transform: translate3d(-500px, -500px, 0);
+  transition: opacity var(--kumi-dur-fast) var(--kumi-ease-soft), transform 0.08s linear;
+}
+
+.kumi-cursor-glow.is-active {
+  background: radial-gradient(circle, rgba(217, 242, 91, 0.42), transparent 62%);
+}
+
+@media (hover: none) {
+  .kumi-cursor-glow {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------- 5. Layout --- */
+.kumi-shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--kumi-page);
+}
+
+/* Pembungkus isi halaman. Dipakai kalau kamu tidak memakai .kumi-shell,
+   supaya konten tetap berada di atas .kumi-bg. */
+.kumi-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Grid 12 kolom, gap 16 */
+.kumi-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--kumi-gap);
+}
+
+.kumi-col-3 { grid-column: span 3; }
+.kumi-col-4 { grid-column: span 4; }
+.kumi-col-5 { grid-column: span 5; }
+.kumi-col-6 { grid-column: span 6; }
+.kumi-col-7 { grid-column: span 7; }
+.kumi-col-8 { grid-column: span 8; }
+.kumi-col-12 { grid-column: span 12; }
+
+/* Atribut ukuran (dipakai kalau tidak mau class) */
+[data-kumi-size="xs"] { grid-column: span 3; }
+[data-kumi-size="sm"] { grid-column: span 4; }
+[data-kumi-size="md"] { grid-column: span 5; }
+[data-kumi-size="lg"] { grid-column: span 6; }
+[data-kumi-size="xl"] { grid-column: span 8; }
+[data-kumi-size="full"] { grid-column: span 12; }
+
+.kumi-row {
+  display: flex;
+  align-items: center;
+  gap: var(--kumi-space-2);
+  flex-wrap: wrap;
+}
+
+.kumi-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kumi-space-2);
+}
+
+.kumi-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--kumi-space-2);
+  flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------- 6. Animasi util --- */
+/* -- Muncul saat di-scroll -------------------------------------------------
+   Dasar: naik + membesar sedikit. Variasi lewat class tambahan:
+     .kumi-reveal--down   dari atas      .kumi-reveal--left   dari kanan
+     .kumi-reveal--right  dari kiri      .kumi-reveal--zoom  membesar
+     .kumi-reveal--flip   miring sedikit .kumi-reveal--blur  dari kabur
+     .kumi-reveal--fade   hanya memudar
+   Atur jeda dengan data-kumi-delay="180" atau --kumi-delay.
+   Untuk satu grid penuh, pakai data-kumi-stagger di wadahnya. */
+
+.kumi-reveal {
+  --kumi-rv-x: 0px;
+  --kumi-rv-y: 28px;
+  --kumi-rv-scale: 0.985;
+  --kumi-rv-rotate: 0deg;
+  opacity: 0;
+  /* Sertakan var kemiringan 3D supaya elemen yang juga punya data-kumi-tilt
+     tetap bisa miring setelah muncul (lihat .kumi-tilt di components.css). */
+  transform: translate3d(var(--kumi-rv-x), var(--kumi-rv-y), 0)
+    scale(var(--kumi-rv-scale)) rotate(var(--kumi-rv-rotate))
+    perspective(1000px) rotateX(var(--kumi-rx, 0deg)) rotateY(var(--kumi-ry, 0deg));
+}
+
+.kumi-reveal--down { --kumi-rv-y: -28px; }
+.kumi-reveal--left { --kumi-rv-y: 0px; --kumi-rv-x: 36px; }
+.kumi-reveal--right { --kumi-rv-y: 0px; --kumi-rv-x: -36px; }
+.kumi-reveal--zoom { --kumi-rv-y: 0px; --kumi-rv-scale: 0.9; }
+.kumi-reveal--flip { --kumi-rv-y: 20px; --kumi-rv-rotate: -3deg; }
+.kumi-reveal--fade { --kumi-rv-y: 0px; --kumi-rv-scale: 1; }
+
+/* Varian kabur dipisah supaya elemen lain tidak ikut membuat stacking context. */
+.kumi-reveal--blur {
+  --kumi-rv-y: 14px;
+  filter: blur(12px);
+}
+
+.kumi-reveal.is-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1) rotate(0deg)
+    perspective(1000px) rotateX(var(--kumi-rx, 0deg)) rotateY(var(--kumi-ry, 0deg));
+  transition: opacity var(--kumi-dur-slow) var(--kumi-ease),
+    transform var(--kumi-dur-slow) var(--kumi-ease),
+    filter var(--kumi-dur) var(--kumi-ease);
+  transition-delay: var(--kumi-delay, 0ms);
+}
+
+.kumi-reveal--blur.is-in {
+  filter: blur(0px);
+}
+
+/* -- Teks pecah per kata / per huruf --------------------------------------
+   Dibentuk otomatis oleh kumi.js:
+     <h1 class="kumi-display" data-kumi-split="words">Kumi Design</h1>
+   data-kumi-split="chars" untuk per huruf. Teks aslinya tetap dibaca
+   pembaca layar lewat aria-label, potongannya aria-hidden. */
+
+.kumi-split__mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  /* Ruang untuk ekor huruf (g, j, y) supaya tidak terpotong. */
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+
+.kumi-split__part {
+  display: inline-block;
+  white-space: pre;
+  opacity: 0;
+  transform: translate3d(0, 110%, 0) rotate(4deg);
+  transition: opacity var(--kumi-dur) var(--kumi-ease),
+    transform var(--kumi-dur-slow) var(--kumi-ease);
+  transition-delay: var(--kumi-delay, 0ms);
+}
+
+.kumi-split.is-in .kumi-split__part {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) rotate(0deg);
+}
+
+/* -- Angka berjalan ------------------------------------------------------- */
+.kumi-count.is-counting {
+  animation: kumi-count-pop var(--kumi-dur) var(--kumi-ease);
+}
+
+@keyframes kumi-count-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+/* -- Riak saat tombol ditekan --------------------------------------------- */
+.kumi-btn,
+.kumi-chip,
+.kumi-list__item--interactive,
+.kumi-tile--link {
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.kumi-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 240px;
+  height: 240px;
+  margin: -120px 0 0 -120px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.24;
+  pointer-events: none;
+  transform: scale(0);
+  animation: kumi-ripple var(--kumi-dur-slow) var(--kumi-ease-soft) forwards;
+}
+
+@keyframes kumi-ripple {
+  60% { opacity: 0.16; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* -- Kilau pada progress bar --------------------------------------------- */
+.kumi-progress__bar {
+  position: relative;
+  overflow: hidden;
+}
+
+.kumi-progress__bar--sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  animation: kumi-sheen 2.6s var(--kumi-ease-soft) infinite;
+}
+
+@keyframes kumi-sheen {
+  0% { transform: translateX(-100%); }
+  55%, 100% { transform: translateX(100%); }
+}
+
+/* -- Cahaya berputar (untuk tile gelap / hero) ---------------------------- */
+.kumi-glow {
+  position: absolute;
+  top: -40%;
+  right: -30%;
+  width: 70%;
+  height: 130%;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    rgba(var(--kumi-accent-rgb), 0.75),
+    transparent 45%,
+    rgba(var(--kumi-accent-rgb), 0.6)
+  );
+  filter: blur(60px);
+  opacity: 0.55;
+  animation: kumi-glow-spin 24s linear infinite;
+}
+
+@keyframes kumi-glow-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* -- Utilitas gerak siap pakai -------------------------------------------- */
+.kumi-lift {
+  transition: transform var(--kumi-dur) var(--kumi-ease);
+}
+
+.kumi-lift:hover {
+  transform: translate3d(0, -6px, 0);
+}
+
+.kumi-grow {
+  transition: transform var(--kumi-dur) var(--kumi-ease);
+}
+
+.kumi-grow:hover {
+  transform: scale(1.045);
+}
+
+.kumi-bob {
+  animation: kumi-bob 3.6s var(--kumi-ease-soft) infinite;
+}
+
+@keyframes kumi-bob {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -7px, 0); }
+}
+
+.kumi-wiggle:hover {
+  animation: kumi-wiggle 0.5s var(--kumi-ease);
+}
+
+@keyframes kumi-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-7deg); }
+  60% { transform: rotate(5deg); }
+}
+
+.kumi-breathe {
+  animation: kumi-breathe 5s var(--kumi-ease-soft) infinite;
+}
+
+@keyframes kumi-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+
+/* -- Elemen yang menunggu digerakkan JavaScript --------------------------- */
+[data-kumi-parallax] {
+  will-change: transform;
+}
+
+/* -- Header yang mengecil saat digulir ------------------------------------ */
+.kumi-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  transition: padding var(--kumi-dur-fast) var(--kumi-ease),
+    background var(--kumi-dur-fast) var(--kumi-ease-soft),
+    box-shadow var(--kumi-dur-fast) var(--kumi-ease-soft),
+    backdrop-filter var(--kumi-dur-fast) var(--kumi-ease-soft);
+}
+
+.kumi-header.is-stuck {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  background: color-mix(in srgb, var(--kumi-canvas) 86%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 12px 30px -22px rgba(23, 23, 27, 0.55);
+}
+
+.kumi-rise {
+  animation: kumi-rise var(--kumi-dur) var(--kumi-ease) both;
+}
+
+@keyframes kumi-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.kumi-spin {
+  animation: kumi-spin 1s linear infinite;
+}
+
+@keyframes kumi-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.kumi-pulse {
+  animation: kumi-pulse 2.2s ease-out infinite;
+}
+
+@keyframes kumi-pulse {
+  0% { box-shadow: 0 0 0 0 currentColor; }
+  70% { box-shadow: 0 0 0 7px rgba(0, 0, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+}
+
+.kumi-float {
+  animation: kumi-float 6s var(--kumi-ease-soft) infinite;
+}
+
+@keyframes kumi-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Teks gradien (mis. judul hero) */
+.kumi-gradient-text {
+  background: linear-gradient(100deg, #fff 10%, var(--kumi-lime) 45%, #fff 80%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: kumi-shimmer 6s var(--kumi-ease-soft) infinite;
+}
+
+@keyframes kumi-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Teks gradien yang dipecah per kata/huruf: karena tiap potongan punya
+   transform sendiri, gradiennya ditempel di potongan, bukan di induknya. */
+.kumi-split--gradient .kumi-split__part {
+  background: linear-gradient(100deg, #fff 10%, var(--kumi-lime) 45%, #fff 80%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: kumi-shimmer 6s var(--kumi-ease-soft) infinite;
+  /* Jeda sama dengan jeda naik, jadi kilaunya terlihat mengalir dari kiri ke
+     kanan, bukan berkedip serentak. */
+  animation-delay: var(--kumi-delay, 0ms);
+}
+
+/* Ticker / teks berjalan */
+.kumi-marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.kumi-marquee__track {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  width: max-content;
+  animation: kumi-marquee 30s linear infinite;
+}
+
+.kumi-marquee:hover .kumi-marquee__track {
+  animation-play-state: paused;
+}
+
+@keyframes kumi-marquee {
+  to { transform: translateX(-50%); }
+}
+
+/* -- Utilitas gerak tambahan ---------------------------------------------- */
+/* Semuanya selesai dalam keadaan diam (keyframe 100% = tampilan dasar), jadi
+   aman saat animasi dimatikan lewat prefers-reduced-motion. */
+
+/* Kedip: penanda "sedang berlangsung" / rekaman aktif. */
+.kumi-blink {
+  animation: kumi-blink 1.4s steps(1, end) infinite;
+}
+
+@keyframes kumi-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.15; }
+}
+
+/* Kedip lembut, untuk teks status yang tidak boleh mengganggu. */
+.kumi-blink--soft {
+  animation: kumi-blink-soft 2.4s var(--kumi-ease-soft) infinite;
+}
+
+@keyframes kumi-blink-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* Kilat: dua kedip terang cepat lalu jeda, berulang. Untuk menarik perhatian
+   sesaat — pakai hemat, jangan di elemen yang sedang dibaca lama. */
+.kumi-flash {
+  animation: kumi-flash 2.6s var(--kumi-ease) infinite;
+}
+
+@keyframes kumi-flash {
+  0%, 34%, 100% { filter: none; }
+  10%, 22% { filter: brightness(1.45) saturate(1.25); }
+}
+
+/* Cincin ganda yang memancar keluar, berulang — untuk titik "live" atau
+   notifikasi yang perlu terus terlihat aktif. */
+.kumi-pulse-ring {
+  animation: kumi-pulse-ring 2s var(--kumi-ease-soft) infinite;
+}
+
+@keyframes kumi-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(var(--kumi-accent-rgb), 0.5),
+      0 0 0 0 rgba(var(--kumi-accent-rgb), 0.32);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(var(--kumi-accent-rgb), 0),
+      0 0 0 28px rgba(var(--kumi-accent-rgb), 0);
+  }
+}
+
+/* Getar mendatar singkat saat disentuh — untuk tombol "salah"/tolak. */
+.kumi-shake:hover,
+.kumi-shake:focus-visible {
+  animation: kumi-shake 0.5s var(--kumi-ease);
+}
+
+@keyframes kumi-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+/* Muncul memantul sekali (bukan berulang). Memakai `backwards`, jadi setelah
+   selesai elemen kembali ke gaya normalnya dan transform lain (mis. hover)
+   tetap bisa bekerja. */
+.kumi-bounce-in {
+  animation: kumi-bounce-in 0.72s var(--kumi-ease) backwards;
+}
+
+@keyframes kumi-bounce-in {
+  0% { opacity: 0; transform: scale(0.82) translateY(10px); }
+  60% { opacity: 1; transform: scale(1.04) translateY(-3px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Gradien yang mengalir pelan. Elemen harus punya latar bergradien sendiri
+   (lewat `background-image`), class ini hanya menggeser posisinya. Mis.:
+     background-image: linear-gradient(100deg, #6c5ce7, #00d2a8, #6c5ce7); */
+.kumi-gradient-flow {
+  background-size: 200% 200%;
+  animation: kumi-gradient-flow 9s var(--kumi-ease-soft) infinite;
+}
+
+@keyframes kumi-gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Titik "live": noktah kecil + cincin yang memancar. Warna ikut
+   --kumi-live (default: aksen). */
+.kumi-live-dot {
+  --kumi-live: var(--kumi-accent);
+  position: relative;
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--kumi-live);
+}
+
+.kumi-live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 var(--kumi-live);
+  animation: kumi-live-ring 1.9s var(--kumi-ease-soft) infinite;
+}
+
+@keyframes kumi-live-ring {
+  0% { box-shadow: 0 0 0 0 var(--kumi-live); opacity: 0.55; }
+  70% { box-shadow: 0 0 0 9px transparent; opacity: 0; }
+  100% { box-shadow: 0 0 0 0 transparent; opacity: 0; }
+}
+
+/* Sapuan kilau menyeberang (untuk kartu/banner). Butuh .kumi-sheen pada
+   elemen dengan overflow yang boleh dipotong. */
+.kumi-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.kumi-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: kumi-sheen 2.8s var(--kumi-ease-soft) infinite;
+}
+
+/* -------------------------------------------------------- 7. Aksesibilitas - */
+.kumi-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.kumi-focus:focus-visible,
+.kumi-page :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--kumi-accent);
+  outline-offset: 3px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* ------------------------------------------------------------- 8. Responsif */
+@media (max-width: 1100px) {
+  :root {
+    --kumi-page: 32px;
+    --kumi-pad: 28px;
+  }
+
+  .kumi-col-3 { grid-column: span 3; }
+  .kumi-col-4,
+  .kumi-col-5,
+  .kumi-col-6,
+  .kumi-col-7 { grid-column: span 6; }
+  .kumi-col-8 { grid-column: span 6; }
+}
+
+@media (max-width: 720px) {
+  :root {
+    --kumi-page: 20px;
+    --kumi-pad: 24px;
+    --kumi-r-lg: 26px;
+  }
+
+  .kumi-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .kumi-grid > [class*="kumi-col-"],
+  .kumi-grid > [data-kumi-size] {
+    grid-column: span 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .kumi-reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .kumi-reveal--blur,
+  .kumi-split__part {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+
+  .kumi-count.is-counting {
+    animation: none;
+  }
+}
