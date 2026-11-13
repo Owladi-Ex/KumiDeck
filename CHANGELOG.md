@@ -3,6 +3,30 @@
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 versi mengikuti [SemVer](https://semver.org/lang/id/).
 
+## [1.7.3] — 2026-11-13
+
+### Diperbaiki
+
+- Installer memilih folder tujuan **otomatis dari daftar lokasi yang benar-benar
+  bisa ditulis** (D:\KumiDeck, %LOCALAPPDATA%\KumiDeck,
+  %LOCALAPPDATA%\Programs\KumiDeck, folder profil, lalu drive sistem). Ini
+  mengatasi kegagalan "Error 5: Access is denied" saat membuat folder bawaan di
+  mesin yang membatasi penulisan pada %LOCALAPPDATA%.
+- `UsePreviousAppDir=no`: folder dari pemasangan lama yang bermasalah tidak lagi
+  dipakai ulang secara diam-diam.
+- Tersedia juga **ZIP portabel** (`KumiDeck-<versi>-portable.zip`) sebagai jalan
+  alternatif tanpa pemasangan.
+## [1.7.2] — 2026-11-13
+
+### Diperbaiki
+
+- Installer: folder bawaan dipindah dari `{autopf}\KumiDeck` ke
+  **`%LOCALAPPDATA%\KumiDeck`**, dan halaman pemilihan folder kini **selalu
+  tampil** sehingga pengguna bisa memilih lokasi lain bila folder bawaan
+  bermasalah. Pintasan memakai cakupan pengguna (`{userprograms}`,
+  `{userdesktop}`, `{userstartup}`) agar tidak pernah memicu permintaan izin.
+- Installer kini **selalu menulis log** ke `%TEMP%\Setup Log*.txt`
+  (`SetupLogging=yes`) untuk memudahkan diagnosa bila pemasangan gagal.
 ## [1.7.1] — 2026-11-13
 
 ### Diperbaiki
@@ -419,6 +443,8 @@ Rilis awal.
 - Pasangkan Android dengan kode QR + kode 8 karakter.
 - Penyunting di desktop, riwayat aktivitas, daftar perangkat.
 - Tema terang/gelap, Kumi Design System v1.1.0.
+
+
 
 
 
