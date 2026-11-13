@@ -1416,7 +1416,10 @@ let server = http.createServer(handler);
 let modeHttps = false;
 let serverHttpPengalihan = null;
 
-if (process.env.KD_HTTPS === "1") {
+/* Disiapkan sebagai fungsi async, bukan top-level await: bundel SEA dibangun
+   dengan format CommonJS yang tidak mendukung top-level await. */
+async function siapkanHttps() {
+  if (process.env.KD_HTTPS !== "1") return;
   try {
     const { siapkanTls } = await import("./tls.js");
     const tls = await siapkanTls(DIR_DATA, alamatLan());
@@ -1463,7 +1466,21 @@ if (process.env.KD_HTTPS === "1") {
 }
 
 /* --------------------------------------------------------------- mulai --- */
-server.listen(PORT, HOST, () => {
+siapkanHttps().finally(mulaiServer);
+
+function mulaiServer() {
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(
+        "[kumideck] Port " + PORT + " sedang dipakai. Hentikan proses lain atau jalankan dengan PORT lain, mis.:\n" +
+          "  $env:PORT=4174; node server/index.js"
+      );
+      process.exit(1);
+    }
+    console.error("[kumideck] galat server:", err.message);
+  });
+
+  server.listen(PORT, HOST, () => {
   const lan = alamatLan();
   perbaruiSiaranLive();
 
@@ -1554,18 +1571,10 @@ server.listen(PORT, HOST, () => {
       /* diabaikan */
     }
   }
-});
+  });
+}
 
-server.on("error", (err) => {
-  if (err.code === "EADDRINUSE") {
-    console.error(
-      "[kumideck] Port " + PORT + " sedang dipakai. Hentikan proses lain atau jalankan dengan PORT lain, mis.:\n" +
-        "  $env:PORT=4174; node server/index.js"
-    );
-    process.exit(1);
-  }
-  console.error("[kumideck] galat server:", err.message);
-});
+
 
 function tutup() {
   console.log("\n[kumideck] menyimpan deck dan berhenti…");
@@ -1585,6 +1594,7 @@ function finishTutup() {
 }
 process.on("SIGINT", tutup);
 process.on("SIGTERM", tutup);
+
 
 
 

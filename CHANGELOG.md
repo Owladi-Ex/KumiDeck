@@ -3,6 +3,15 @@
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 versi mengikuti [SemVer](https://semver.org/lang/id/).
 
+## [1.7.1] — 2026-11-13
+
+### Diperbaiki
+
+- Penyiapan HTTPS dipindah ke fungsi `async` sehingga server tidak lagi memakai
+  **top-level await**. Ini memperbaiki pembuatan `.exe` (SEA) yang dibangun
+  sebagai CommonJS: sebelumnya bundling gagal dengan galat
+  "Top-level await is currently not supported with the cjs output format".
+  Perilaku aplikasi tidak berubah.
 ## [1.7.0] — 2026-11-13
 
 ### Dibersihkan
@@ -410,6 +419,7 @@ Rilis awal.
 - Pasangkan Android dengan kode QR + kode 8 karakter.
 - Penyunting di desktop, riwayat aktivitas, daftar perangkat.
 - Tema terang/gelap, Kumi Design System v1.1.0.
+
 
 
 

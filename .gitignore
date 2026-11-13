@@ -6,6 +6,7 @@ data/
 # --- Internal / rencana rilis (tidak untuk konsumsi publik) ---
 scripts/
 buat-exe.cmd
+buat-installer.cmd
 rilis.cmd
 CONTRACT.md
 README-lokal.md
@@ -25,3 +26,4 @@ desktop.ini
 .DS_Store
 *.log
 *.tmp
+
