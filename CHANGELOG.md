@@ -3,6 +3,50 @@
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 versi mengikuti [SemVer](https://semver.org/lang/id/).
 
+## [2.0.0] — 2026-11-13
+
+**Aplikasi native Windows 11.** Backend Node.js digantikan aplikasi C#
+(.NET 10 + WPF + WebView2) yang membawa seluruh UI `public/` di dalam satu
+`KumiDeck.exe` mandiri. Tidak ada Node.js, PowerShell, Chrome/Edge `--app`,
+maupun jendela konsol saat dipakai. Antarmuka web dan API-nya tetap sama,
+sehingga klien Remote di ponsel tidak berubah.
+
+### Ditambahkan
+
+- **Aplikasi native** `native/KumiDeck` (C#/.NET 10, WPF + WebView2): satu
+  berkas `KumiDeck.exe` mandiri (~73 MB) berisi server HTTP/HTTPS, SSE, API,
+  eksekusi aksi, pemindai aplikasi, soundboard, mikrofon, ikon aplikasi, tray,
+  mulai otomatis, dan QR pasangan.
+- **Title bar custom ala Windows 11**: tanpa caption bawaan; tombol
+  perkecil/perbesar/tutup dibuat di UI, kepala aplikasi dipakai untuk menggeser
+  jendela (snap ke tepi layar dan klik ganda untuk memperbesar tetap jalan),
+  dan sudut jendela membulat.
+- **Tata letak padat**: tinggi halaman dikunci ke jendela, papan mengisi sisa
+  ruang, gulir hanya terjadi di dalam kartu, dan batang gulir disembunyikan di
+  seluruh antarmuka — termasuk dialog Setelan.
+- Gaya native disuntikkan dari sisi C# (`AddScriptToExecuteOnDocumentCreated`),
+  jadi berkas di `public/` tidak diubah dan tetap bisa dipakai di peramban biasa.
+- Ikon baki sistem tertanam di dalam exe; `/api/tray/ikon` melaporkannya.
+- HTTPS opsional (`KD_HTTPS=1`) dengan sertifikat buatan sendiri dan server
+  pengalih `308` di port+1, sama seperti versi Node.
+- `scripts/buat-installer.ps1` (Inno Setup) dan `scripts/rilis.ps1` (paket
+  portabel + `SHA256.txt`), dipanggil lewat `buat-installer.cmd` / `rilis.cmd`.
+
+### Diubah
+
+- `scripts/buat-exe.ps1` kini mempublikasikan aplikasi .NET menjadi satu berkas.
+- Gerak khas peramban dimatikan: zoom Ctrl+roda, cubit (pinch), dan geser dua
+  jari untuk maju/mundur. Pintasan salin-tempel tetap aktif.
+- Pemasang tidak lagi menghapus folder aplikasi saat dicopot, supaya data
+  pengguna (papan, token pasangan, ikon, suara, sertifikat) tidak hilang.
+- Server Node di `server/` tetap ada sebagai versi lama/rujukan.
+
+### Distribusi
+
+- `KumiDeck-2.0.0-setup.exe` (pemasang) dan `KumiDeck-2.0.0-portabel.zip`.
+- Syarat: Windows 10 (1809+)/11 64-bit + Microsoft Edge WebView2 Runtime
+  (sudah ada di Windows 11).
+
 ## [1.0.0] — 2026-11-13
 
 **Rilis publik pertama.** Kode yang sama dengan versi pengembangan internal

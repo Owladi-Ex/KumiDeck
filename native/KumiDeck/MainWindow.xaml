@@ -1,0 +1,27 @@
+<Window x:Class="KumiDeck.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="KumiDeck"
+        Width="1280" Height="860"
+        MinWidth="820" MinHeight="560"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        Background="#EEEDE8"
+        UseLayoutRounding="True">
+  <!-- Tanpa caption bawaan: tombol perkecil/perbesar/tutup dibuat di dalam UI
+       (lihat SkripJendela), sementara tepi jendela tetap bisa ditarik untuk
+       mengubah ukuran lewat WindowChrome. -->
+  <WindowChrome.WindowChrome>
+    <WindowChrome CaptionHeight="0"
+                  ResizeBorderThickness="5"
+                  CornerRadius="0"
+                  GlassFrameThickness="0"
+                  UseAeroCaptionButtons="False" />
+  </WindowChrome.WindowChrome>
+  <Grid>
+    <!-- Sisa 5px di tepi adalah area tarik untuk mengubah ukuran jendela. -->
+    <wv2:WebView2 x:Name="Web" Margin="5" DefaultBackgroundColor="#EEEDE8" />
+  </Grid>
+</Window>

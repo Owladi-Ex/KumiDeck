@@ -15,6 +15,12 @@ README-lokal.md
 _rilis/
 _exe/
 build/
+dist/
+
+# Hasil build aplikasi native (.NET)
+native/**/bin/
+native/**/obj/
+native/**/publish/
 
 # Dependensi build (dipasang otomatis oleh scripts/buat-exe.ps1)
 node_modules/
