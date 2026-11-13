@@ -1,14 +1,21 @@
-# Berkas yang tidak ikut disimpan di repositori
+# Berkas yang tidak ikut disimpan di repositori (publik)
 
 # Data lokal pengguna: kode pasangan, papan, ikon unggahan, suara, sertifikat TLS
 data/
+
+# --- Internal / rencana rilis (tidak untuk konsumsi publik) ---
+scripts/
+buat-exe.cmd
+rilis.cmd
+CONTRACT.md
+README-lokal.md
 
 # Hasil build rilis (dibuat ulang oleh rilis.cmd / buat-exe.cmd)
 _rilis/
 _exe/
 build/
 
-# Dependensi build (hanya dipakai saat membuat .exe, dipasang otomatis)
+# Dependensi build (dipasang otomatis oleh scripts/buat-exe.ps1)
 node_modules/
 package-lock.json
 
@@ -18,6 +25,3 @@ desktop.ini
 .DS_Store
 *.log
 *.tmp
-
-# README versi lokal (internal), README.md yang dipakai di GitHub
-README-lokal.md

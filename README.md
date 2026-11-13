@@ -14,9 +14,9 @@ Dibangun dengan **Node.js tanpa dependensi runtime** dan memakai
 | `server/` | Server lokal: HTTP/HTTPS, SSE, API, eksekusi aksi, pemindai aplikasi, soundboard, mikrofon, ikon aplikasi, QR |
 | `public/` | Antarmuka web: UI desktop (`index.html`), UI Remote (`remote.html`), CSS/JS aplikasi, PWA (manifest + service worker), `kumi/` (paket desain) |
 | `assets/` | Ikon aplikasi & ikon baki sistem (`.ico`) |
-| `scripts/` | Skrip pembuatan arsip rilis dan `.exe` portabel |
-| `*.cmd` | Peluncur: `start.cmd`, `start-https.cmd`, `rilis.cmd`, `buat-exe.cmd` |
-| `CHANGELOG.md`, `CONTRACT.md` | Riwayat versi dan kontrak data/API |
+| `package.json` | Nama, versi, dan skrip `start` / `test` |
+| `CHANGELOG.md` | Riwayat versi |
+| `LICENSE` | Lisensi MIT |
 | `data/` | **tidak** ada di repo — dibuat saat pertama dijalankan (papan, token pasangan, ikon & suara unggahan) |
 
 ## Fitur
@@ -49,14 +49,9 @@ cd KumiDeck
 node server/index.js
 ```
 
-Atau jalankan `start.cmd` (server + ikon baki sistem). Buka
-`http://localhost:4173` di komputer. Untuk klien Remote, buka
+Buka `http://localhost:4173` di komputer. Untuk klien Remote, buka
 `http://<ip-komputer>:4173/remote` dari perangkat di Wi-Fi yang sama, lalu
 pasangkan dengan kode yang tampil di layar komputer.
-
-Untuk memasang Remote sebagai aplikasi di Android, jalankan `start-https.cmd`
-(HTTPS lokal dengan sertifikat swa-tanda) — detail di `CONTRACT.md` dan kode
-`server/tls.js`.
 
 ## Data & keamanan
 
@@ -68,14 +63,22 @@ Untuk memasang Remote sebagai aplikasi di Android, jalankan `start-https.cmd`
 - Server hanya untuk jaringan lokal tepercaya; jangan diekspos langsung ke
   internet.
 
-## Pengembangan
+## Uji
 
-- Tidak ada langkah build untuk UI: berkas di `public/` dilayani apa adanya.
-- Uji: `node server/qr.test.js`, `node server/apps.test.js`,
-  `node server/appicons.test.js`, `node server/audio.test.js`.
-- Membuat `.exe` portabel: `buat-exe.cmd` (dependensi build dipasang otomatis).
-- Membuat arsip rilis: `rilis.cmd`.
+```powershell
+node server/qr.test.js
+node server/apps.test.js
+node server/appicons.test.js
+node server/audio.test.js
+```
+
+Tidak ada langkah build untuk antarmuka: berkas di `public/` dilayani apa adanya.
 
 ## Lisensi
 
 MIT — lihat `LICENSE`.
+
+---
+
+Kumi Design System adalah paket desain terpisah yang disertakan di
+`public/kumi/`; jangan mengubah isinya dari dalam repo ini.
