@@ -1,6 +1,6 @@
 {
   "name": "kumideck",
-  "version": "1.7.5",
+  "version": "1.7.6",
   "private": true,
   "type": "module",
   "description": "Papan tombol (stream deck) lokal untuk Windows dengan klien Remote lewat web, memakai Kumi Design System.",

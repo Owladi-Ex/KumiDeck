@@ -52,7 +52,7 @@ function matikanPid(pid) {
 }
 
 /* Skrip PowerShell. Efek samping: data/tray.on ada selama tray hidup. */
-function skripTray({ ikon, ikonCadangan, tautan, berkasOn, berkasCtl, berkasLog, port }) {
+function skripTray({ ikon, ikonCadangan, tautan, berkasOn, berkasCtl, berkasLog, port, jendela }) {
   const kutip = (v) => "'" + String(v).replace(/'/g, "''") + "'";
   return `
 $ErrorActionPreference = "Stop"
@@ -66,6 +66,7 @@ $berkasOn = ${kutip(berkasOn)}
 $berkasCtl = ${kutip(berkasCtl)}
 $berkasLog = ${kutip(berkasLog)}
 $port = ${Number(port)}
+$jendela = ${kutip(jendela || "")}
 
 [System.IO.File]::WriteAllText($berkasOn, "on")
 
@@ -99,7 +100,13 @@ $notify.Visible = $true
 
 $menu = New-Object System.Windows.Forms.ContextMenuStrip
 $buka = $menu.Items.Add("Buka papan")
-$buka.Add_Click({ Start-Process ("http://localhost:" + $port) })
+$buka.Add_Click({
+  # Bila pintasan jendela aplikasi ada, pakai itu (tanpa bilah alamat).
+  if ($jendela -and (Test-Path $jendela)) { Start-Process $jendela }
+  else { Start-Process ("http://localhost:" + $port) }
+})
+$bukaBrowser = $menu.Items.Add("Buka di peramban")
+$bukaBrowser.Add_Click({ Start-Process ("http://localhost:" + $port) })
 $salin = $menu.Items.Add("Salin tautan Remote")
 $salin.Add_Click({ [System.Windows.Forms.Clipboard]::SetText($tautan) })
 [void]$menu.Items.Add("-")
@@ -108,7 +115,10 @@ $keluar.Add_Click({
   [System.IO.File]::WriteAllText($berkasCtl, "keluar")
 })
 $notify.ContextMenuStrip = $menu
-$notify.Add_DoubleClick({ Start-Process ("http://localhost:" + $port) })
+$notify.Add_DoubleClick({
+  if ($jendela -and (Test-Path $jendela)) { Start-Process $jendela }
+  else { Start-Process ("http://localhost:" + $port) }
+})
 
 $notify.ShowBalloonTip(2500, "KumiDeck berjalan", "Klik dua kali ikon untuk membuka papan.", [System.Windows.Forms.ToolTipIcon]::None)
 
@@ -129,7 +139,7 @@ Remove-Item $berkasOn -Force -ErrorAction SilentlyContinue
 `;
 }
 
-export function mulaiTray({ port, lanUrl, dirData, ikon, ikonCadangan }) {
+export function mulaiTray({ port, lanUrl, dirData, ikon, ikonCadangan, jendela }) {
   if (process.platform !== "win32") return false;
   if (proses) return false;
 
@@ -149,6 +159,7 @@ export function mulaiTray({ port, lanUrl, dirData, ikon, ikonCadangan }) {
   }
 
   const skrip = skripTray({
+    jendela: jendela || "",
     ikon: ikon || "",
     ikonCadangan: ikonCadangan || "",
     tautan: lanUrl || "",
@@ -242,6 +253,7 @@ export function logTray(dirData) {
     return "";
   }
 }
+
 
 
 

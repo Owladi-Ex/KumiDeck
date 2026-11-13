@@ -735,6 +735,37 @@ function periksaAsal(req) {
   return { ok: true };
 }
 
+/* ---------------------------------------------------------- log berkas --- */
+/* Saat dibangun sebagai aplikasi jendela (tanpa konsol), keluaran tetap bisa
+   diperiksa lewat data\kumideck.log. */
+function pasangLogBerkas() {
+  try {
+    fs.mkdirSync(DIR_DATA, { recursive: true });
+    const berkas = path.join(DIR_DATA, "kumideck.log");
+    const bungkus = (asli, tingkat) =>
+      function (...args) {
+        try {
+          const isi = args
+            .map((a) => (typeof a === "string" ? a : a instanceof Error ? a.stack || a.message : JSON.stringify(a)))
+            .join(" ");
+          fs.appendFileSync(berkas, new Date().toISOString() + " [" + tingkat + "] " + isi + "\n");
+        } catch (err) {
+          /* diabaikan */
+        }
+        try {
+          asli.apply(console, args);
+        } catch (err) {
+          /* konsol tidak tersedia */
+        }
+      };
+    console.log = bungkus(console.log, "info");
+    console.error = bungkus(console.error, "error");
+  } catch (err) {
+    /* diabaikan */
+  }
+}
+
+if (process.env.KD_LOG === "1") pasangLogBerkas();
 /* -------------------------------------------------------------- router --- */
 const handler = async (req, res) => {
   let url;
@@ -1338,6 +1369,7 @@ const handler = async (req, res) => {
           dirData: DIR_DATA,
           ikon: path.join(AKAR, "assets", "tray.ico"),
           ikonCadangan: path.join(AKAR, "assets", "icon.ico"),
+          jendela: path.join(DIR_DATA, "jendela", "KumiDeck.lnk"),
         });
         /* mulaiTray mengembalikan false bila tray sudah hidup; anggap sukses. */
         return kirimJson(res, 200, { ok: true, tray: true, baru: !!aktif });
@@ -1494,6 +1526,7 @@ function mulaiServer() {
       dirData: DIR_DATA,
       ikon: path.join(AKAR, "assets", "tray.ico"),
       ikonCadangan: path.join(AKAR, "assets", "icon.ico"),
+      jendela: path.join(DIR_DATA, "jendela", "KumiDeck.lnk"),
     });
     if (aktif) {
       console.log("  Tray   : aktif — klik ikon KumiDeck di baki sistem");
@@ -1510,6 +1543,7 @@ function mulaiServer() {
               dirData: DIR_DATA,
               ikon: path.join(AKAR, "assets", "tray.ico"),
               ikonCadangan: path.join(AKAR, "assets", "icon.ico"),
+              jendela: path.join(DIR_DATA, "jendela", "KumiDeck.lnk"),
             });
           }
           if (fs.existsSync(berkas)) {
@@ -1560,8 +1594,21 @@ function mulaiServer() {
   console.log("  Tutup dengan Ctrl+C.");
   console.log("");
 
-  if (process.env.KD_OPEN === "1") {
-    bukaPeramban("http://localhost:" + PORT);
+  const tautanLokal = "http://localhost:" + PORT;
+  if (process.env.KD_JENDELA === "1") {
+    /* UI dibuka sebagai jendela aplikasi sendiri (mode --app peramban). */
+    console.log("[kumideck] membuka jendela aplikasi:", tautanLokal);
+    import("./jendela.js")
+      .then((mod) =>
+        mod.bukaJendela(tautanLokal, { dirData: DIR_DATA, ikon: path.join(AKAR, "assets", "icon.ico") })
+      )
+      .then((hasil) => {
+        console.log("[kumideck] jendela aplikasi:", JSON.stringify(hasil));
+        if (!hasil || !hasil.ok) bukaPeramban(tautanLokal);
+      })
+      .catch(() => bukaPeramban(tautanLokal));
+  } else if (process.env.KD_OPEN === "1") {
+    bukaPeramban(tautanLokal);
   }
   });
 }
@@ -1616,6 +1663,13 @@ function finishTutup() {
 }
 process.on("SIGINT", tutup);
 process.on("SIGTERM", tutup);
+
+
+
+
+
+
+
 
 
 

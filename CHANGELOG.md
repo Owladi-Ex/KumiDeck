@@ -3,6 +3,29 @@
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 versi mengikuti [SemVer](https://semver.org/lang/id/).
 
+## [1.7.6] — 2026-11-13
+
+### Ditambahkan
+
+- **Mode jendela aplikasi**: UI desktop kini bisa dibuka sebagai jendela sendiri
+  (mirip aplikasi Windows) memakai mode `--app` peramban — tanpa bilah alamat,
+  tanpa tab, ikon & judul sendiri, entri taskbar sendiri. Pemilih peramban:
+  Chrome → Edge → Brave; profil khusus di `data\jendela\profil`.
+- `server/jendela.js`: membuka jendela lewat pintasan (.lnk) yang dijalankan
+  shell Windows (rundll32/explorer/cmd start) agar proses peramban tidak
+  mewarisi batasan proses induk — akar masalah crash Chrome 0x80000003.
+- **`Buka KumiDeck.cmd`** sebagai peluncur utama paket portabel; juga
+  `Buka di Peramban.cmd` dan `Jalankan Server Saja.cmd`.
+- Menu baki sistem: "Buka papan" membuka jendela aplikasi, "Buka di peramban"
+  membuka di peramban biasa.
+- Log aplikasi `data\kumideck.log` (dipakai saat konsol disembunyikan).
+
+### Diubah
+
+- `.exe` portabel **tidak lagi membuka peramban/jendela sendiri** dan **tidak
+  menampilkan jendela konsol** (subsistem PE diubah ke GUI). Peluncur
+  `Buka KumiDeck.cmd` yang menyalakan server lalu membuka jendela aplikasi.
+- `BACA-INI.txt` diperbarui untuk alur baru.
 ## [1.7.5] — 2026-11-13
 
 ### Diperbaiki
@@ -472,6 +495,7 @@ Rilis awal.
 - Pasangkan Android dengan kode QR + kode 8 karakter.
 - Penyunting di desktop, riwayat aktivitas, daftar perangkat.
 - Tema terang/gelap, Kumi Design System v1.1.0.
+
 
 
 
