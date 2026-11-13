@@ -7,6 +7,15 @@ papan tombol nirkabel lewat Wi-Fi.
 Dibangun dengan **Node.js tanpa dependensi runtime** dan memakai
 **Kumi Design System** untuk tampilannya.
 
+## Unduh
+
+Rilis siap pakai tersedia di halaman **Releases**:
+
+- **Windows, portabel (tanpa pemasangan):** `KumiDeck-1.0.0-portable.zip` —
+  ekstrak, lalu klik dua kali **`Buka KumiDeck.cmd`**. Server berjalan tanpa
+  jendela konsol dan antarmuka terbuka di jendela aplikasi sendiri.
+
+Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
 ## Isi repo
 
 | Path | Isi |
@@ -82,3 +91,4 @@ MIT — lihat `LICENSE`.
 
 Kumi Design System adalah paket desain terpisah yang disertakan di
 `public/kumi/`; jangan mengubah isinya dari dalam repo ini.
+
