@@ -16,6 +16,7 @@ public static class AppPaths
     public static string Tls => Path.Combine(Data, "tls");
     public static string Jendela => Path.Combine(Data, "jendela");
     public static string WebView => Path.Combine(Data, "webview2");
+    public static string Cadangan => Path.Combine(Data, "cadangan");
     public static string DeckBerkas => Path.Combine(Data, "deck.json");
     public static string RahasiaBerkas => Path.Combine(Data, "secret.json");
     public static string LogBerkas => Path.Combine(Data, "kumideck.log");
@@ -38,7 +39,7 @@ public static class AppPaths
             Portabel = false;
         }
 
-        foreach (var dir in new[] { Data, Ikon, Suara, Tls, Jendela, WebView })
+        foreach (var dir in new[] { Data, Ikon, Suara, Tls, Jendela, WebView, Cadangan })
         {
             try
             {

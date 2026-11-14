@@ -36,6 +36,13 @@ public static class DeckNormalizer
     public static string IdBaru(string prefix, int byteAcak = 4) =>
         prefix + Convert.ToHexString(RandomNumberGenerator.GetBytes(byteAcak)).ToLowerInvariant();
 
+    /* Aksen tema: hanya #rrggbb yang sah; selain itu kembali ke bawaan. */
+    public static string NormalAksen(JsonElement? e)
+    {
+        var nilai = Teks(e, 7);
+        return WarnaSah.IsMatch(nilai) ? nilai.ToLowerInvariant() : "";
+    }
+
     /* ------------------------------------------------------------- teks ---- */
     private static bool Objek(JsonElement? e) => e is { ValueKind: JsonValueKind.Object };
 
@@ -479,6 +486,7 @@ public static class DeckNormalizer
                 Terkunci = Bool(Prop(Prop(sumber, "settings"), "terkunci"), false),
                 AutoProfil = Bool(Prop(Prop(sumber, "settings"), "autoProfil"), false),
                 MulaiOtomatis = Bool(Prop(Prop(sumber, "settings"), "mulaiOtomatis"), false),
+                Aksen = NormalAksen(Prop(Prop(sumber, "settings"), "aksen")),
             },
         };
     }
@@ -606,6 +614,7 @@ public static class DeckNormalizer
                 Terkunci = false,
                 AutoProfil = false,
                 MulaiOtomatis = false,
+                Aksen = "",
             },
         };
     }

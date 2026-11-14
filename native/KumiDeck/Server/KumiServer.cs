@@ -77,6 +77,9 @@ public sealed partial class KumiServer
     public string KodeTampil => Store.KodeTampil;
     public TrayIcon? Tray { get; private set; }
 
+    /* Diisi App setelah jendela dibuat. Dipakai untuk ekspor PNG papan. */
+    public Func<int, int, int, int, Task<byte[]?>>? TangkapPapan { get; set; }
+
     public event Action? MintaTampilJendela;
     public event Action? MintaKeluar;
 

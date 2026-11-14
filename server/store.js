@@ -382,6 +382,10 @@ export function normalDeck(masukan, deckLama) {
       autoProfil: sumber?.settings?.autoProfil === true,
       /* Tray: start.cmd/.exe menambah shortcut autostart. */
       mulaiOtomatis: sumber?.settings?.mulaiOtomatis === true,
+      /* Warna aksen tema: hanya #rrggbb yang sah. */
+      aksen: /^#[0-9a-f]{6}$/i.test(String(sumber?.settings?.aksen || ""))
+        ? String(sumber.settings.aksen).toLowerCase()
+        : "",
     },
   };
 }
@@ -494,6 +498,7 @@ export function deckContoh() {
       terkunci: false,
       autoProfil: false,
       mulaiOtomatis: false,
+      aksen: "",
     },
   };
 }

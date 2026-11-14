@@ -3,6 +3,39 @@
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 versi mengikuti [SemVer](https://semver.org/lang/id/).
 
+## [2.1.0] - 2026-11-14
+
+**"Rapi & Aman"** - paket perapian kecil tanpa perubahan arsitektur.
+
+### Ditambahkan
+
+- **Pencarian tombol Ctrl+K**: modal pencarian dari mana saja. Cocokkan nama
+  tombol, jenis aksi, atau nama halaman; hasil di halaman aktif didahulukan.
+  Enter membuka hasil pertama; memilih hasil berpindah halaman, menyorot
+  tombol, dan membuka editor bila mode sunting aktif.
+- **Duplikat halaman & tombol**: halaman disalin lengkap dengan semua tombolnya
+  (ID baru, bukan halaman awal); tombol disalin ke slot kosong berikutnya pada
+  halaman yang sama.
+- **Cadangan otomatis + pulihkan**: setiap perubahan papan menyimpan versi
+  sebelumnya di `data/cadangan` (maksimal 10). Setelan menampilkan daftar
+  cadangan dengan waktu dan ukuran; pemulihan memakai dua klik untuk mencegah
+  kecelakaan. Pemulihan ikut mencadangkan papan yang sedang aktif.
+- **Unduh log dari setelan**: berkas `kumideck.log` diunduh lewat UI desktop
+  (endpoint dibatasi untuk komputer host).
+- **Warna aksen tema**: pilih warna aksen di setelan; berlaku di UI desktop
+  dan perangkat Remote. Nilai dibatasi ke `#rrggbb`.
+- **Ekspor papan PNG**: tangkap papan dari WebView2, potong ke area papan, lalu
+  unduh sebagai `kumideck-papan.png`. Hanya tersedia di aplikasi desktop;
+  peramban biasa mendapat pesan yang jelas.
+
+### Catatan teknis
+
+- `DeckNormalizer` menormalkan `settings.aksen` (kosong bila tidak sah).
+- Endpoint baru: `GET /api/cadangan`, `POST /api/cadangan/pulihkan`,
+  `GET /api/log/unduh`, `POST /api/papan/ekspor`.
+- Folder `data/cadangan` dibuat otomatis; berkas cadangan bernama
+  `deck-yyyyMMdd-HHmmss-fff.json` dan dipangkas ke 10 versi terbaru.
+
 ## [2.0.1] - 2026-11-13
 
 ### Diperbaiki

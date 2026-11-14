@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media.Imaging;
 using KumiDeck.Core;
 using KumiDeck.Platform;
 using KumiDeck.Server;
@@ -670,6 +671,75 @@ public partial class MainWindow : Window
         catch
         {
             /* diabaikan */
+        }
+    }
+
+    /* Tangkap tampilan WebView lalu potong ke kotak papan. Koordinat yang
+       dikirim UI dalam CSS px (= DIP), sedangkan hasil tangkapan dalam piksel
+       fisik; skalanya dihitung dari lebar kontrol. */
+    public async Task<byte[]?> TangkapPapanAsync(int x, int y, int lebar, int tinggi)
+    {
+        var selesai = new TaskCompletionSource<byte[]?>();
+        _ = Dispatcher.InvokeAsync(async () =>
+        {
+            try
+            {
+                var inti = Web.CoreWebView2;
+                if (inti is null)
+                {
+                    selesai.TrySetResult(null);
+                    return;
+                }
+
+                using var aliran = new MemoryStream();
+                await inti.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, aliran);
+                selesai.TrySetResult(PotongGambar(aliran.ToArray(), x, y, lebar, tinggi));
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("tangkapan papan gagal: " + ex.Message);
+                selesai.TrySetResult(null);
+            }
+        });
+        return await selesai.Task;
+    }
+
+    private byte[]? PotongGambar(byte[] data, int x, int y, int lebar, int tinggi)
+    {
+        if (data.Length == 0) return null;
+        if (lebar <= 0 || tinggi <= 0) return data;
+
+        try
+        {
+            using var masuk = new MemoryStream(data);
+            var gambar = new BitmapImage();
+            gambar.BeginInit();
+            gambar.CacheOption = BitmapCacheOption.OnLoad;
+            gambar.StreamSource = masuk;
+            gambar.EndInit();
+            gambar.Freeze();
+
+            var skala = gambar.PixelWidth / Math.Max(1.0, Web.ActualWidth);
+            var kiri = Math.Clamp((int)Math.Round(x * skala), 0, gambar.PixelWidth - 1);
+            var atas = Math.Clamp((int)Math.Round(y * skala), 0, gambar.PixelHeight - 1);
+            var kanan = Math.Clamp((int)Math.Round((x + lebar) * skala), kiri + 1, gambar.PixelWidth);
+            var bawah = Math.Clamp((int)Math.Round((y + tinggi) * skala), atas + 1, gambar.PixelHeight);
+
+            var potong = new CroppedBitmap(
+                gambar,
+                new Int32Rect(kiri, atas, kanan - kiri, bawah - atas));
+            potong.Freeze();
+
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(potong));
+            using var keluar = new MemoryStream();
+            encoder.Save(keluar);
+            return keluar.ToArray();
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("potong gambar gagal: " + ex.Message);
+            return data;
         }
     }
 

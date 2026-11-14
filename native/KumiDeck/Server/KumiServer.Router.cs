@@ -739,6 +739,123 @@ public sealed partial class KumiServer
                 return;
             }
 
+            /* --- cadangan, log, ekspor gambar ----------------------------- */
+            if (jalur == "/api/cadangan")
+            {
+                if (ButuhToken(req, res, this)) return;
+                KirimJson(res, 200, new { ok = true, cadangan = Store.DaftarCadangan() });
+                return;
+            }
+
+            if (jalur == "/api/cadangan/pulihkan")
+            {
+                if (ButuhToken(req, res, this)) return;
+                if (Store.Deck.Settings.Terkunci)
+                {
+                    KirimJson(res, 423, new
+                    {
+                        ok = false,
+                        code = "terkunci",
+                        message = "Tata letak terkunci. Buka kunci dulu untuk memulihkan cadangan.",
+                    });
+                    return;
+                }
+
+                using var dok = BodyJson(req);
+                var nama = dok is null ? "" : Teks(dok.RootElement, "nama");
+                if (!Store.PulihkanCadangan(nama, out var pesan))
+                {
+                    KirimJson(res, 400, new { ok = false, message = pesan });
+                    return;
+                }
+
+                PerbaruiDataHidup();
+                SiarState();
+                KirimJson(res, 200, new { ok = true, message = pesan, deck = Store.Deck });
+                return;
+            }
+
+            if (jalur == "/api/log/unduh")
+            {
+                if (ButuhToken(req, res, this)) return;
+                if (!AlamatLokal(req))
+                {
+                    KirimJson(res, 403, new { ok = false, message = "Log hanya bisa diunduh dari komputer ini." });
+                    return;
+                }
+
+                var isi = "Belum ada catatan log.\n";
+                try
+                {
+                    if (File.Exists(AppPaths.LogBerkas))
+                    {
+                        isi = File.ReadAllText(AppPaths.LogBerkas, Encoding.UTF8);
+                        if (isi.Length == 0) isi = "Belum ada catatan log.\n";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn("log tidak dapat dibaca: " + ex.Message);
+                }
+
+                res.Status = 200;
+                res.Tipe = "text/plain; charset=utf-8";
+                res.Isi = Encoding.UTF8.GetBytes(isi);
+                res.Header["Cache-Control"] = "no-store";
+                res.Header["Content-Disposition"] = "attachment; filename=\"kumideck-log.txt\"";
+                return;
+            }
+
+            if (jalur == "/api/papan/ekspor")
+            {
+                if (ButuhToken(req, res, this)) return;
+                var penangkap = TangkapPapan;
+                if (penangkap is null)
+                {
+                    KirimJson(res, 501, new
+                    {
+                        ok = false,
+                        message = "Ekspor PNG hanya tersedia di aplikasi desktop.",
+                    });
+                    return;
+                }
+
+                using var dok = BodyJson(req);
+                var body = dok is null ? default : dok.RootElement;
+                var x = body.ValueKind == JsonValueKind.Object ? Angka(body, "x", 0) : 0;
+                var y = body.ValueKind == JsonValueKind.Object ? Angka(body, "y", 0) : 0;
+                var lebar = body.ValueKind == JsonValueKind.Object ? Angka(body, "lebar", 0) : 0;
+                var tinggi = body.ValueKind == JsonValueKind.Object ? Angka(body, "tinggi", 0) : 0;
+
+                byte[]? png;
+                try
+                {
+                    png = await penangkap(x, y, lebar, tinggi);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn("tangkapan papan gagal: " + ex.Message);
+                    png = null;
+                }
+
+                if (png is null || png.Length == 0)
+                {
+                    KirimJson(res, 500, new
+                    {
+                        ok = false,
+                        message = "Papan tidak dapat ditangkap. Coba lagi sebentar.",
+                    });
+                    return;
+                }
+
+                res.Status = 200;
+                res.Tipe = "image/png";
+                res.Isi = png;
+                res.Header["Cache-Control"] = "no-store";
+                res.Header["Content-Disposition"] = "attachment; filename=\"kumideck-papan.png\"";
+                return;
+            }
+
             if (jalur == "/api/sinyal")
             {
                 if (ButuhToken(req, res, this)) return;

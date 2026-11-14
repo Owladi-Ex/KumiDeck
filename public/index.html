@@ -35,6 +35,9 @@
           <svg class="kumi-icon" aria-hidden="true"><use href="#i-play"></use></svg>
           Soundboard
         </button>
+        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-cari" aria-label="Cari tombol (Ctrl+K)" title="Cari tombol (Ctrl+K)">
+          <svg class="kumi-icon" aria-hidden="true"><use href="#i-search"></use></svg>
+        </button>
         <button class="kumi-btn kumi-btn--ghost" type="button" id="btn-setelan">
           <svg class="kumi-icon" aria-hidden="true"><use href="#i-settings"></use></svg>
           Setelan
@@ -262,6 +265,10 @@
       </form>
 
       <div class="kumi-modal__foot kd-bilah">
+        <button class="kumi-btn kumi-btn--ghost" type="button" id="editor-duplikat">
+          <svg class="kumi-icon" aria-hidden="true"><use href="#i-copy"></use></svg>
+          Duplikat
+        </button>
         <button class="kumi-btn kumi-btn--ghost kd-tombol-hapus" type="button" id="editor-hapus">
           <svg class="kumi-icon" aria-hidden="true"><use href="#i-trash"></use></svg>
           Hapus
@@ -271,6 +278,28 @@
           <button class="kumi-btn kumi-btn--primary" type="submit" form="form-editor" id="editor-simpan">Simpan tombol</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ========================= MODAL: CARI TOMBOL ========================= -->
+  <div class="kumi-overlay" id="modal-cari" aria-hidden="true">
+    <div class="kumi-modal kd-modal--cari" role="dialog" aria-modal="true" aria-labelledby="cari-judul">
+      <div class="kumi-modal__head">
+        <div>
+          <span class="kumi-label">Pencarian</span>
+          <h2 class="kumi-h3" id="cari-judul">Cari tombol</h2>
+        </div>
+        <button class="kumi-btn kumi-btn--icon kumi-btn--ghost" type="button" data-tutup aria-label="Tutup">
+          <svg class="kumi-icon" aria-hidden="true"><use href="#i-close"></use></svg>
+        </button>
+      </div>
+
+      <div class="kumi-field">
+        <input class="kumi-input" id="cari-tombol" type="search" autocomplete="off" placeholder="Nama tombol, aksi, atau halaman…" aria-label="Cari tombol">
+        <span class="kumi-field__hint">Ctrl+K kapan saja. Enter membuka hasil pertama.</span>
+      </div>
+
+      <ul class="kumi-list kd-cari-hasil" id="hasil-cari" aria-label="Hasil pencarian"></ul>
     </div>
   </div>
 
@@ -531,6 +560,39 @@
             <span class="kd-hint">Jalankan KumiDeck saat Windows menyala (tanpa jendela konsol).</span>
           </div>
           <input class="kumi-switch" type="checkbox" id="setelan-mulai" aria-label="Mulai otomatis">
+        </div>
+
+        <hr class="kumi-divider">
+
+        <div class="kumi-field">
+          <label class="kumi-field__label" for="setelan-aksen">Warna aksen</label>
+          <div class="kd-aksen-baris">
+            <input class="kd-warna" type="color" id="setelan-aksen" value="#3d5afe" aria-label="Warna aksen">
+            <button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" id="btn-aksen-awal">Kembalikan bawaan</button>
+            <span class="kd-hint">Berlaku di layar ini dan perangkat Remote.</span>
+          </div>
+        </div>
+
+        <hr class="kumi-divider">
+
+        <div class="kumi-field">
+          <div class="kd-bilah">
+            <span class="kumi-field__label">Cadangan otomatis</span>
+            <button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" id="btn-cadangan-muat">Muat ulang daftar</button>
+          </div>
+          <div class="kumi-stack kd-cadangan" id="daftar-cadangan"></div>
+          <span class="kumi-field__hint">Sepuluh versi terakhir disimpan otomatis. Pulihkan untuk mengurungkan perubahan.</span>
+        </div>
+
+        <div class="kumi-row kd-alat-data">
+          <button class="kumi-btn kumi-btn--ghost" type="button" id="btn-unduh-log">
+            <svg class="kumi-icon" aria-hidden="true"><use href="#i-download"></use></svg>
+            Unduh log
+          </button>
+          <button class="kumi-btn kumi-btn--ghost" type="button" id="btn-ekspor-png">
+            <svg class="kumi-icon" aria-hidden="true"><use href="#i-image"></use></svg>
+            Ekspor PNG
+          </button>
         </div>
       </form>
 

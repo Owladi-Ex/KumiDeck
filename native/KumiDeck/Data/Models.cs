@@ -130,6 +130,7 @@ public sealed class Setelan
     [JsonPropertyName("terkunci")] public bool Terkunci { get; set; }
     [JsonPropertyName("autoProfil")] public bool AutoProfil { get; set; }
     [JsonPropertyName("mulaiOtomatis")] public bool MulaiOtomatis { get; set; }
+    [JsonPropertyName("aksen")] public string Aksen { get; set; } = "";
 }
 
 public static class Json

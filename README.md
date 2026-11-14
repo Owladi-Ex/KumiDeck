@@ -48,6 +48,9 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
 - **Widget** jam, tanggal, dan lagu yang sedang diputar.
 - **Tambah cepat**, daftar aplikasi terpasang, perekam pintasan.
 - Kunci tata letak, seret & lepas, impor/ekspor papan (JSON).
+- **Pencarian tombol Ctrl+K**, duplikat halaman/tombol.
+- **Cadangan otomatis** 10 versi terakhir + pulihkan, serta unduh log dari setelan.
+- **Warna aksen** tema dan **ekspor papan PNG** (aplikasi desktop).
 - Profil otomatis, penanda status, tray icon, mulai otomatis.
 - Klien Remote di ponsel/tablet (PWA, dipasangkan lewat kode QR), bisa dipasang
   sebagai aplikasi bila tersedia HTTPS.

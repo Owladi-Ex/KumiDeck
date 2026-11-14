@@ -185,6 +185,7 @@
   }
 
   function renderSemua() {
+    if (S.deck && S.deck.settings) KD.terapkanAksen(S.deck.settings.aksen);
     renderJudul();
     renderStatus();
     renderHalaman();

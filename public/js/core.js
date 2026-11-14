@@ -113,6 +113,22 @@
       return data;
     },
 
+    /* Warna aksen tema. Kosong = bawaan dari CSS. */
+    terapkanAksen: function (warna) {
+      var hex = String(warna || "").trim();
+      var akar = document.documentElement;
+      if (!/^#[0-9a-f]{6}$/i.test(hex)) {
+        akar.style.removeProperty("--kumi-accent");
+        akar.style.removeProperty("--kumi-accent-rgb");
+        return;
+      }
+      var r = parseInt(hex.slice(1, 3), 16);
+      var g = parseInt(hex.slice(3, 5), 16);
+      var b = parseInt(hex.slice(5, 7), 16);
+      akar.style.setProperty("--kumi-accent", hex);
+      akar.style.setProperty("--kumi-accent-rgb", r + ", " + g + ", " + b);
+    },
+
     /* ---------------------------------------------------------- SSE --- */
     /* KD.stream({ onSync, onPress, onDevices, onActivity, onOpen, onClose })
        → { tutup() }. EventSource menyambung ulang otomatis saat putus. */
