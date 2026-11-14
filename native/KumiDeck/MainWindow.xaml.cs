@@ -244,10 +244,11 @@ public partial class MainWindow : Window
             inti.Settings.IsPasswordAutosaveEnabled = false;
             inti.Settings.IsGeneralAutofillEnabled = false;
 
-            /* Pintasan peramban tetap aktif (Ctrl+C/V untuk mengisi kolom),
-               tetapi gerak khas peramban dimatikan: tanpa zoom Ctrl+roda,
-               tanpa cubit, tanpa geser dua jari untuk maju/mundur. */
-            inti.Settings.AreBrowserAcceleratorKeysEnabled = true;
+            /* Pintasan khas peramban dimatikan supaya tombol seperti Ctrl+K
+               sampai ke UI (Chromium memakainya untuk "search"), dan supaya
+               tidak ada Ctrl+P/F5/Ctrl+roda di dalam aplikasi. Pintasan
+               penyuntingan (Ctrl+C/V/X/A) tidak terpengaruh setelan ini. */
+            inti.Settings.AreBrowserAcceleratorKeysEnabled = false;
             inti.Settings.IsZoomControlEnabled = false;
             inti.Settings.IsPinchZoomEnabled = false;
             inti.Settings.IsSwipeNavigationEnabled = false;

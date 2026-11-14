@@ -653,6 +653,12 @@
   list-style: none;
 }
 
+/* Daftar ini punya tinggi maksimum; tanpa ini, butir daftar menyusut
+   sampai teksnya bertumpuk alih-alih menggulir. */
+.kd-cari-hasil > .kumi-list__item {
+  flex: 0 0 auto;
+}
+
 .kd-cari-item {
   display: flex;
   flex-direction: column;
