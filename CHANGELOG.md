@@ -34,6 +34,9 @@ lebih lengkap.
   dilupakan harus memasukkan kode pasangan baru.
 - **Cek pembaruan** dari setelan desktop: membandingkan versi terpasang dengan
   rilis terbaru di GitHub (tanpa token).
+- **Aplikasi Android (APK)**: Remote bisa dipasang di ponsel tanpa sertifikat
+  HTTPS. APK hanya membungkus UI `/remote` di WebView, jadi papan dan aksi tetap
+  di komputer; sumber dan cara build ada di `android/README.md`.
 
 ### Diperbaiki
 
