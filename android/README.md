@@ -74,11 +74,15 @@ Lewat kabel USB dan SDK yang dipakai untuk membangun:
 ## Pemakaian
 
 1. Jalankan KumiDeck di komputer, buka layar **Remote** (kode QR tampil di sana).
-2. Di ponsel, tekan **Pindai kode QR**, izinkan kamera sekali, lalu arahkan ke
-   kode QR di layar komputer. Aplikasi langsung tersambung.
-3. Kalau kamera tidak bisa dipakai, tempel tautan `/remote?kode=…` atau isi
-   alamat server (mis. `192.168.1.10:4173`) lalu masukkan kode pasangan
-   8 karakter dari layar komputer.
+2. Di ponsel, layar masuk menawarkan dua cara:
+   - **Pindai kode QR** — izinkan kamera sekali, arahkan ke kode QR di layar
+     komputer, aplikasi langsung tersambung;
+   - **Masukkan kode** — isi alamat server (mis. `192.168.1.10:4173`), tempel
+     tautan `/remote?kode=…`, lalu masukkan kode pasangan 8 karakter dari layar
+     komputer.
+3. Bila perangkat diputus dari komputer (tombol **Putuskan** di UI Remote),
+   aplikasi kembali ke layar masuk itu — bukan langsung ke kolom kode — jadi
+   pemindaian QR selalu tersedia.
 
 ### Memindai kode QR
 
@@ -98,6 +102,12 @@ Bila pratinjau kamera miring, tekan **↺ Putar kiri** di layar pemindai. Setiap
 tekanan memutar 90° berlawanan arah jarum jam, dan pilihan itu diingat di
 `SharedPreferences` (`putarKamera`) untuk pemindaian berikutnya. Pembacaan kode
 QR tidak terpengaruh arah putar.
+
+Pratinjau tidak memakai matriks `TextureView.setTransform`. Kotak `TextureView`
+dibuat dengan aspek yang sama persis seperti buffer kamera, lalu kotak itu
+diputar (`setRotation`) dan diperbesar sampai menutupi layar. Dengan begitu
+gambar hanya terpotong (center-crop), tidak pernah gepeng — baik mendatar
+maupun menurun.
 
 Aplikasi hanya menyimpan alamat asal server (`http://host:port`) di
 `SharedPreferences`. Token pasangan disimpan WebView di `localStorage`, sama
@@ -121,6 +131,9 @@ lama ikon aplikasi dan pilih **Ganti alamat**.
   batas waktu kedua menampilkan galat yang sama.
 - Pustaka pihak ketiga: `libs/core-3.5.3.jar` (ZXing core, Apache-2.0) untuk
   decoder QR. Lihat `libs/README.md`.
+- Jembatan JS `KumiDeckApl.pasangan(Boolean)` hanya melaporkan status layar
+  pasangan (`#lapis-pasangan`) milik UI Remote, dipakai untuk menampilkan layar
+  masuk saat perangkat diputus. Tidak ada data lain yang dikirim ke aplikasi.
 - Layar tetap menyala selama aplikasi terbuka (`FLAG_KEEP_SCREEN_ON`), karena
   `navigator.wakeLock` tidak tersedia pada konteks HTTP.
 - Video layar penuh dari UI web didukung lewat `onShowCustomView`; tombol

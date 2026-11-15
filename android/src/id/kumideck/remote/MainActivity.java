@@ -74,6 +74,10 @@ public class MainActivity extends Activity {
     private View tampilanPenuh;
     private WebChromeClient.CustomViewCallback callbackPenuh;
 
+    /* Pengguna sedang memilih "Masukkan kode": layar kode pasangan milik UI web
+       memang yang diminta, jadi jangan dialihkan ke layar masuk. */
+    private boolean keHalamanKode;
+
     /* Batas tunggu halaman: koneksi ke alamat LAN yang salah bisa menggantung
        puluhan detik tanpa memicu onReceivedError. */
     private final Handler penunda = new Handler(Looper.getMainLooper());
@@ -105,7 +109,7 @@ public class MainActivity extends Activity {
             return;
         }
         String asal = alamatTersimpan();
-        if (asal.isEmpty()) tampilkanSetup("");
+        if (asal.isEmpty()) tampilkanMasuk();
         else buka(asal + "/remote");
     }
 
@@ -148,6 +152,7 @@ public class MainActivity extends Activity {
         String url = normalisasi(teks.substring(awal, akhir));
         if (url.isEmpty()) return false;
         prefs().edit().putString(KEY_ASAL, asalDari(url)).apply();
+        keHalamanKode = false;
         buka(url);
         return true;
     }
@@ -213,6 +218,102 @@ public class MainActivity extends Activity {
     }
 
     /* ---------------------------------------------------------- layar awal -- */
+
+    /* Layar masuk: pilihan cara menyambung. Dipakai saat belum ada alamat
+       tersimpan dan saat perangkat baru saja diputus dari komputer, supaya
+       pengguna bisa memilih memindai kode QR atau mengetik kode pasangan. */
+    private void tampilkanMasuk() {
+        lepasWeb();
+        akar.removeAllViews();
+        alamatTampil = "";
+        diSetup = false;
+
+        ScrollView gulir = new ScrollView(this);
+        gulir.setFillViewport(true);
+        gulir.setBackgroundColor(WARNA_LATAR);
+
+        LinearLayout isi = new LinearLayout(this);
+        isi.setOrientation(LinearLayout.VERTICAL);
+        isi.setGravity(Gravity.CENTER_VERTICAL);
+        isi.setPadding(dp(28), dp(28), dp(28), dp(28));
+        gulir.addView(isi, new ScrollView.LayoutParams(ISI, BUNGKUS));
+
+        isi.addView(teks("KumiDeck Remote", 28, WARNA_TEKS, true));
+        TextView ket = teks(
+            "Papan tombol untuk komputer yang menjalankan KumiDeck. Pilih cara menyambung:",
+            14, WARNA_REDUP, false);
+        ket.setPadding(0, dp(10), 0, dp(26));
+        isi.addView(ket);
+
+        Button pindai = new Button(this);
+        pindai.setText("Pindai kode QR");
+        pindai.setAllCaps(false);
+        pindai.setTextSize(16);
+        pindai.setTextColor(WARNA_LATAR);
+        pindai.setBackgroundTintList(ColorStateList.valueOf(WARNA_AKSEN));
+        isi.addView(pindai, new LinearLayout.LayoutParams(ISI, dp(52)));
+        pindai.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                bukaPemindai();
+            }
+        });
+
+        Button kode = new Button(this);
+        kode.setText("Masukkan kode");
+        kode.setAllCaps(false);
+        kode.setTextSize(16);
+        kode.setTextColor(WARNA_AKSEN);
+        kode.setBackgroundTintList(ColorStateList.valueOf(0xFF23232A));
+        LinearLayout.LayoutParams lpKode = new LinearLayout.LayoutParams(ISI, dp(52));
+        lpKode.topMargin = dp(10);
+        isi.addView(kode, lpKode);
+        kode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pilihMasukKode();
+            }
+        });
+
+        TextView catatan = teks(
+            "Kode QR ada di layar Remote di komputer. Di layar itu juga tampil kode pasangan 8 karakter bila kamera tidak bisa dipakai.",
+            12, WARNA_REDUP, false);
+        catatan.setPadding(0, dp(22), 0, 0);
+        isi.addView(catatan);
+
+        final String tersimpan = alamatTersimpan();
+        if (!tersimpan.isEmpty()) {
+            Button kembali = new Button(this);
+            kembali.setText("Kembali ke papan");
+            kembali.setAllCaps(false);
+            kembali.setTextColor(WARNA_TEKS);
+            LinearLayout.LayoutParams lpKembali = new LinearLayout.LayoutParams(ISI, dp(48));
+            lpKembali.topMargin = dp(10);
+            kembali.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    keHalamanKode = false;
+                    buka(tersimpan + "/remote");
+                }
+            });
+            isi.addView(kembali, lpKembali);
+        }
+
+        akar.addView(gulir, new FrameLayout.LayoutParams(ISI, ISI));
+    }
+
+    /* "Masukkan kode": tanpa alamat tersimpan, buka formulir alamat dulu.
+       Kalau alamat sudah ada, halaman Remote yang menampilkan kolom kode
+       8 karakter langsung dibuka. */
+    private void pilihMasukKode() {
+        String asal = alamatTersimpan();
+        if (asal.isEmpty()) {
+            tampilkanSetup("");
+            return;
+        }
+        keHalamanKode = true;
+        buka(asal + "/remote");
+    }
 
     private void tampilkanSetup(String isiAwal) {
         lepasWeb();
@@ -299,6 +400,7 @@ public class MainActivity extends Activity {
                     return;
                 }
                 prefs().edit().putString(KEY_ASAL, asalDari(alamat)).apply();
+                keHalamanKode = true;
                 buka(alamat);
             }
         });
@@ -366,6 +468,8 @@ public class MainActivity extends Activity {
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
         s.setUserAgentString(s.getUserAgentString() + " KumiDeckRemote/" + VERSI);
 
+        web.addJavascriptInterface(new Jembatan(), "KumiDeckApl");
+
         web.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -396,6 +500,7 @@ public class MainActivity extends Activity {
                 batalBatas();
                 tampilkanMemuat(false);
                 sembunyikanAjakanPwa(view);
+                awasiPasangan(view);
             }
 
             @Override
@@ -645,6 +750,46 @@ public class MainActivity extends Activity {
             "window.setTimeout(function(){o.disconnect();},15000);}catch(e){}" +
             "try{localStorage.setItem('kumideck-remote-hint','1');}catch(e){}" +
             "})()", null);
+    }
+
+    /* Memantau layar pasangan milik UI web (#lapis-pasangan). Bila perangkat
+       baru saja diputus (lapis dari tersembunyi menjadi tampil), aplikasi
+       menawarkan layar masuk: pindai kode QR atau masukkan kode. */
+    private void awasiPasangan(WebView view) {
+        view.evaluateJavascript(
+            "(function(){" +
+            "var l=document.getElementById('lapis-pasangan');" +
+            "if(!l){return;}" +
+            "var tampil=!l.hasAttribute('hidden');" +
+            "var lapor=function(nilai){try{KumiDeckApl.pasangan(nilai);}catch(e){}};" +
+            "lapor(tampil);" +
+            "var cek=function(){var t=!l.hasAttribute('hidden');" +
+            "if(t===tampil){return;}tampil=t;lapor(t);};" +
+            "try{new MutationObserver(cek).observe(l," +
+            "{attributes:true,attributeFilter:['hidden']});}" +
+            "catch(e){window.setInterval(cek,1500);}" +
+            "})()", null);
+    }
+
+    /* Jembatan kecil dari halaman Remote ke aplikasi. Hanya menerima status
+       layar pasangan; tidak boleh dipakai halaman lain untuk apa pun. */
+    private class Jembatan {
+        @android.webkit.JavascriptInterface
+        public void pasangan(final boolean tampil) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (web == null) return;
+                    if (!tampil) {
+                        /* Sudah dipasangkan: alur normal dipakai lagi. */
+                        keHalamanKode = false;
+                        return;
+                    }
+                    if (keHalamanKode) return; /* pengguna memang memilih kode */
+                    tampilkanMasuk();
+                }
+            });
+        }
     }
 
     private void pasangLayarPenuh(boolean nyala) {

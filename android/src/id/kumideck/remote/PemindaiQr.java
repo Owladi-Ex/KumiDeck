@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
-import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.GradientDrawable;
 import android.hardware.camera2.CameraAccessException;
@@ -96,6 +95,9 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
     private boolean sudahSelesai;
     private boolean izinDiminta;
     private boolean transformTerpasang;
+    private int lebarTerpasang;
+    private int tinggiTerpasang;
+    private int rotasiTerpasang = -1;
 
     /* Koreksi putar dari pengguna (kelipatan 90° ke kiri). Sebagian
        perangkat melaporkan orientasi sensor yang tidak cocok dengan
@@ -532,12 +534,53 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
         return terbaik == null ? yuv : terbaik;
     }
 
+    /* Pratinjau tidak memakai matriks transform (mudah gepeng karena buffer
+       diregangkan lebih dulu oleh TextureView). Sebagai gantinya, kotak
+       pratinjau dibuat dengan aspek yang sama persis seperti buffer kamera,
+       lalu kotak itu yang diputar. Dengan begitu gambar tidak pernah
+       diregangkan: hanya dipotong (center-crop) sampai menutupi layar. */
     private void aturTransformasi() {
         if (ukuranPratinjau == null) return;
-        int lebarTampilan = pratinjau.getWidth();
-        int tinggiTampilan = pratinjau.getHeight();
-        if (lebarTampilan == 0 || tinggiTampilan == 0) return;
+        int lebarLayar = akar.getWidth();
+        int tinggiLayar = akar.getHeight();
+        if (lebarLayar == 0 || tinggiLayar == 0) return;
 
+        int putar = sudutPutar();
+        int lebarBuffer = ukuranPratinjau.getWidth();
+        int tinggiBuffer = ukuranPratinjau.getHeight();
+
+        float skala;
+        int lebar;
+        int tinggi;
+        if (putar % 180 == 0) {
+            /* Kotak mendatar: lebar/tinggi layar bertemu langsung. */
+            skala = Math.max(lebarLayar / (float) lebarBuffer,
+                             tinggiLayar / (float) tinggiBuffer);
+        } else {
+            /* Kotak diputar 90°: lebar kotak menutupi tinggi layar. */
+            skala = Math.max(lebarLayar / (float) tinggiBuffer,
+                             tinggiLayar / (float) lebarBuffer);
+        }
+        lebar = Math.round(lebarBuffer * skala);
+        tinggi = Math.round(tinggiBuffer * skala);
+
+        if (lebar == lebarTerpasang && tinggi == tinggiTerpasang && putar == rotasiTerpasang) {
+            transformTerpasang = true;
+            return;
+        }
+        lebarTerpasang = lebar;
+        tinggiTerpasang = tinggi;
+        rotasiTerpasang = putar;
+
+        pratinjau.setLayoutParams(
+            new FrameLayout.LayoutParams(lebar, tinggi, Gravity.CENTER));
+        pratinjau.setPivotX(lebar / 2f);
+        pratinjau.setPivotY(tinggi / 2f);
+        pratinjau.setRotation(putar);
+        transformTerpasang = true;
+    }
+
+    private int sudutPutar() {
         int derajatTampilan;
         switch (aktivitas.getWindowManager().getDefaultDisplay().getRotation()) {
             case Surface.ROTATION_90:
@@ -553,26 +596,7 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
                 derajatTampilan = 0;
                 break;
         }
-
-        int putar = (orientasiSensor - derajatTampilan + 360 + putarTambahan) % 360;
-        float lebarBuffer = ukuranPratinjau.getWidth();
-        float tinggiBuffer = ukuranPratinjau.getHeight();
-        float lebarIsi = (putar % 180 == 0) ? lebarBuffer : tinggiBuffer;
-        float tinggiIsi = (putar % 180 == 0) ? tinggiBuffer : lebarBuffer;
-        float skala = Math.max(lebarTampilan / lebarIsi, tinggiTampilan / tinggiIsi);
-
-        /* TextureView meregangkan buffer (lebarBuffer x tinggiBuffer) agar
-           memenuhi layar. Transformasi ini membalik peregangan itu lebih dulu,
-           memusatkan buffer, memutar, lalu memperbesar seragam supaya penuh
-           tanpa gambar gepeng. */
-        Matrix matriks = new Matrix();
-        matriks.postScale(lebarBuffer / lebarTampilan, tinggiBuffer / tinggiTampilan);
-        matriks.postTranslate(-lebarBuffer / 2f, -tinggiBuffer / 2f);
-        matriks.postRotate(putar);
-        matriks.postScale(skala, skala);
-        matriks.postTranslate(lebarTampilan / 2f, tinggiTampilan / 2f);
-        pratinjau.setTransform(matriks);
-        transformTerpasang = true;
+        return (orientasiSensor - derajatTampilan + 360 + putarTambahan) % 360;
     }
 
     /* Dipanggil tombol “Putar kiri”: memutar pratinjau 90° berlawanan arah
