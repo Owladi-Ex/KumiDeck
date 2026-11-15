@@ -53,6 +53,9 @@ Ikon peluncur dibuat dari `public/icons/icon-512.png` dan
 `icon-maskable-512.png`, jadi tidak ada aset ikon terpisah yang perlu dirawat.
 
 Gunakan `-TanpaTandaTangan` bila hanya ingin memeriksa hasil build.
+`versionCode` dan `versionName` diambil dari `android/AndroidManifest.xml`;
+naikkan keduanya setiap rilis agar Android mau memperbarui aplikasi yang sudah
+terpasang.
 
 ## Memasang di ponsel
 

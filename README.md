@@ -60,10 +60,10 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
 - **Warna aksen** tema dan **ekspor papan PNG** (aplikasi desktop).
 - Profil otomatis, penanda status, tray icon, mulai otomatis.
 - **Skala tombol per halaman** (100–140%) untuk layar sentuh besar.
-- Klien Remote di ponsel/tablet (PWA, dipasangkan lewat kode QR), bisa dipasang
-  sebagai aplikasi bila tersedia HTTPS. Remote punya halaman awal sendiri,
-  mode kios/layar tetap menyala, dan setiap perangkat memakai token sendiri
-  sehingga bisa dilupakan satu per satu.
+- Klien Remote di ponsel/tablet (dipasangkan lewat kode QR) dengan halaman awal
+  sendiri, mode kios/layar tetap menyala, dan token per perangkat sehingga bisa
+  dilupakan satu per satu. Bisa dipasang sebagai **APK KumiDeck Remote**
+  (Android, tanpa sertifikat) atau sebagai PWA bila tersedia HTTPS.
 - Jendela native Windows 11: title bar sendiri (perkecil/perbesar/tutup),
   kepala aplikasi dipakai untuk menggeser jendela, tata letak padat tanpa
   batang gulir halaman.
@@ -83,6 +83,16 @@ Dari paket rilis: ekstrak ZIP lalu jalankan `Jalankan KumiDeck.cmd` (atau
 `KumiDeck.exe`). Papan terbuka di jendela aplikasi sendiri; untuk klien Remote,
 buka `http://<ip-komputer>:4173/remote` dari perangkat di Wi-Fi yang sama, lalu
 pasangkan dengan kode yang tampil di layar komputer.
+
+Untuk memasang Remote sebagai aplikasi di Android ada dua pilihan:
+
+- **APK KumiDeck Remote** (disarankan, tanpa sertifikat): unduh
+  `KumiDeck-<versi>-remote.apk` dari halaman rilis, izinkan pemasangan dari
+  sumber tak dikenal, lalu isi alamat server saat aplikasi pertama dibuka.
+  Sumber dan cara membangunnya ada di [`android/README.md`](android/README.md).
+- **PWA lewat HTTPS**: Chrome Android hanya menawarkan “Pasang aplikasi” pada
+  konteks aman (`https://` dengan sertifikat dipercaya), jadi mode HTTPS di
+  bawah ini diperlukan.
 
 Dari kode sumber (butuh .NET SDK 10):
 
