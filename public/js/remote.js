@@ -965,7 +965,7 @@
         if (judulTidakAman) judulTidakAman.textContent = "Pemasangan butuh HTTPS";
         if (hintTidakAman) {
           hintTidakAman.textContent =
-            "Chrome hanya bisa memasang aplikasi lewat HTTPS. Di desktop jalankan start-https.cmd, pasang sertifikat di perangkat Remote, lalu buka tautan https.";
+            "Chrome hanya memasang aplikasi lewat HTTPS. Jalankan “Jalankan KumiDeck HTTPS.cmd” di komputer lalu pasang sertifikatnya, atau gunakan APK KumiDeck Remote dari halaman rilis GitHub.";
         }
       }
     }

@@ -24,6 +24,10 @@ native/**/bin/
 native/**/obj/
 native/**/publish/
 
+# Hasil build APK Android Remote (dibuat ulang oleh android/build-apk.ps1)
+android/build/
+android/out/
+
 # Dependensi build (dipasang otomatis oleh scripts/buat-exe.ps1)
 node_modules/
 package-lock.json

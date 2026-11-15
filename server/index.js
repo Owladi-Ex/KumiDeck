@@ -803,7 +803,7 @@ const handler = async (req, res) => {
       tautan: tautanRemote(),
       petunjuk: httpsAktif
         ? "Pasang sertifikat di perangkat Remote, lalu buka tautan HTTPS dan pilih “Pasang aplikasi”."
-        : "Aktifkan mode HTTPS (start-https.cmd) agar perangkat Remote bisa memasang aplikasinya.",
+        : "Aktifkan mode HTTPS (Jalankan KumiDeck HTTPS.cmd) atau gunakan APK KumiDeck Remote, sehingga perangkat Remote tidak perlu sertifikat.",
     });
   }
 
