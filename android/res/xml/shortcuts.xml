@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pintasan tekan-lama ikon peluncur: buka layar alamat server tanpa harus
+     menunggu sambungan gagal. Intent-nya eksplisit ke MainActivity. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="ganti-alamat"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/pintasan_ganti_pendek"
+        android:shortcutLongLabel="@string/pintasan_ganti_panjang">
+        <intent
+            android:action="id.kumideck.remote.SETUP"
+            android:targetPackage="id.kumideck.remote"
+            android:targetClass="id.kumideck.remote.MainActivity" />
+    </shortcut>
+</shortcuts>

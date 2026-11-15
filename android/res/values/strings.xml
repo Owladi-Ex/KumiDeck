@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">KumiDeck Remote</string>
+    <string name="pintasan_ganti_pendek">Ganti alamat</string>
+    <string name="pintasan_ganti_panjang">Ganti alamat server KumiDeck</string>
 </resources>

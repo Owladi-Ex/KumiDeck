@@ -45,6 +45,7 @@ public class MainActivity extends Activity {
 
     private static final String PREFS = "kumideck-remote";
     private static final String KEY_ASAL = "asal"; /* scheme://host:port */
+    private static final String AKSI_SETUP = "id.kumideck.remote.SETUP";
     private static final String VERSI = "2.2.0";
 
     private static final int WARNA_LATAR = 0xFF17171B;
@@ -62,6 +63,7 @@ public class MainActivity extends Activity {
     private View lapisGalat;
     private TextView pesanGalat;
     private String alamatTampil = "";
+    private boolean diSetup = false;
     private View tampilanPenuh;
     private WebChromeClient.CustomViewCallback callbackPenuh;
 
@@ -76,7 +78,7 @@ public class MainActivity extends Activity {
         akar.setBackgroundColor(WARNA_LATAR);
         setContentView(akar);
 
-        if (getIntent() != null && getIntent().getBooleanExtra("setup", false)) {
+        if (mintaSetup(getIntent())) {
             tampilkanSetup(alamatTersimpan());
             return;
         }
@@ -88,9 +90,18 @@ public class MainActivity extends Activity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        if (intent != null && intent.getBooleanExtra("setup", false)) {
+        setIntent(intent);
+        if (mintaSetup(intent)) {
             tampilkanSetup(alamatTersimpan());
         }
+    }
+
+    /* Pintasan tekan-lama ikon memakai aksi khusus; extra "setup" lama tetap
+       diterima agar tautan atau uji adb yang sudah ada tidak rusak. */
+    private boolean mintaSetup(Intent intent) {
+        if (intent == null) return false;
+        return AKSI_SETUP.equals(intent.getAction())
+            || intent.getBooleanExtra("setup", false);
     }
 
     /* ------------------------------------------------------------- setelan -- */
@@ -189,6 +200,26 @@ public class MainActivity extends Activity {
         catatan.setPadding(0, dp(22), 0, 0);
         isi.addView(catatan);
 
+        /* Saat alamat sudah pernah tersimpan, layar ini juga dibuka lewat
+           pintasan tekan-lama ikon: sediakan jalan kembali tanpa memutus. */
+        final String tersimpan = alamatTersimpan();
+        if (!tersimpan.isEmpty()) {
+            Button kembali = new Button(this);
+            kembali.setText("Kembali ke papan");
+            kembali.setAllCaps(false);
+            kembali.setTextColor(WARNA_TEKS);
+            LinearLayout.LayoutParams lpKembali = new LinearLayout.LayoutParams(ISI, dp(48));
+            lpKembali.topMargin = dp(10);
+            kembali.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    buka(tersimpan + "/remote");
+                }
+            });
+            isi.addView(kembali, lpKembali);
+        }
+
+        diSetup = true;
         akar.addView(gulir, new FrameLayout.LayoutParams(ISI, ISI));
     }
 
@@ -198,6 +229,7 @@ public class MainActivity extends Activity {
         lepasWeb();
         akar.removeAllViews();
         alamatTampil = url;
+        diSetup = false;
 
         web = new WebView(this);
         web.setBackgroundColor(Color.parseColor("#eeede8"));
@@ -488,6 +520,10 @@ public class MainActivity extends Activity {
         }
         if (web != null && web.canGoBack()) {
             web.goBack();
+            return;
+        }
+        if (diSetup && !alamatTersimpan().isEmpty()) {
+            buka(alamatTersimpan() + "/remote");
             return;
         }
         super.onBackPressed();
