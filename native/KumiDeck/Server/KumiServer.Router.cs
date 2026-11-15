@@ -140,18 +140,45 @@ public sealed partial class KumiServer
                 }
                 using var dok = BodyJson(req);
                 var kode = "";
+                var deviceId = "";
+                var platformPasang = "";
+                var namaPasang = "";
                 if (dok is not null &&
-                    dok.RootElement.ValueKind == JsonValueKind.Object &&
-                    dok.RootElement.TryGetProperty("code", out var c) &&
-                    c.ValueKind == JsonValueKind.String)
+                    dok.RootElement.ValueKind == JsonValueKind.Object)
                 {
-                    kode = c.GetString() ?? "";
+                    if (dok.RootElement.TryGetProperty("code", out var c) &&
+                        c.ValueKind == JsonValueKind.String)
+                    {
+                        kode = c.GetString() ?? "";
+                    }
+                    deviceId = Teks(dok.RootElement, "deviceId");
+                    platformPasang = Teks(dok.RootElement, "platform");
+                    namaPasang = Teks(dok.RootElement, "nama");
                 }
                 kode = (kode.Length == 0 ? req.Q("code") ?? "" : kode)
                     .Trim().ToLowerInvariant().Replace("-", "").Replace(" ", "");
                 if (kode.Length > 0 && kode == Store.Token)
                 {
-                    KirimJson(res, 200, new { ok = true, token = Store.Token });
+                    /* Klien lama mengirim data perangkat di query, yang baru di body. */
+                    var platform = platformPasang.Length > 0 ? platformPasang : req.Q("platform") ?? "android";
+                    var nama = namaPasang.Length > 0 ? namaPasang : req.Q("nama") ?? "";
+                    /* Token per perangkat: mencabut satu ponsel tidak mengganggu
+                       perangkat lain. Klien lama tanpa deviceId tetap memakai
+                       token bersama. */
+                    var token = deviceId.Length == 0
+                        ? Store.Token
+                        : TokenUntukPasangan(deviceId, platform, nama);
+                    if (token.Length == 0)
+                    {
+                        KirimJson(res, 403, new
+                        {
+                            ok = false,
+                            code = "butuh-pasangan",
+                            message = "Perangkat ini sudah dilupakan. Masukkan kode baru dari layar desktop.",
+                        });
+                        return;
+                    }
+                    KirimJson(res, 200, new { ok = true, token });
                 }
                 else
                 {
@@ -187,6 +214,29 @@ public sealed partial class KumiServer
             {
                 if (ButuhToken(req, res, this)) return;
                 await TanganiPress(req, res);
+                return;
+            }
+
+            if (jalur == "/api/press/izinkan")
+            {
+                if (ButuhToken(req, res, this)) return;
+                TanganiIzinkanAksi(req, res);
+                return;
+            }
+
+            /* --- perangkat ------------------------------------------------- */
+            if (jalur == "/api/devices/revoke")
+            {
+                if (ButuhToken(req, res, this)) return;
+                using var dokRevoke = BodyJson(req);
+                var idRevoke = dokRevoke is null ? "" : Teks(dokRevoke.RootElement, "deviceId");
+                if (idRevoke.Length == 0)
+                {
+                    KirimJson(res, 400, new { ok = false, message = "Perangkat tidak dipilih." });
+                    return;
+                }
+                CabutPerangkat(idRevoke);
+                KirimJson(res, 200, new { ok = true });
                 return;
             }
 
@@ -1066,6 +1116,31 @@ public sealed partial class KumiServer
             return;
         }
 
+        /* Tekan lama = aksi kedua (#2.2). Bila tombol belum punya aksi kedua,
+           jangan jalan diam-diam: beri tahu pemakainya. */
+        var kedua = Teks(body, "kedua") is "1" or "true";
+        if (kedua && key.ActionKedua is null)
+        {
+            KirimJson(res, 200, new { ok = true, message = "Tombol ini belum punya aksi kedua." });
+            return;
+        }
+        var aksi = kedua ? key.ActionKedua! : key.Action;
+
+        /* Skrip butuh izin sekali per tombol. */
+        if (aksi.Type == "skrip" && !aksi.Izin)
+        {
+            var alat = aksi.Target is null ? "" : System.IO.Path.GetFileName(aksi.Target);
+            KirimJson(res, 409, new
+            {
+                ok = false,
+                code = "butuh-izin",
+                message = "Jalankan skrip " + alat + "? Komputer akan menjalankan berkas ini.",
+                skrip = alat,
+                alasan = "Tekan setuju hanya bila berkas ini kamu pasang sendiri.",
+            });
+            return;
+        }
+
         CatatPerangkat(Teks(body, "deviceId"), Teks(body, "platform"), Teks(body, "name"));
 
         if (AksiBerjalan >= BatasAksiBersamaan)
@@ -1087,7 +1162,7 @@ public sealed partial class KumiServer
                 Store.Deck.Pages.Select(h => h.Id).ToList(),
                 Store.Deck.Soundboard.ToList(),
                 Port);
-            hasil = await ActionRunner.JalankanAsync(key.Action, konteks);
+            hasil = await ActionRunner.JalankanAsync(aksi, konteks);
         }
         catch (Exception ex)
         {
@@ -1106,7 +1181,7 @@ public sealed partial class KumiServer
             KeyId = keyId,
             Label = key.Label,
             Ok = hasil.Ok,
-            Message = string.IsNullOrEmpty(hasil.Message) ? ActionRunner.Ringkas(key.Action) : hasil.Message,
+            Message = string.IsNullOrEmpty(hasil.Message) ? ActionRunner.Ringkas(aksi) : hasil.Message,
             Platform = Teks(body, "platform") == "android" ? "android" : "desktop",
             Durasi = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - mulai,
         };
@@ -1146,6 +1221,61 @@ public sealed partial class KumiServer
         {
             return _aktivitas.ToList();
         }
+    }
+
+    /* Konfirmasi skrip: pengguna menyetujui sekali, izin tersimpan di tombol,
+       lalu skrip langsung dijalankan. */
+    private void TanganiIzinkanAksi(HttpPermintaan req, HttpJawaban res)
+    {
+        using var dok = BodyJson(req);
+        if (dok is null || dok.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            KirimJson(res, 400, new { ok = false, message = "Isi permintaan tidak valid." });
+            return;
+        }
+        var body = dok.RootElement;
+        var pageId = Teks(body, "pageId");
+        var keyId = Teks(body, "keyId");
+        var kedua = Teks(body, "kedua") is "1" or "true";
+
+        var halaman = Store.Deck.Pages.FirstOrDefault(h => h.Id == pageId);
+        var key = halaman?.Keys.FirstOrDefault(k => k?.Id == keyId);
+        var aksi = key is null ? null : kedua ? key.ActionKedua : key.Action;
+        if (aksi is null || aksi.Type != "skrip")
+        {
+            KirimJson(res, 404, new { ok = false, message = "Tombol skrip tidak ditemukan." });
+            return;
+        }
+
+        var hasil = ScriptAction.Jalankan(aksi.Target, aksi.Args);
+        if (hasil.Ok)
+        {
+            /* Izin disimpan supaya tidak bertanya tiap kali tombol ditekan. */
+            aksi.Izin = true;
+            Store.Simpan();
+
+            CatatAktivitas(new Aktivitas
+            {
+                Id = Convert.ToHexString(RandomNumberGenerator.GetBytes(4)).ToLowerInvariant(),
+                Time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                PageId = pageId,
+                KeyId = keyId,
+                Label = key!.Label,
+                Ok = true,
+                Message = hasil.Pesan,
+                Platform = Teks(body, "platform") == "android" ? "android" : "desktop",
+                Durasi = 0,
+            });
+        }
+
+        KirimJson(res, hasil.Ok ? 200 : 500, new
+        {
+            ok = hasil.Ok,
+            message = hasil.Pesan,
+            /* Pembukaan dialog izin hanya sekali: tutup tampilan konfirmasi. */
+            izin = hasil.Ok,
+            activity = AktivitasSnapshot(),
+        });
     }
 
     /* --------------------------------------------------------------- SSE --- */

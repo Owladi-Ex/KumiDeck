@@ -120,6 +120,20 @@ public static class DeckNormalizer
                 var target = Teks(Prop(aksi, "target"), 500);
                 return target.Length == 0 ? Aksi.Kosong() : new Aksi { Type = "buka", Target = target };
             }
+            case "skrip":
+            {
+                var target = Teks(Prop(aksi, "target"), 500);
+                if (target.Length == 0) return Aksi.Kosong();
+                var args = TeksBiasa(
+                    Prop(aksi, "args") is { ValueKind: JsonValueKind.String } s ? s.GetString() : "", 200);
+                return new Aksi
+                {
+                    Type = "skrip",
+                    Target = target,
+                    Args = args,
+                    Izin = Bool(Prop(aksi, "izin"), false),
+                };
+            }
             case "http":
             {
                 var url = Teks(Prop(aksi, "url"), 500);
@@ -280,6 +294,7 @@ public static class DeckNormalizer
         if (!Varian.Contains(varian)) varian = "default";
 
         var widget = NormalWidget(Prop(tombol, "widget"));
+        var kedua = widget is null ? NormalAksi(Prop(tombol, "actionKedua")) : Aksi.Kosong();
         return new Tombol
         {
             Id = Teks(Prop(tombol, "id"), 40, idFallback),
@@ -290,6 +305,7 @@ public static class DeckNormalizer
             Widget = widget,
             TandaiAktif = widget is null ? NormalTandaAktif(Prop(tombol, "tandaiAktif")) : null,
             Action = widget is null ? NormalAksi(Prop(tombol, "action")) : Aksi.Kosong(),
+            ActionKedua = kedua.Type == "kosong" ? null : kedua,
         };
     }
 
@@ -301,6 +317,7 @@ public static class DeckNormalizer
         {
             Id = Teks(Prop(halaman, "id"), 40, IdBaru("p_")),
             Name = Teks(Prop(halaman, "name"), 24, "Halaman"),
+            Skala = Math.Clamp(AngkaBulat(Prop(halaman, "skala"), 100) / 10 * 10, 100, 140),
         };
 
         var sumber = Prop(halaman, "keys") is { ValueKind: JsonValueKind.Array } arr
@@ -315,6 +332,11 @@ public static class DeckNormalizer
             if (tombol is not null)
             {
                 tombol.Action = RapikanHalamanDiAksi(tombol.Action, halamanSah);
+                if (tombol.ActionKedua is not null)
+                {
+                    tombol.ActionKedua = RapikanHalamanDiAksi(tombol.ActionKedua, halamanSah);
+                    if (tombol.ActionKedua.Type == "kosong") tombol.ActionKedua = null;
+                }
             }
             halamanBaru.Keys.Add(tombol);
         }

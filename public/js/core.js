@@ -189,16 +189,35 @@
     },
 
     /* -------------------------------------------------------- aksi --- */
-    tekan: function (pageId, keyId) {
+    tekan: function (pageId, keyId, kedua) {
       return KD.api("/api/press", {
         method: "POST",
         body: {
           pageId: pageId,
           keyId: keyId,
+          kedua: kedua ? "1" : "",
           deviceId: KD.deviceId,
           platform: KD.platform,
         },
       });
+    },
+
+    /* Setujui skrip yang menunggu izin di komputer ini. */
+    izinkanSkrip: function (pageId, keyId, kedua) {
+      return KD.api("/api/press/izinkan", {
+        method: "POST",
+        body: {
+          pageId: pageId,
+          keyId: keyId,
+          kedua: kedua ? "1" : "",
+          platform: KD.platform,
+        },
+      });
+    },
+
+    /* Lupakan perangkat Remote: tokennya mati, perangkat harus memasang ulang. */
+    cabutPerangkat: function (deviceId) {
+      return KD.api("/api/devices/revoke", { method: "POST", body: { deviceId: deviceId } });
     },
 
     simpanDeck: function (deck) {
@@ -404,26 +423,44 @@
     },
 
     _terjemahAtribut: function (el) {
-      var atribut = ["aria-label", "title", "placeholder", "alt", "value"];
+      /* "value" sengaja tidak diterjemahkan: nilai option/select adalah
+         pengenal aksi (mis. "naik", "turun") dan tidak boleh ikut berubah. */
+      var atribut = ["aria-label", "title", "placeholder", "alt"];
       var simpan = KD._atributAsli && KD._atributAsli.get(el);
       if (!simpan) {
         simpan = {};
         if (KD._atributAsli) KD._atributAsli.set(el, simpan);
       }
-      /* Lengkapi atribut baru yang cocok kamus: sebuah tombol bisa
-         mendapat aria-label lebih dulu dan title beberapa saat kemudian. */
+      /* Terjemahan Inggris dihitung tanpa mengubah bahasa yang sedang aktif. */
+      var keInggris = function (teks) {
+        var bahasaSimpan = KD.bahasa;
+        KD.bahasa = "en";
+        var hasil = KD.t(teks);
+        KD.bahasa = bahasaSimpan;
+        return hasil;
+      };
+
       for (var i = 0; i < atribut.length; i += 1) {
         var nama = atribut[i];
-        if (Object.prototype.hasOwnProperty.call(simpan, nama)) continue;
-        if (!el.hasAttribute || !el.hasAttribute(nama)) continue;
-        var nilai = el.getAttribute(nama);
-        if (!nilai || !Object.prototype.hasOwnProperty.call(window.KD_EN || {}, nilai)) continue;
-        simpan[nama] = nilai;
-      }
-      for (var nama2 in simpan) {
-        if (!Object.prototype.hasOwnProperty.call(simpan, nama2)) continue;
-        var tujuan = KD.bahasa === "en" ? KD.t(simpan[nama2]) : simpan[nama2];
-        if (el.getAttribute(nama2) !== tujuan) el.setAttribute(nama2, tujuan);
+        if (!el.hasAttribute || !el.hasAttribute(nama)) {
+          delete simpan[nama];
+          continue;
+        }
+        var kini = el.getAttribute(nama);
+        var data = simpan[nama];
+        /* Atribut baru, atau kode baru saja mengganti nilainya: simpan aslinya
+           supaya bisa diterjemahkan dan dipulihkan saat bahasa berganti. */
+        if (!data || (kini !== data.asli && kini !== data.inggris)) {
+          var inggrisBaru = keInggris(kini);
+          if (inggrisBaru === kini) {
+            delete simpan[nama];
+            continue;
+          }
+          data = { asli: kini, inggris: inggrisBaru };
+          simpan[nama] = data;
+        }
+        var tujuan = KD.bahasa === "en" ? data.inggris : data.asli;
+        if (kini !== tujuan) el.setAttribute(nama, tujuan);
       }
     },
 
@@ -454,7 +491,7 @@
         subtree: true,
         characterData: true,
         attributes: true,
-        attributeFilter: ["aria-label", "title", "placeholder", "alt", "value"],
+        attributeFilter: ["aria-label", "title", "placeholder", "alt"],
       });
     },
 
@@ -611,12 +648,16 @@
 
     relatif: function (waktu) {
       var detik = Math.max(0, Math.round((Date.now() - waktu) / 1000));
-      if (detik < 10) return "baru saja";
-      if (detik < 60) return detik + " detik lalu";
+      var en = KD.bahasa === "en";
+      var satuan = function (n, id, tunggal, jamak) {
+        return n + " " + (en ? (n === 1 ? tunggal : jamak) : id);
+      };
+      if (detik < 10) return en ? "just now" : "baru saja";
+      if (detik < 60) return satuan(detik, "detik lalu", "second ago", "seconds ago");
       var menit = Math.round(detik / 60);
-      if (menit < 60) return menit + " menit lalu";
+      if (menit < 60) return satuan(menit, "menit lalu", "minute ago", "minutes ago");
       var jam = Math.round(menit / 60);
-      return jam + " jam lalu";
+      return satuan(jam, "jam lalu", "hour ago", "hours ago");
     },
 
     kodePasangan: function (token) {
@@ -671,6 +712,7 @@
     hotkey: "Pintasan papan ketik",
     teks: "Mengetik teks",
     buka: "Membuka aplikasi atau tautan",
+    skrip: "Menjalankan skrip",
     http: "Permintaan HTTP",
     media: "Kontrol media",
     halaman: "Membuka halaman",
@@ -745,6 +787,7 @@
     var nama = KD.t(NAMA_TIPE[action.type] || action.type);
     if (action.type === "hotkey" && action.combo) return nama + " " + action.combo;
     if (action.type === "buka" && action.target) return nama + " " + action.target;
+    if (action.type === "skrip" && action.target) return nama + " " + action.target;
     if (action.type === "http" && action.url) return nama + " " + action.method + " " + action.url;
     if (action.type === "media" && action.cmd) return nama + " " + action.cmd;
     if (action.type === "jendela") return nama + ": " + KD.t(NAMA_JENDELA[action.cmd] || action.cmd);
@@ -769,6 +812,52 @@
   }
 
   /* ------------------------------------------------------------- init --- */
+  /* Tekan lama untuk semua tombol papan (desktop & Remote).
+     opsi: { ketuk, lama, jeda }. Gestur 550 ms; klik setelah tekan lama
+     diabaikan supaya satu gestur tidak menjalankan dua aksi. */
+  function pasangTekan(elemen, opsi) {
+    opsi = opsi || {};
+    var jeda = opsi.jeda || 550;
+    var timer = null;
+    var lamaTerjadi = false;
+    var aktif = false;
+
+    var batal = function () {
+      if (timer) window.clearTimeout(timer);
+      timer = null;
+    };
+
+    elemen.addEventListener("pointerdown", function (ev) {
+      if (ev.pointerType === "mouse" && ev.button !== 0) return;
+      lamaTerjadi = false;
+      aktif = true;
+      batal();
+      timer = window.setTimeout(function () {
+        timer = null;
+        if (!aktif) return;
+        lamaTerjadi = true;
+        if (opsi.lama) opsi.lama(ev);
+      }, jeda);
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(function (nama) {
+      elemen.addEventListener(nama, function () {
+        aktif = false;
+        batal();
+      });
+    });
+    /* Tahan di ponsel tidak boleh memunculkan menu konteks. */
+    elemen.addEventListener("contextmenu", function (ev) {
+      ev.preventDefault();
+    });
+    elemen.addEventListener("click", function (ev) {
+      if (lamaTerjadi) {
+        lamaTerjadi = false;
+        return;
+      }
+      if (opsi.ketuk) opsi.ketuk(ev);
+    });
+  }
+
   KD.token = ambilTokenAwal();
   KD.platform = deteksiPlatform();
   if (!KD.deviceId) {
@@ -777,6 +866,7 @@
   }
 
   KD.escapeHtml = escapeHtml;
+  KD.pasangTekan = pasangTekan;
   KD.jelaskanAksi = function (action) {
     return KD.t(jelaskanAksi(action));
   };
@@ -785,6 +875,7 @@
   KD.muatBahasa();
   KD.namaTipe = NAMA_TIPE;
   KD.namaWidget = NAMA_WIDGET;
+  KD.namaPerangkat = namaPerangkat;
   KD.bacaStore = readStore;
   KD.tulisStore = writeStore;
   KD.parseQuery = parseQuery;

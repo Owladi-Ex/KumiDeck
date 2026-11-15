@@ -40,8 +40,15 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
 
 - Papan tombol berhalaman (kolom 3–6, baris 2–4) dengan ikon, warna, dan varian tombol.
 - Aksi: pintasan papan ketik, mengetik teks, buka aplikasi/berkas/tautan,
-  permintaan HTTP, kontrol media, pindah halaman, urutan aksi, tindakan jendela,
-  volume sistem, daya komputer, serta aksi bersyarat menurut aplikasi di depan.
+  permintaan HTTP (dengan header tambahan), kontrol media, pindah halaman,
+  urutan aksi, tindakan jendela, volume sistem, daya komputer, aksi bersyarat
+  menurut aplikasi di depan, serta menjalankan skrip `.bat`/`.cmd`/`.ps1`/`.exe`
+  dengan izin sekali per tombol.
+- **Dua aksi per tombol**: ketuk menjalankan aksi utama, tekan lama menjalankan
+  aksi kedua — di papan desktop maupun Remote.
+- **Templat papan bawaan**: Streaming, Ngoding, Media, dan Kerja, siap diisi
+  dalam satu klik.
+- **Urungkan/ulangi** (`Ctrl+Z`/`Ctrl+Y`) untuk perubahan papan.
 - **Soundboard**: unggah berkas atau tautan, volume dan perangkat output per suara.
 - **Mute/unmute mikrofon** dari tombol papan.
 - **Ikon asli aplikasi** diekstrak otomatis saat menambah aplikasi terpasang.
@@ -52,8 +59,11 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
 - **Cadangan otomatis** 10 versi terakhir + pulihkan, serta unduh log dari setelan.
 - **Warna aksen** tema dan **ekspor papan PNG** (aplikasi desktop).
 - Profil otomatis, penanda status, tray icon, mulai otomatis.
+- **Skala tombol per halaman** (100–140%) untuk layar sentuh besar.
 - Klien Remote di ponsel/tablet (PWA, dipasangkan lewat kode QR), bisa dipasang
-  sebagai aplikasi bila tersedia HTTPS.
+  sebagai aplikasi bila tersedia HTTPS. Remote punya halaman awal sendiri,
+  mode kios/layar tetap menyala, dan setiap perangkat memakai token sendiri
+  sehingga bisa dilupakan satu per satu.
 - Jendela native Windows 11: title bar sendiri (perkecil/perbesar/tutup),
   kepala aplikasi dipakai untuk menggeser jendela, tata letak padat tanpa
   batang gulir halaman.

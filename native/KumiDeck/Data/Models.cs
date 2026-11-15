@@ -28,6 +28,7 @@ public sealed class Halaman
 {
     [JsonPropertyName("id")] public string Id { get; set; } = "";
     [JsonPropertyName("name")] public string Name { get; set; } = "Halaman";
+    [JsonPropertyName("skala")] public int Skala { get; set; } = 100;
     [JsonPropertyName("keys")] public List<Tombol?> Keys { get; set; } = new();
 }
 
@@ -41,6 +42,7 @@ public sealed class Tombol
     [JsonPropertyName("widget"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] public Widget? Widget { get; set; }
     [JsonPropertyName("tandaiAktif"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] public Penanda? TandaiAktif { get; set; }
     [JsonPropertyName("action")] public Aksi Action { get; set; } = Aksi.Kosong();
+    [JsonPropertyName("actionKedua"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] public Aksi? ActionKedua { get; set; }
 }
 
 public sealed class Warna
@@ -92,6 +94,8 @@ public sealed class Aksi
     [JsonPropertyName("headers")] public List<HeaderHttp>? Headers { get; set; }
 
     [JsonPropertyName("cmd")] public string? Cmd { get; set; }
+    [JsonPropertyName("args")] public string? Args { get; set; }
+    [JsonPropertyName("izin")] public bool Izin { get; set; }
     [JsonPropertyName("pageId")] public string? PageId { get; set; }
     [JsonPropertyName("steps")] public List<Langkah>? Steps { get; set; }
     [JsonPropertyName("soundId")] public string? SoundId { get; set; }

@@ -32,6 +32,7 @@
     { id: "hotkey", label: "Pintasan papan ketik" },
     { id: "teks", label: "Mengetik teks" },
     { id: "buka", label: "Buka aplikasi, berkas, atau tautan" },
+    { id: "skrip", label: "Jalankan skrip (.bat, .ps1)" },
     { id: "http", label: "Permintaan HTTP" },
     { id: "media", label: "Kontrol media" },
     { id: "halaman", label: "Pindah halaman" },
@@ -108,6 +109,7 @@
     hotkey: "Tulis kombinasi dengan tanda +, mis. ctrl+shift+m atau win+l. Tombol yang dikenal: ctrl, shift, alt, win, a-z, 0-9, f1-f24, panah, enter, tab, esc, space, del, printscreen.",
     teks: "Teks dikirim ke jendela yang sedang aktif. Huruf, angka, dan tanda baca biasa didukung.",
     buka: "Contoh: notepad, calc, ms-settings:, https://github.com, %USERPROFILE%\\Downloads.",
+    skrip: "Berkas .bat, .cmd, .ps1, atau .exe di komputer host. Saat pertama ditekan, desktop meminta izin; setelah disetujui skrip jalan tanpa bertanya lagi.",
     http: "Permintaan dikirim dari komputer host (bukan dari ponsel). Cocok untuk pemantik skrip atau layanan rumah pintar di jaringan lokal.",
     media: "Kontrol pemutar media yang sedang aktif di komputer ini.",
     halaman: "Berpindah ke halaman lain di papan. Halaman tujuan harus masih ada.",
@@ -160,7 +162,7 @@
     halamanId: null,
     sunting: false,
     suntingSel: null /* { halamanId, indeks } */,
-    editor: null /* { halamanId, indeks, draft, sumber, cari } */,
+    editor: null /* { halamanId, indeks, draft, slot, sumber, cari } */,
     apps: null /* daftar aplikasi terpasang */,
     appsMemuat: false,
     appsGalat: "",
@@ -293,10 +295,13 @@
 
     var teksPerangkat = $("#status-perangkat");
     if (jumlahRemote === 0) {
-      teksPerangkat.textContent = "Belum ada perangkat Remote terpasang";
+      teksPerangkat.textContent = KD.t("Belum ada perangkat Remote terpasang");
     } else {
       teksPerangkat.textContent =
-        jumlahRemote + " Remote terhubung" + (jumlahSemua > jumlahRemote ? " · desktop aktif" : "");
+        jumlahRemote +
+        " " +
+        KD.t("Remote terhubung") +
+        (jumlahSemua > jumlahRemote ? " · " + KD.t("desktop aktif") : "");
     }
 
     var status = $("#status-koneksi");
@@ -353,6 +358,8 @@
     var kolom = kolomPapan();
     S.kolomTerpasang = kolom;
     papan.style.setProperty("--kd-cols", String(kolom));
+    /* Skala tombol per halaman (#2.2). 100% = bawaan. */
+    papan.style.setProperty("--kd-skala", String((halaman.skala || 100) / 100));
     papan.setAttribute("aria-busy", "false");
     papan.hidden = false;
     memuat.hidden = true;
@@ -376,11 +383,13 @@
         tombol.setAttribute(
           "aria-label",
           (key ? key.label + " — " + KD.jelaskan(key.action) : "Slot kosong") +
-            (key ? " (klik untuk menyunting)" : " — klik untuk mengisi")
+            (key
+              ? " (" + KD.t("klik untuk menyunting") + ")"
+              : " — " + KD.t("klik untuk mengisi"))
         );
       }
 
-      tombol.addEventListener("click", function () {
+      var jalankan = function (kedua) {
         /* Kunci tata letak hanya menahan penyuntingan — menjalankan aksi tetap
            boleh, karena itu pemakaian normal papan. */
         var mauSunting = S.sunting && !terkunci();
@@ -393,9 +402,26 @@
           /* Widget bukan tombol kerja: tidak ada yang dijalankan. */
           KD.segarkanWidget();
         } else if (key) {
-          tekanTombol(halaman.id, key.id, tombol);
+          tekanTombol(halaman.id, key.id, tombol, kedua);
         }
-      });
+      };
+
+      if (key && key.actionKedua && !S.sunting) {
+        KD.pasangTekan(tombol, {
+          ketuk: function () {
+            jalankan(false);
+          },
+          lama: function () {
+            KD.toast("Aksi tekan lama: " + KD.jelaskan(key.actionKedua), "info");
+            if (window.Kumi) Kumi.sound.play("toggle");
+            jalankan(true);
+          },
+        });
+      } else {
+        tombol.addEventListener("click", function () {
+          jalankan(false);
+        });
+      }
 
       /* Penanda slot yang baru dipilih di mode sunting. */
       if (
@@ -588,7 +614,7 @@
         if (segar) {
           lencana.innerHTML = '<span class="kumi-dot"></span>';
         }
-        lencana.appendChild(document.createTextNode(segar ? "Aktif" : "Menunggu"));
+        lencana.appendChild(document.createTextNode(KD.t(segar ? "Aktif" : "Menunggu")));
 
         li.appendChild(ikon);
         li.appendChild(isi);
@@ -604,7 +630,9 @@
       }).length;
       statusPasang.classList.toggle("is-online", jumlahRemote > 0);
       statusPasang.querySelector("span:last-child").textContent =
-        jumlahRemote > 0 ? jumlahRemote + " Remote terhubung" : "Menunggu perangkat";
+        jumlahRemote > 0
+          ? jumlahRemote + " " + KD.t("Remote terhubung")
+          : KD.t("Menunggu perangkat");
     }
   }
 
@@ -669,20 +697,48 @@
     if (window.Kumi) Kumi.sound.play("toggle");
   }
 
-  function tekanTombol(pageId, keyId, tombolEl) {
+  function tekanTombol(pageId, keyId, tombolEl, kedua) {
     KD.kilat(tombolEl);
     tombolEl.classList.add("kena-aksi");
     window.setTimeout(function () {
       tombolEl.classList.remove("kena-aksi");
     }, 520);
 
-    KD.tekan(pageId, keyId)
+    KD.tekan(pageId, keyId, kedua)
       .then(function (hasil) {
         if (!hasil.ok && window.Kumi) {
           Kumi.sound.play("error");
           KD.toast(hasil.message || "Aksi gagal dijalankan.", "danger");
         }
         if (hasil.navigate) pindahHalaman(hasil.navigate);
+        if (Array.isArray(hasil.activity)) {
+          S.aktivitas = hasil.activity;
+          renderAktivitas();
+        }
+      })
+      .catch(function (galat) {
+        if (galat && galat.status === 409 && galat.code === "butuh-izin") {
+          tanyaIzinSkrip(pageId, keyId, kedua, galat.message);
+          return;
+        }
+        tandaiTerputus(galat);
+      });
+  }
+
+  /* Konfirmasi skrip sekali per tombol (409 butuh-izin). */
+  function tanyaIzinSkrip(pageId, keyId, kedua, pesan) {
+    var teks =
+      KD.t(pesan || "Jalankan skrip ini?") +
+      "\n\n" +
+      KD.t("Tekan setuju hanya bila berkas skrip itu kamu pasang sendiri di komputer ini.");
+    if (!window.confirm(teks)) {
+      KD.toast("Skrip tidak dijalankan.", "info");
+      return;
+    }
+    KD.izinkanSkrip(pageId, keyId, kedua)
+      .then(function (hasil) {
+        if (window.Kumi) Kumi.sound.play(hasil.ok ? "success" : "error");
+        KD.toast(hasil.message || "Skrip dijalankan.", hasil.ok ? "ok" : "danger");
         if (Array.isArray(hasil.activity)) {
           S.aktivitas = hasil.activity;
           renderAktivitas();
@@ -707,6 +763,16 @@
 
   /* ------------------------------------------------------------- keadaan --- */
   function terapkanState(state) {
+    /* Penanda: pembaruan ini berasal dari simpanan kita sendiri, jadi riwayat
+       urungkan tidak boleh dibuang (kalau dibuang, Ctrl+Y langsung mati).
+       Sinyal sinkron bisa tiba sebelum jawaban simpan, karena itu ada penanda
+       simpanMenunggu; papan yang sama persis juga tidak mengubah riwayat. */
+    var jsonBaru = state.deck ? JSON.stringify(state.deck) : "";
+    var dariSimpananSendiri =
+      S_riwayat.sibuk ||
+      S_riwayat.simpanMenunggu > 0 ||
+      (!!S_riwayat.tersimpan && jsonBaru === S_riwayat.tersimpan) ||
+      (!!S.deck && jsonBaru === JSON.stringify(S.deck));
     S.deck = state.deck;
     S.perangkat = state.devices || [];
     S.aktivitas = state.activity || [];
@@ -733,6 +799,7 @@
     }
     renderSemua();
     terapkanKunci();
+    if (!dariSimpananSendiri) riwayatBersih(S.deck);
   }
 
   function muatState() {
@@ -905,7 +972,7 @@
     if (!daftar.length) {
       return '<div class="kd-hint" style="padding:8px">Tidak ada aplikasi yang cocok.</div>';
     }
-    var target = (S.editor && S.editor.draft && S.editor.draft.action.target) || "";
+    var target = aksiDraft().target || "";
     return daftar
       .map(function (a) {
         var terpilih = a.target === target;
@@ -938,7 +1005,7 @@
   function htmlPaneBuka() {
     if (!S.editor) return "";
     var sumber = S.editor.sumber || "aplikasi";
-    var target = S.editor.draft.action.target || "";
+    var target = aksiDraft().target || "";
 
     if (sumber === "tautan") {
       return (
@@ -1092,6 +1159,20 @@
       opt.textContent = j.label;
       pilih.appendChild(opt);
     });
+    segarkanPilihanJenis();
+  }
+
+  /* Widget hanya masuk akal untuk aksi utama; sembunyikan dari slot tekan lama. */
+  function segarkanPilihanJenis() {
+    var pilih = $("#editor-jenis");
+    if (!pilih || !S.editor) return;
+    var slotKedua = S.editor.slot === 1;
+    Array.prototype.forEach.call(pilih.options, function (opt) {
+      var larang = slotKedua && opt.value === "widget";
+      opt.hidden = larang;
+      opt.disabled = larang;
+    });
+    if (slotKedua && pilih.value === "widget") pilih.value = "kosong";
   }
 
   function dapatkanGalatEditor() {
@@ -1138,6 +1219,7 @@
       halamanId: halamanId,
       indeks: indeks,
       draft: draft,
+      slot: 0,
       sumber: sumberAwal,
       cari: "",
     };
@@ -1147,16 +1229,14 @@
     $("#editor-judul").textContent = asli ? "Sunting tombol" : "Isi slot kosong";
     $("#editor-label").value = draft.label || "";
     $("#editor-label").removeAttribute("aria-invalid");
-    $("#editor-jenis").value = draft.widget
-      ? "widget"
-      : draft.action
-        ? draft.action.type
-        : "kosong";
     $("#editor-hapus").hidden = !asli;
     if ($("#editor-duplikat")) $("#editor-duplikat").hidden = !asli;
+    if ($("#editor-slot")) $("#editor-slot").hidden = !!draft.widget;
     muatIkonKustom();
     tandaiIkonTerpilih();
     tandaiVarianTerpilih();
+    /* Jenis aksi awal mengikuti slot yang sedang disunting. */
+    $("#editor-jenis").value = draft.widget ? "widget" : aksiDraft().type || "kosong";
     /* Penanda status (#20). */
     if ($("#editor-tanda-proses")) {
       $("#editor-tanda-proses").value = (draft.tandaiAktif && draft.tandaiAktif.proses) || "";
@@ -1170,14 +1250,110 @@
     renderPapan();
   }
 
-  /* Field parameter mengikuti jenis aksi. */
+  /* Field parameter mengikuti jenis aksi.
+     S.editor.slot: 0 = aksi ketuk, 1 = aksi tekan lama. */
+  function aksiDraft() {
+    if (!S.editor) return { type: "kosong" };
+    if (!S.editor.slot) {
+      if (!S.editor.draft.action) S.editor.draft.action = { type: "kosong" };
+      return S.editor.draft.action;
+    }
+    if (!S.editor.draft.actionKedua) S.editor.draft.actionKedua = { type: "kosong" };
+    return S.editor.draft.actionKedua;
+  }
+
+  function setAksiDraft(aksi) {
+    if (!S.editor) return;
+    if (!S.editor.slot) {
+      S.editor.draft.action = aksi;
+      return;
+    }
+    S.editor.draft.actionKedua = aksi && aksi.type !== "kosong" ? aksi : null;
+  }
+
+  /* Header HTTP lanjutan: baris nama/nilai yang bisa ditambah & dihapus.
+     Nilai header sering berupa token, jadi tidak pernah ditampilkan di log. */
+  function renderHeaderHttp() {
+    var wadah = $("#param-http-header-daftar");
+    if (!wadah || !S.editor) return;
+    var aksi = aksiDraft();
+    var daftar = Array.isArray(aksi.headers) ? aksi.headers : [];
+    wadah.innerHTML = "";
+    if (!daftar.length) {
+      var kosong = document.createElement("div");
+      kosong.className = "kd-hint";
+      kosong.textContent = "Belum ada header tambahan.";
+      wadah.appendChild(kosong);
+      return;
+    }
+    daftar.forEach(function (h, i) {
+      var baris = document.createElement("div");
+      baris.className = "kd-header-baris__isi";
+
+      var nama = document.createElement("input");
+      nama.className = "kumi-input";
+      nama.type = "text";
+      nama.autocomplete = "off";
+      nama.placeholder = "Nama header";
+      nama.setAttribute("aria-label", "Nama header " + (i + 1));
+      nama.value = h.name || "";
+      nama.addEventListener("input", function () {
+        h.name = nama.value.trim();
+      });
+
+      var nilai = document.createElement("input");
+      nilai.className = "kumi-input";
+      nilai.type = "text";
+      nilai.autocomplete = "off";
+      nilai.placeholder = "Nilai";
+      nilai.setAttribute("aria-label", "Nilai header " + (i + 1));
+      nilai.value = h.value || "";
+      nilai.addEventListener("input", function () {
+        h.value = nilai.value;
+      });
+
+      var hapus = document.createElement("button");
+      hapus.type = "button";
+      hapus.className = "kumi-btn kumi-btn--ghost kumi-btn--icon";
+      hapus.setAttribute("aria-label", "Hapus header " + (i + 1));
+      hapus.innerHTML = KD.ikon("i-trash");
+      hapus.addEventListener("click", function () {
+        kumpulkanHeader();
+        aksiDraft().headers.splice(i, 1);
+        renderHeaderHttp();
+      });
+
+      baris.appendChild(nama);
+      baris.appendChild(nilai);
+      baris.appendChild(hapus);
+      wadah.appendChild(baris);
+    });
+  }
+
+  /* Nilai sudah ditulis langsung oleh event input; ini hanya memastikan
+     bentuknya array sebelum disimpan. */
+  function kumpulkanHeader() {
+    var aksi = aksiDraft();
+    if (!Array.isArray(aksi.headers)) aksi.headers = [];
+    aksi.headers = aksi.headers.filter(function (h) {
+      return h && (h.name || h.value);
+    });
+    return aksi.headers;
+  }
+
   function renderParamEditor() {
     var wadah = $("#editor-param");
     if (!S.editor) return;
-    var aksi = S.editor.draft.action || { type: "kosong" };
+    var aksi = aksiDraft();
     /* Widget tidak menyimpan aksi, jadi jenisnya dibaca dari draft.widget. */
-    var jenis = S.editor.draft.widget ? "widget" : aksi.type || "kosong";
+    var jenis =
+      S.editor.slot ? aksi.type || "kosong" : S.editor.draft.widget ? "widget" : aksi.type || "kosong";
     $("#editor-hint").textContent = PETUNJUK_JENIS[jenis] || "";
+    if ($("#editor-slot")) {
+      Array.prototype.forEach.call($("#editor-slot").children, function (chip) {
+        chip.classList.toggle("is-active", Number(chip.getAttribute("data-slot")) === S.editor.slot);
+      });
+    }
 
     var html = "";
     if (jenis === "hotkey") {
@@ -1215,6 +1391,20 @@
           .join("") +
         "</select></div>" +
         htmlPaneBuka();
+    } else if (jenis === "skrip") {
+      html =
+        '<div class="kumi-field"><label class="kumi-field__label" for="param-skrip-jalur">Berkas skrip</label>' +
+        '<input class="kumi-input" id="param-skrip-jalur" type="text" autocomplete="off" placeholder="C:\\Skrip\\mulai-ngoding.bat" value="' +
+        KD.escapeHtml(aksi.target || "") +
+        '">' +
+        '<span class="kumi-field__hint">Berkas .bat, .cmd, .ps1, atau .exe di komputer host. Skrip menunggu persetujuan sekali saat pertama dijalankan.</span></div>' +
+        '<div class="kumi-field"><label class="kumi-field__label" for="param-skrip-args">Argumen (opsional)</label>' +
+        '<input class="kumi-input" id="param-skrip-args" type="text" autocomplete="off" placeholder="--mode cepat" value="' +
+        KD.escapeHtml(aksi.args || "") +
+        '"></div>' +
+        (aksi.izin
+          ? '<div class="kd-hint">Skrip ini sudah diizinkan di komputer. Hapus lalu buat ulang tombol bila ingin meminta izin lagi.</div>'
+          : '<div class="kd-hint">Saat tombol ditekan, KumiDeck meminta izin menjalankan skrip. Setelah disetujui, izin tersimpan untuk tombol ini.</div>');
     } else if (jenis === "http") {
       html =
         '<div class="kumi-row kd-pasangan-bidang">' +
@@ -1235,7 +1425,14 @@
         '<div class="kumi-field"><label class="kumi-field__label" for="param-http-body">Isi permintaan (opsional)</label>' +
         '<textarea class="kumi-textarea" id="param-http-body" rows="3" placeholder="{\"saklar\":1}">' +
         KD.escapeHtml(aksi.body || "") +
-        "</textarea></div>";
+        "</textarea></div>" +
+        '<div class="kumi-field"><span class="kumi-field__label">Header tambahan (opsional)</span>' +
+        '<div class="kd-header-baris" id="param-http-header-daftar"></div>' +
+        '<button class="kumi-btn kumi-btn--soft kumi-btn--sm" type="button" id="btn-tambah-header">' +
+        KD.ikon("i-plus") +
+        " Tambah header</button>" +
+        '<span class="kumi-field__hint">Contoh: <span class="kumi-mono">Authorization: Bearer token</span> atau ' +
+        '<span class="kumi-mono">Content-Type: application/json</span>.</span></div>';
     } else if (jenis === "media") {
       html =
         '<div class="kumi-field"><label class="kumi-field__label" for="param-media">Perintah media</label>' +
@@ -1373,11 +1570,11 @@
     wadah.innerHTML = html;
 
     if (jenis === "urutan") {
-      if (!Array.isArray(S.editor.draft.action.steps)) S.editor.draft.action.steps = [];
+      if (!Array.isArray(aksiDraft().steps)) aksiDraft().steps = [];
       renderLangkah();
       $("#btn-tambah-langkah").addEventListener("click", function () {
         kumpulkanLangkah();
-        S.editor.draft.action.steps.push({
+        aksiDraft().steps.push({
           delay: 150,
           action: { type: "buka", target: "" },
         });
@@ -1403,7 +1600,7 @@
       var pilihMic = $("#param-mic");
       if (pilihMic) {
         pilihMic.addEventListener("change", function () {
-          if (S.editor) S.editor.draft.action = { type: "mic", cmd: pilihMic.value };
+          setAksiDraft({ type: "mic", cmd: pilihMic.value });
         });
       }
     }
@@ -1411,7 +1608,7 @@
       var pilihSuara = $("#param-suara");
       if (pilihSuara) {
         pilihSuara.addEventListener("change", function () {
-          if (S.editor) S.editor.draft.action = { type: "suara", soundId: pilihSuara.value };
+          setAksiDraft({ type: "suara", soundId: pilihSuara.value });
         });
       }
     }
@@ -1419,7 +1616,7 @@
       var pilihJendela = $("#param-jendela");
       if (pilihJendela) {
         pilihJendela.addEventListener("change", function () {
-          if (S.editor) S.editor.draft.action = { type: "jendela", cmd: pilihJendela.value };
+          setAksiDraft({ type: "jendela", cmd: pilihJendela.value });
         });
       }
     }
@@ -1429,10 +1626,11 @@
         pilihVolume.addEventListener("change", function () {
           if (!S.editor) return;
           var nilai = Number(($("#param-volume-nilai") || {}).value) || 50;
-          S.editor.draft.action =
+          setAksiDraft(
             pilihVolume.value === "set"
               ? { type: "volume", mode: "set", nilai: nilai }
-              : { type: "volume", mode: pilihVolume.value };
+              : { type: "volume", mode: pilihVolume.value }
+          );
           renderParamEditor();
         });
       }
@@ -1441,8 +1639,9 @@
         sliderVolume.addEventListener("input", function () {
           var label = $("#param-volume-label");
           if (label) label.textContent = sliderVolume.value + "%";
-          if (S.editor && S.editor.draft.action.mode === "set") {
-            S.editor.draft.action.nilai = Number(sliderVolume.value) || 50;
+          var sekarang = aksiDraft();
+          if (sekarang.mode === "set") {
+            sekarang.nilai = Number(sliderVolume.value) || 50;
           }
         });
       }
@@ -1452,7 +1651,7 @@
       if (pilihDaya) {
         pilihDaya.addEventListener("change", function () {
           if (!S.editor) return;
-          S.editor.draft.action = { type: "daya", cmd: pilihDaya.value };
+          setAksiDraft({ type: "daya", cmd: pilihDaya.value });
           renderParamEditor();
         });
       }
@@ -1473,7 +1672,7 @@
       };
       var perbaruiKondisional = function () {
         if (!S.editor) return;
-        S.editor.draft.action = {
+        setAksiDraft({
           type: "kondisional",
           syarat: {
             proses: (($("#kond-proses") || {}).value || "").trim(),
@@ -1481,7 +1680,7 @@
           },
           aktif: bacaSederhana("aktif", { type: "hotkey" }),
           tidakAktif: bacaSederhana("tidak", { type: "buka" }),
-        };
+        });
       };
       ["#kond-proses", "#kond-jendela", "#kond-aktif-nilai", "#kond-tidak-nilai"].forEach(function (sel) {
         var el = $(sel);
@@ -1497,13 +1696,42 @@
       var inputHotkey = $("#param-hotkey");
       if (inputHotkey) {
         inputHotkey.addEventListener("input", function () {
-          if (S.editor) S.editor.draft.action.combo = inputHotkey.value.trim();
+          aksiDraft().combo = inputHotkey.value.trim();
         });
       }
       var tombolRekam = $("#btn-rekam-hotkey");
       if (tombolRekam) {
         tombolRekam.addEventListener("click", function () {
           mulaiRekam(inputHotkey, tombolRekam);
+        });
+      }
+    }
+
+    if (jenis === "http") {
+      renderHeaderHttp();
+      var tambahHeader = $("#btn-tambah-header");
+      if (tambahHeader) {
+        tambahHeader.addEventListener("click", function () {
+          kumpulkanHeader();
+          var daftar = aksiDraft();
+          if (!Array.isArray(daftar.headers)) daftar.headers = [];
+          daftar.headers.push({ name: "", value: "" });
+          renderHeaderHttp();
+        });
+      }
+    }
+
+    if (jenis === "skrip") {
+      var inputSkrip = $("#param-skrip-jalur");
+      if (inputSkrip) {
+        inputSkrip.addEventListener("input", function () {
+          aksiDraft().target = inputSkrip.value.trim();
+        });
+      }
+      var inputArgs = $("#param-skrip-args");
+      if (inputArgs) {
+        inputArgs.addEventListener("input", function () {
+          aksiDraft().args = inputArgs.value.trim();
         });
       }
     }
@@ -1517,7 +1745,7 @@
           if (pilihSumber.value === "aplikasi") {
             /* target lama dipertahankan; pengguna bisa memilih aplikasi lain */
           } else {
-            S.editor.draft.action.target = "";
+            aksiDraft().target = "";
           }
           renderParamEditor();
         });
@@ -1539,7 +1767,7 @@
         daftarApp.addEventListener("click", function (ev) {
           var item = ev.target.closest("[data-app-target]");
           if (!item || !S.editor) return;
-          S.editor.draft.action.target = item.getAttribute("data-app-target");
+          aksiDraft().target = item.getAttribute("data-app-target");
           var ikonApp = item.getAttribute("data-app-ikon");
           if (ikonApp) S.editor.draft.icon = ikonApp;
           var labelInput = $("#editor-label");
@@ -1571,13 +1799,13 @@
       var inputTautan = $("#param-tautan");
       if (inputTautan) {
         inputTautan.addEventListener("input", function () {
-          if (S.editor) S.editor.draft.action.target = inputTautan.value.trim();
+          aksiDraft().target = inputTautan.value.trim();
         });
       }
       var inputJalur = $("#param-jalur");
       if (inputJalur) {
         inputJalur.addEventListener("input", function () {
-          if (S.editor) S.editor.draft.action.target = inputJalur.value;
+          aksiDraft().target = inputJalur.value;
         });
       }
     }
@@ -1677,7 +1905,7 @@
       bagian.push(nama);
       var combo = bagian.join("+");
       input.value = combo;
-      if (S.editor && S.editor.draft.action) S.editor.draft.action.combo = combo;
+      if (S.editor) aksiDraft().combo = combo;
       hentikanRekam();
       if (window.Kumi) Kumi.sound.play("success");
     }
@@ -1775,7 +2003,7 @@
   function renderLangkah() {
     var wadah = $("#editor-langkah");
     if (!wadah) return;
-    var langkah = S.editor.draft.action.steps || [];
+    var langkah = aksiDraft().steps || [];
     wadah.innerHTML = "";
 
     if (!langkah.length) {
@@ -1836,7 +2064,7 @@
       hapus.innerHTML = KD.ikon("i-trash");
       hapus.addEventListener("click", function () {
         kumpulkanLangkah();
-        S.editor.draft.action.steps.splice(i, 1);
+        aksiDraft().steps.splice(i, 1);
         renderLangkah();
       });
 
@@ -1889,7 +2117,7 @@
   function kumpulkanLangkah() {
     /* Nilai sudah diperbarui langsung oleh event input; fungsi ini hanya
        memastikan referensi tetap sinkron sebelum render ulang. */
-    return S.editor && S.editor.draft.action ? S.editor.draft.action.steps || [] : [];
+    return S.editor ? aksiDraft().steps || [] : [];
   }
 
   /* Baca form → aksi tervalidasi. Mengembalikan {aksi} atau {galat}. */
@@ -1992,7 +2220,7 @@
       var sumberBuka = (S.editor && S.editor.sumber) || "aplikasi";
       var target = "";
       if (sumberBuka === "aplikasi") {
-        target = ((S.editor && S.editor.draft.action.target) || "").trim();
+        target = (aksiDraft().target || "").trim();
         if (!target) return { galat: "Pilih aplikasi dari daftar, atau ubah ke tautan/jalur manual." };
       } else if (sumberBuka === "tautan") {
         target = (($("#param-tautan") || {}).value || "").trim();
@@ -2006,18 +2234,37 @@
       return { aksi: { type: "buka", target: target } };
     }
 
+    if (jenis === "skrip") {
+      var jalurSkrip = (($("#param-skrip-jalur") || {}).value || "").trim();
+      if (!jalurSkrip) return { galat: "Pilih berkas skrip yang ingin dijalankan." };
+      if (!/\.(bat|cmd|ps1|exe)$/i.test(jalurSkrip)) {
+        return { galat: "Berkas skrip harus berakhiran .bat, .cmd, .ps1, atau .exe." };
+      }
+      var argsSkrip = (($("#param-skrip-args") || {}).value || "").trim();
+      /* Izin yang sudah ada dipertahankan selama berkasnya sama. */
+      var izinLama = !!aksiDraft().izin && aksiDraft().target === jalurSkrip;
+      return { aksi: { type: "skrip", target: jalurSkrip, args: argsSkrip, izin: izinLama } };
+    }
+
     if (jenis === "http") {
       var url = (($("#param-http-url") || {}).value || "").trim();
       if (!/^https?:\/\//i.test(url)) return { galat: "URL harus dimulai dengan http:// atau https://." };
       var metode = ($("#param-http-metode") || {}).value || "GET";
       var isi = ($("#param-http-body") || {}).value || "";
+      var header = kumpulkanHeader()
+        .filter(function (h) {
+          return h.name;
+        })
+        .map(function (h) {
+          return { name: h.name, value: h.value || "" };
+        });
       return {
         aksi: {
           type: "http",
           method: metode,
           url: url,
           body: metode === "GET" ? "" : isi.slice(0, 4000),
-          headers: [],
+          headers: header,
         },
       };
     }
@@ -2058,11 +2305,102 @@
     return { galat: "Jenis aksi tidak dikenal." };
   }
 
+  /* ------------------------------------------------- undo / ulangi (#2.2) --- */
+  /* Riwayat lokal (bukan di server): keadaan papan terakhir yang tersimpan
+     didorong ke tumpukan urungkan setiap kali simpan berhasil. Tersedia lewat
+     Ctrl+Z dan Ctrl+Y, serta tombol di sisi papan. */
+  var RIWAYAT_MAKS = 30;
+  var S_riwayat = { tumpukan: [], depan: [], sibuk: false, simpanMenunggu: 0, tersimpan: null };
+
+  function riwayatBersih(deck) {
+    S_riwayat.tumpukan = [];
+    S_riwayat.depan = [];
+    S_riwayat.tersimpan = deck ? JSON.stringify(deck) : null;
+    segarkanTombolRiwayat();
+  }
+
+  function riwayatDorong(deckLama) {
+    if (!deckLama) return;
+    S_riwayat.tumpukan.push(deckLama);
+    if (S_riwayat.tumpukan.length > RIWAYAT_MAKS) S_riwayat.tumpukan.shift();
+    S_riwayat.depan = [];
+  }
+
+  function segarkanTombolRiwayat() {
+    var urung = $("#btn-urungkan");
+    var ulang = $("#btn-ulangi");
+    if (urung) urung.disabled = !S_riwayat.tumpukan.length;
+    if (ulang) ulang.disabled = !S_riwayat.depan.length;
+  }
+
+  function terapkanRiwayat(state) {
+    var deck;
+    try {
+      deck = JSON.parse(state);
+    } catch (err) {
+      KD.toast("Riwayat tidak dapat dibaca.", "danger");
+      return Promise.resolve(false);
+    }
+    S_riwayat.sibuk = true;
+    return KD.simpanDeck(deck)
+      .then(function (hasil) {
+        if (hasil && hasil.deck) S.deck = hasil.deck;
+        S_riwayat.tersimpan = JSON.stringify(S.deck);
+        S.online = true;
+        renderSemua();
+        if (window.Kumi) Kumi.sound.play("toggle");
+        return true;
+      })
+      .catch(function (galat) {
+        tandaiTerputus(galat);
+        return false;
+      })
+      .finally(function () {
+        S_riwayat.sibuk = false;
+        segarkanTombolRiwayat();
+      });
+  }
+
+  function urungkan() {
+    if (!S.deck || S_riwayat.sibuk || !S_riwayat.tumpukan.length) {
+      KD.toast("Tidak ada perubahan untuk diurungkan.", "info");
+      return;
+    }
+    var sekarang = JSON.stringify(S.deck);
+    var state = S_riwayat.tumpukan.pop();
+    S_riwayat.depan.push(sekarang);
+    segarkanTombolRiwayat();
+    terapkanRiwayat(state).then(function (ok) {
+      if (ok) KD.toast("Perubahan terakhir diurungkan.", "ok");
+    });
+  }
+
+  function ulangi() {
+    if (!S.deck || S_riwayat.sibuk || !S_riwayat.depan.length) {
+      KD.toast("Tidak ada perubahan untuk diulangi.", "info");
+      return;
+    }
+    var sekarang = JSON.stringify(S.deck);
+    var state = S_riwayat.depan.pop();
+    S_riwayat.tumpukan.push(sekarang);
+    segarkanTombolRiwayat();
+    terapkanRiwayat(state).then(function (ok) {
+      if (ok) KD.toast("Perubahan diulangi.", "ok");
+    });
+  }
+
   function simpanDeckBaru(deck, pesan) {
+    var tersimpanSebelum = S_riwayat.tersimpan;
+    /* Sinyal sinkron dari server bisa tiba sebelum jawaban simpan; selagi
+       menunggu, pembaruan papan tidak boleh menghapus riwayat. */
+    S_riwayat.simpanMenunggu++;
     return KD.simpanDeck(deck)
       .then(function (hasil) {
         if (hasil && hasil.deck) S.deck = hasil.deck;
         S.online = true;
+        /* Keadaan tersimpan sebelumnya menjadi titik urungkan. */
+        riwayatDorong(tersimpanSebelum);
+        S_riwayat.tersimpan = JSON.stringify(S.deck);
         renderSemua();
         if (window.Kumi) Kumi.sound.play("success");
         if (pesan) KD.toast(pesan, "ok");
@@ -2071,6 +2409,10 @@
       .catch(function (galat) {
         tandaiTerputus(galat);
         return false;
+      })
+      .finally(function () {
+        S_riwayat.simpanMenunggu = Math.max(0, S_riwayat.simpanMenunggu - 1);
+        segarkanTombolRiwayat();
       });
   }
 
@@ -2093,17 +2435,30 @@
     }
     tampilkanGalatEditor("");
 
+    /* Form hanya menampilkan satu slot; slot lainnya sudah tersimpan di draft
+       lewat aksiDraft(). */
+    var slotAktif = S.editor.slot;
+    var aksiUtama = slotAktif === 0 ? hasil.aksi : S.editor.draft.action || { type: "kosong" };
+    var aksiKedua = slotAktif === 1 ? hasil.aksi : S.editor.draft.actionKedua || null;
+    if (aksiKedua && aksiKedua.type === "kosong") aksiKedua = null;
+
+    var widget =
+      $("#editor-jenis").value === "widget" && slotAktif === 0
+        ? S.editor.draft.widget || { type: "jam" }
+        : slotAktif === 0
+          ? null
+          : S.editor.draft.widget || null;
+
     return {
       id: S.editor.draft.id || "",
       label: label.slice(0, 24),
       icon: S.editor.draft.icon || "i-grid",
       variant: S.editor.draft.variant || "default",
       warna: S.editor.draft.warna || null,
-      widget:
-        $("#editor-jenis").value === "widget"
-          ? S.editor.draft.widget || { type: "jam" }
-          : null,
-      action: hasil.aksi,
+      widget: widget,
+      action: aksiUtama,
+      /* Aksi tekan lama hanya berlaku untuk tombol aksi, bukan widget. */
+      actionKedua: widget ? null : aksiKedua,
       /* Penanda status: kosongkan seluruhnya bila kedua kolom kosong. */
       tandaiAktif: (function () {
         var proses = (($("#editor-tanda-proses") || {}).value || "").trim().slice(0, 64);
@@ -2937,8 +3292,24 @@
         });
       });
 
+      var skala = document.createElement("select");
+      skala.className = "kumi-select kd-halaman-skala";
+      skala.setAttribute("aria-label", "Skala tombol halaman " + h.name);
+      [100, 110, 120, 130, 140].forEach(function (n) {
+        var opt = document.createElement("option");
+        opt.value = String(n);
+        opt.textContent = n + "%";
+        if ((h.skala || 100) === n) opt.selected = true;
+        skala.appendChild(opt);
+      });
+      skala.addEventListener("change", function () {
+        h.skala = Number(skala.value) || 100;
+        simpanDeckBaru(JSON.parse(JSON.stringify(S.deck)), "Skala halaman diperbarui.");
+      });
+
       baris.appendChild(input);
       if (lencana.className) baris.appendChild(lencana);
+      baris.appendChild(skala);
       baris.appendChild(duplikat);
       baris.appendChild(jadikanAwal);
       baris.appendChild(hapus);
@@ -2966,7 +3337,327 @@
     });
   }
 
+  /* ------------------------------------------------------------- templat --- */
+  /* Templat bawaan: mengisi papan dengan tombol siap pakai. Semua tombol
+     memakai aksi yang sudah dikenal server, jadi tidak ada perintah khusus. */
+  var TEMPLAT = [
+    {
+      id: "streaming",
+      nama: "Streaming",
+      ket: "Kontrol siaran: mikrofon, kamera, adegan, dan suara.",
+      ikon: "i-play",
+      halaman: [
+        {
+          nama: "Siaran",
+          keys: [
+            ["Mikrofon", "i-volume", { type: "mic", cmd: "togel" }, "accent"],
+            ["Senyapkan", "i-volume-off", { type: "volume", mode: "mute" }],
+            ["Volume Naik", "i-volume", { type: "media", cmd: "volup" }],
+            ["Volume Turun", "i-volume-off", { type: "media", cmd: "voldown" }],
+            ["Jeda Siaran", "i-play", { type: "hotkey", combo: "ctrl+shift+p" }],
+          ],
+        },
+        {
+          nama: "Aplikasi",
+          keys: [
+            ["OBS", "i-eye", { type: "buka", target: "obs64.exe" }],
+            ["Chrome", "i-globe", { type: "buka", target: "chrome" }],
+            ["Spotify", "i-play", { type: "buka", target: "spotify" }],
+            ["Catatan", "i-file", { type: "buka", target: "notepad" }],
+            ["Jeda Musik", "i-play", { type: "media", cmd: "playpause" }, "accent"],
+          ],
+        },
+      ],
+    },
+    {
+      id: "ngoding",
+      nama: "Ngoding",
+      ket: "Buka editor, terminal, dan pintasan build dalam satu ketukan.",
+      ikon: "i-bolt",
+      halaman: [
+        {
+          nama: "Alat",
+          keys: [
+            ["Terminal", "i-code", { type: "buka", target: "wt.exe" }, "accent"],
+            ["Editor", "i-code", { type: "buka", target: "code" }],
+            ["Explorer", "i-folder", { type: "buka", target: "explorer.exe" }],
+            ["Browser", "i-globe", { type: "buka", target: "chrome" }],
+            ["Sakelar", "i-grid", { type: "jendela", cmd: "minimize" }],
+          ],
+        },
+        {
+          nama: "Pintasan",
+          keys: [
+            ["Simpan", "i-check", { type: "hotkey", combo: "ctrl+s" }],
+            ["Build", "i-bolt", { type: "hotkey", combo: "ctrl+shift+b" }, "accent"],
+            ["Terminal", "i-code", { type: "hotkey", combo: "ctrl+grave" }],
+            ["Cari Berkas", "i-search", { type: "hotkey", combo: "ctrl+p" }],
+            ["Format", "i-bolt", { type: "hotkey", combo: "shift+alt+f" }],
+          ],
+        },
+      ],
+    },
+    {
+      id: "media",
+      nama: "Media",
+      ket: "Pemutar musik dan video: putar, lompat, volume.",
+      ikon: "i-play",
+      halaman: [
+        {
+          nama: "Pemutar",
+          keys: [
+            ["Putar / Jeda", "i-play", { type: "media", cmd: "playpause" }, "accent"],
+            ["Sebelumnya", "i-arrow-left", { type: "media", cmd: "prev" }],
+            ["Berikutnya", "i-arrow-right", { type: "media", cmd: "next" }],
+            ["Volume Naik", "i-volume", { type: "media", cmd: "volup" }],
+            ["Volume Turun", "i-volume-off", { type: "media", cmd: "voldown" }],
+          ],
+        },
+        {
+          nama: "Aplikasi",
+          keys: [
+            ["Spotify", "i-play", { type: "buka", target: "spotify" }],
+            ["YouTube", "i-globe", { type: "buka", target: "https://www.youtube.com" }],
+            ["VLC", "i-play", { type: "buka", target: "vlc" }],
+            ["Jam", "i-clock", { type: "widget" }],
+          ],
+        },
+      ],
+    },
+    {
+      id: "kerja",
+      nama: "Kerja",
+      ket: "Rapat, surel, dan dokumen untuk meja kantor.",
+      ikon: "i-inbox",
+      halaman: [
+        {
+          nama: "Harian",
+          keys: [
+            ["Rapat", "i-eye", { type: "buka", target: "https://meet.google.com" }, "accent"],
+            ["Surel", "i-mail", { type: "buka", target: "https://mail.google.com" }],
+            ["Kalender", "i-calendar", { type: "buka", target: "https://calendar.google.com" }],
+            ["Dokumen", "i-file", { type: "buka", target: "winword" }],
+            ["Spreadsheet", "i-grid", { type: "buka", target: "excel" }],
+          ],
+        },
+        {
+          nama: "Kontrol",
+          keys: [
+            ["Senyapkan", "i-volume-off", { type: "volume", mode: "mute" }],
+            ["Mikrofon", "i-volume", { type: "mic", cmd: "togel" }],
+            ["Tangkapan Layar", "i-image", { type: "hotkey", combo: "win+shift+s" }],
+            ["Kunci PC", "i-lock", { type: "hotkey", combo: "win+l" }],
+          ],
+        },
+      ],
+    },
+  ];
+
+  function tombolTemplat(baris) {
+    var label = baris[0];
+    return {
+      label: label.slice(0, 24),
+      icon: baris[1] || "i-grid",
+      action: baris[2] || { type: "kosong" },
+      variant: baris[3] || "default",
+    };
+  }
+
+  function renderTemplat() {
+    var wadah = $("#templat-daftar");
+    if (!wadah) return;
+    wadah.innerHTML = "";
+    TEMPLAT.forEach(function (t) {
+      var kartu = document.createElement("button");
+      kartu.type = "button";
+      kartu.className = "kd-templat-kartu";
+      kartu.setAttribute("data-templat", t.id);
+      var jumlahTombol = t.halaman.reduce(function (n, h) {
+        return n + h.keys.length;
+      }, 0);
+      kartu.innerHTML =
+        '<span class="kd-templat-kartu__ikon">' +
+        KD.ikon(t.ikon) +
+        "</span>" +
+        '<span class="kd-templat-kartu__teks">' +
+        '<span class="kd-templat-kartu__nama">' +
+        KD.escapeHtml(KD.t(t.nama)) +
+        "</span>" +
+        '<span class="kd-templat-kartu__ket">' +
+        KD.escapeHtml(KD.t(t.ket)) +
+        "</span>" +
+        '<span class="kd-templat-kartu__meta">' +
+        KD.t(t.halaman.length + " halaman · " + jumlahTombol + " tombol") +
+        "</span></span>";
+      wadah.appendChild(kartu);
+    });
+  }
+
+  function pakaiTemplat(id) {
+    var t = TEMPLAT.filter(function (x) {
+      return x.id === id;
+    })[0];
+    if (!t || !S.deck) return;
+    var jumlah = S.deck.profile.columns * S.deck.profile.rows;
+    var pages = t.halaman.map(function (h, indeks) {
+      var keys = h.keys.map(tombolTemplat);
+      while (keys.length < jumlah) keys.push(null);
+      return { id: "", name: h.nama, keys: keys.slice(0, jumlah) };
+    });
+
+    var deck = JSON.parse(JSON.stringify(S.deck));
+    deck.pages = pages;
+    deck.profile = { name: t.nama, columns: 5, rows: 3 };
+    deck.settings = Object.assign({}, deck.settings, { home: "" });
+    deck.soundboard = deck.soundboard || [];
+
+    tutupModal("modal-templat");
+    simpanDeckBaru(deck, "Templat " + KD.t(t.nama) + " dimuat.").then(function (ok) {
+      if (!ok) return;
+      S.halamanId = S.deck.pages[0] ? S.deck.pages[0].id : "";
+      simpanLokal("kumideck-halaman", S.halamanId);
+      renderSemua();
+      if (window.Kumi) Kumi.sound.play("success");
+    });
+  }
+
   /* ------------------------------------------------------------- setelan --- */
+  /* Daftar perangkat terpasang + tombol "Lupakan" (token per perangkat). */
+  function renderPerangkatSetelan() {
+    var wadah = $("#daftar-perangkat-setelan");
+    if (!wadah) return;
+    wadah.innerHTML = "";
+    var daftar = (S.perangkat || []).filter(function (p) {
+      /* Bagian ini khusus Remote yang dipasangkan; entri desktop otomatis
+         tidak perlu ditampilkan. */
+      return p.platform === "android";
+    });
+    if (!daftar.length) {
+      var kosong = document.createElement("div");
+      kosong.className = "kd-hint";
+      kosong.textContent = "Belum ada perangkat Remote yang terpasang.";
+      wadah.appendChild(kosong);
+      return;
+    }
+    daftar.forEach(function (p) {
+      var baris = document.createElement("div");
+      baris.className = "kd-cadangan-baris";
+
+      var info = document.createElement("div");
+      info.className = "kd-cadangan-baris__info";
+      var nama = document.createElement("span");
+      nama.className = "kumi-text kumi-text--strong";
+      nama.textContent = p.name || "Perangkat";
+      var ket = document.createElement("span");
+      ket.className = "kd-hint";
+      ket.textContent =
+        (p.platform === "android" ? "Remote" : "Desktop") +
+        " · " +
+        (p.dicabut ? "dilupakan" : p.lastSeen ? KD.relatif(p.lastSeen) : "belum tersambung");
+      info.appendChild(nama);
+      info.appendChild(document.createElement("br"));
+      info.appendChild(ket);
+
+      var hapus = document.createElement("button");
+      hapus.type = "button";
+      hapus.className = "kumi-btn kumi-btn--ghost kumi-btn--sm kd-tombol-hapus";
+      hapus.textContent = p.dicabut ? "Sudah dilupakan" : "Lupakan";
+      hapus.disabled = !!p.dicabut;
+      hapus.addEventListener("click", function () {
+        if (
+          !window.confirm(
+            "Lupakan perangkat " + (p.name || "") + "? Ponsel itu harus memasang ulang dengan kode baru."
+          )
+        ) {
+          return;
+        }
+        KD.cabutPerangkat(p.id)
+          .then(function () {
+            KD.toast("Perangkat dilupakan.", "ok");
+            return muatState();
+          })
+          .then(function () {
+            renderPerangkatSetelan();
+          })
+          .catch(tandaiTerputus);
+      });
+
+      baris.appendChild(info);
+      baris.appendChild(hapus);
+      wadah.appendChild(baris);
+    });
+  }
+
+  /* Cek pembaruan lewat rilis GitHub (repo publik, tanpa token). */
+  var REPO_RILIS = "https://api.github.com/repos/Owladi-Ex/KumiDeck/releases/latest";
+
+  function bandingVersi(a, b) {
+    var pa = String(a || "").split(".").map(Number);
+    var pb = String(b || "").split(".").map(Number);
+    for (var i = 0; i < 3; i += 1) {
+      var x = pa[i] || 0;
+      var y = pb[i] || 0;
+      if (x !== y) return x > y ? 1 : -1;
+    }
+    return 0;
+  }
+
+  function cekPembaruan() {
+    var info = $("#info-versi");
+    var btn = $("#btn-cek-pembaruan");
+    var versiKini = (S.papanServer && S.papanServer.versi) || "";
+    if (info) info.textContent = KD.t("Memeriksa rilis terbaru...");
+    if (btn) btn.disabled = true;
+    var tautanLama = $(".kd-tautan-rilis");
+    if (tautanLama) tautanLama.remove();
+
+    fetch(REPO_RILIS, { headers: { Accept: "application/vnd.github+json" } })
+      .then(function (res) {
+        if (res.status === 404) {
+          var galatRilis = new Error("belum-ada-rilis");
+          galatRilis.code = "belum-ada-rilis";
+          throw galatRilis;
+        }
+        if (!res.ok) throw new Error("GitHub menjawab " + res.status + ".");
+        return res.json();
+      })
+      .then(function (data) {
+        var tag = String((data && data.tag_name) || "").replace(/^v/i, "");
+        var url = (data && data.html_url) || "https://github.com/Owladi-Ex/KumiDeck/releases/latest";
+        if (!tag) {
+          if (info) info.textContent = KD.t("Rilis terbaru tidak menyebut versi.");
+          return;
+        }
+        var beda = bandingVersi(tag, versiKini);
+        if (info) {
+          info.textContent =
+            KD.t("Terpasang") + " " + (versiKini || "?") + " · " + KD.t("terbaru") + " " + tag +
+            (beda > 0 ? KD.t(" — pembaruan tersedia.") : KD.t(" — sudah terbaru."));
+        }
+        if (beda > 0) {
+          var tautan = document.createElement("a");
+          tautan.href = url;
+          tautan.target = "_blank";
+          tautan.rel = "noopener noreferrer";
+          tautan.className = "kumi-btn kumi-btn--soft kumi-btn--sm kd-tautan-rilis";
+          tautan.textContent = KD.t("Buka halaman rilis");
+          tautan.style.marginTop = "8px";
+          if (info && info.parentNode) info.parentNode.appendChild(tautan);
+        }
+      })
+      .catch(function (galat) {
+        if (info) {
+          info.textContent =
+            galat && galat.code === "belum-ada-rilis"
+              ? KD.t("Belum ada rilis publik di GitHub.")
+              : KD.t("Tidak dapat memeriksa pembaruan. Periksa koneksi internet.");
+        }
+      })
+      .finally(function () {
+        if (btn) btn.disabled = false;
+      });
+  }
+
   function isiFormSetelan() {
     if (!S.deck) return;
     var pilihBahasa = $("#pilih-bahasa");
@@ -3772,19 +4463,35 @@
     $("#editor-jenis").addEventListener("change", function () {
       if (!S.editor) return;
       var jenis = $("#editor-jenis").value;
-      S.editor.draft.action = { type: jenis };
-      if (jenis === "urutan") S.editor.draft.action.steps = [];
-      if (jenis === "buka") S.editor.draft.action.target = "";
+      var aksi = { type: jenis };
+      if (jenis === "urutan") aksi.steps = [];
+      if (jenis === "buka") aksi.target = "";
       /* Widget dan aksi saling meniadakan. */
       if (jenis === "widget") {
-        S.editor.draft.widget = S.editor.draft.widget || { type: "jam" };
-        S.editor.draft.action = { type: "kosong" };
+        if (!S.editor.slot) {
+          S.editor.draft.widget = S.editor.draft.widget || { type: "jam" };
+          S.editor.draft.action = { type: "kosong" };
+        }
       } else {
-        S.editor.draft.widget = null;
+        if (!S.editor.slot) S.editor.draft.widget = null;
+        setAksiDraft(aksi);
       }
       renderParamEditor();
       tampilkanGalatEditor("");
     });
+
+    /* Ketuk / tekan lama: satu form, dua slot aksi. */
+    if ($("#editor-slot")) {
+      $("#editor-slot").addEventListener("click", function (ev) {
+        var chip = ev.target.closest("[data-slot]");
+        if (!chip || !S.editor) return;
+        S.editor.slot = Number(chip.getAttribute("data-slot")) || 0;
+        $("#editor-jenis").value = aksiDraft().type || "kosong";
+        segarkanPilihanJenis();
+        renderParamEditor();
+        tampilkanGalatEditor("");
+      });
+    }
     $("#editor-label").addEventListener("input", function () {
       $("#editor-label").removeAttribute("aria-invalid");
     });
@@ -3805,6 +4512,12 @@
     $("#btn-setelan").addEventListener("click", function () {
       isiFormSetelan();
       muatCadangan();
+      renderPerangkatSetelan();
+      var infoVersi = $("#info-versi");
+      if (infoVersi) {
+        infoVersi.textContent =
+          KD.t("Terpasang") + " " + ((S.papanServer && S.papanServer.versi) || "?") + ".";
+      }
       bukaModal("modal-setelan");
     });
     var pilihBahasa = $("#pilih-bahasa");
@@ -3822,6 +4535,35 @@
     });
     $("#btn-contoh-ulang").addEventListener("click", muatContoh);
 
+    /* Templat bawaan. */
+    var btnTemplat = $("#btn-templat");
+    if (btnTemplat) {
+      btnTemplat.addEventListener("click", function () {
+        renderTemplat();
+        bukaModal("modal-templat");
+      });
+    }
+    var daftarTemplat = $("#templat-daftar");
+    if (daftarTemplat) {
+      daftarTemplat.addEventListener("click", function (ev) {
+        var kartu = ev.target.closest("[data-templat]");
+        if (!kartu) return;
+        var nama = kartu.querySelector(".kd-templat-kartu__nama").textContent;
+        if (
+          !window.confirm(
+            KD.t(
+              "Muat templat " +
+                nama +
+                "? Papan saat ini diganti. Cadangan otomatis tetap bisa dipulihkan dari Setelan."
+            )
+          )
+        ) {
+          return;
+        }
+        pakaiTemplat(kartu.getAttribute("data-templat"));
+      });
+    }
+
     /* Cadangan, log, dan ekspor PNG. */
     var btnCadanganMuat = $("#btn-cadangan-muat");
     if (btnCadanganMuat) btnCadanganMuat.addEventListener("click", muatCadangan);
@@ -3829,6 +4571,20 @@
     if (btnUnduhLog) btnUnduhLog.addEventListener("click", unduhLog);
     var btnEksporPng = $("#btn-ekspor-png");
     if (btnEksporPng) btnEksporPng.addEventListener("click", eksporPng);
+
+    var btnPerangkatMuat = $("#btn-perangkat-muat");
+    if (btnPerangkatMuat) {
+      btnPerangkatMuat.addEventListener("click", function () {
+        muatState()
+          .then(function () {
+            renderPerangkatSetelan();
+            KD.toast("Daftar perangkat diperbarui.", "ok");
+          })
+          .catch(tandaiTerputus);
+      });
+    }
+    var btnCekPembaruan = $("#btn-cek-pembaruan");
+    if (btnCekPembaruan) btnCekPembaruan.addEventListener("click", cekPembaruan);
 
     /* Warna aksen: pratinjau langsung, simpan lewat form setelan. */
     var aksenEl = $("#setelan-aksen");
@@ -3879,6 +4635,31 @@
         bukaCari();
       }
     });
+
+    /* Ctrl+Z / Ctrl+Y (dan Ctrl+Shift+Z) untuk urungkan/ulangi papan.
+       Di dalam kolom isian, biarkan urungkan teks bawaan peramban. */
+    document.addEventListener("keydown", function (ev) {
+      if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
+      var el = ev.target;
+      var mengetik =
+        el &&
+        (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
+      if (mengetik) return;
+
+      var tombol = String(ev.key).toLowerCase();
+      if (tombol === "z" && !ev.shiftKey) {
+        ev.preventDefault();
+        urungkan();
+      } else if (tombol === "y" || (tombol === "z" && ev.shiftKey)) {
+        ev.preventDefault();
+        ulangi();
+      }
+    });
+
+    var btnUrungkan = $("#btn-urungkan");
+    if (btnUrungkan) btnUrungkan.addEventListener("click", urungkan);
+    var btnUlangi = $("#btn-ulangi");
+    if (btnUlangi) btnUlangi.addEventListener("click", ulangi);
 
     /* Ubah jumlah kolom hanya kalau ambang lebar jendela berubah. */
     var jamUbahUkuran = null;

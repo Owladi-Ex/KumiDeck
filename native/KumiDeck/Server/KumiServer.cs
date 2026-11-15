@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -21,6 +22,14 @@ public sealed class Perangkat
     public string Name { get; set; } = "Desktop";
     public long LastSeen { get; set; }
     public int Sambungan { get; set; }
+
+    /* Token pasangan milik perangkat ini (kosong untuk klien loopback).
+       Disimpan di data/perangkat.json agar bertahan setelah aplikasi ditutup. */
+    public string Token { get; set; } = "";
+
+    /* Tombol "Lupakan perangkat": token langsung ditolak walau perangkat
+       menyambung lagi dengan token lama. */
+    public bool Dicabut { get; set; }
 }
 
 public sealed class Aktivitas
@@ -87,6 +96,7 @@ public sealed partial class KumiServer
     {
         Store = new DeckStore();
         Lan = NetInfo.AlamatLan();
+        MuatPerangkat();
         _timerLive = new System.Threading.Timer(_ => Detak(), null, 500, 500);
         _timerBersih = new System.Threading.Timer(_ => BersihkanPerangkat(), null, 15000, 15000);
     }
@@ -303,7 +313,14 @@ public sealed partial class KumiServer
         lock (_perangkat)
         {
             devices = _perangkat.Values
-                .Select(p => (object)new { id = p.Id, platform = p.Platform, name = p.Name, lastSeen = p.LastSeen })
+                .Select(p => (object)new
+                {
+                    id = p.Id,
+                    platform = p.Platform,
+                    name = p.Name,
+                    lastSeen = p.LastSeen,
+                    dicabut = p.Dicabut,
+                })
                 .ToList();
         }
         List<Aktivitas> aktivitas;
@@ -321,6 +338,7 @@ public sealed partial class KumiServer
             server = new
             {
                 name = "KumiDeck",
+                versi = VersiRingkas(),
                 port = Port,
                 lan = Lan,
                 lanUrl = Skema + "://" + Lan + ":" + Port + "/remote",
@@ -337,7 +355,14 @@ public sealed partial class KumiServer
         lock (_perangkat)
         {
             devices = _perangkat.Values
-                .Select(p => (object)new { id = p.Id, platform = p.Platform, name = p.Name, lastSeen = p.LastSeen })
+                .Select(p => (object)new
+                {
+                    id = p.Id,
+                    platform = p.Platform,
+                    name = p.Name,
+                    lastSeen = p.LastSeen,
+                    dicabut = p.Dicabut,
+                })
                 .ToList();
         }
         _hub.Siar("devices", devices);
@@ -354,18 +379,148 @@ public sealed partial class KumiServer
 
         lock (_perangkat)
         {
+            var lama = _perangkat.TryGetValue(id, out var p) ? p : null;
             var data = new Perangkat
             {
                 Id = id,
                 Platform = jenis,
                 Name = tampil,
                 LastSeen = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                Sambungan = _perangkat.TryGetValue(id, out var lama) ? lama.Sambungan : 0,
+                Sambungan = lama?.Sambungan ?? 0,
+                /* Token dan status cabut tidak hilang saat perangkat sambung ulang. */
+                Token = lama?.Token ?? "",
+                Dicabut = lama?.Dicabut ?? false,
             };
             _perangkat[id] = data;
             return data;
         }
     }
+
+    /* Token pasangan milik satu perangkat. Dibuat saat pertama kali dipakai. */
+    public string TokenPerangkat(string deviceId)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId)) return "";
+        lock (_perangkat)
+        {
+            if (!_perangkat.TryGetValue(deviceId, out var p) || p.Dicabut) return "";
+            if (p.Token.Length == 0)
+            {
+                p.Token = Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant();
+                SimpanPerangkat();
+            }
+            return p.Token;
+        }
+    }
+
+    /* Token milik perangkat yang dipasangkan lewat kode. Kode pasangan adalah
+       persetujuan pengguna di layar desktop, jadi perangkat yang pernah
+       dilupakan boleh kembali dengan token baru setelah memasukkan kode. */
+    public string TokenUntukPasangan(string deviceId, string platform, string nama)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId)) return "";
+        var data = CatatPerangkat(deviceId, platform, nama);
+        if (data is null) return "";
+        lock (_perangkat)
+        {
+            if (data.Dicabut || data.Token.Length == 0)
+            {
+                /* Dicabut = token lama mati; kode baru memberi token baru. */
+                data.Dicabut = false;
+                data.Token = Convert.ToHexString(RandomNumberGenerator.GetBytes(8)).ToLowerInvariant();
+                SimpanPerangkat();
+            }
+            return data.Token;
+        }
+    }
+
+    /* Token dicocokkan ke perangkat mana pun yang masih aktif. */
+    public bool TokenPerangkatSah(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return false;
+        lock (_perangkat)
+        {
+            return _perangkat.Values.Any(p => !p.Dicabut && p.Token.Length > 0 &&
+                                              string.Equals(p.Token, token, StringComparison.Ordinal));
+        }
+    }
+
+    /* Lupakan perangkat: tokennya langsung ditolak. Entri tetap disimpan
+       dengan tanda dicabut supaya ponsel itu harus memasang ulang. */
+    public void CabutPerangkat(string id)
+    {
+        lock (_perangkat)
+        {
+            var data = _perangkat.TryGetValue(id, out var p) ? p : null;
+            if (data is null) return;
+            data.Dicabut = true;
+            data.Token = "";
+            SimpanPerangkat();
+            /* Putuskan sambungan SSE perangkat itu supaya status berubah. */
+            _hub.Siar("devices", _perangkat.Values
+                .Select(x => (object)new
+                {
+                    id = x.Id,
+                    platform = x.Platform,
+                    name = x.Name,
+                    lastSeen = x.LastSeen,
+                    dicabut = x.Dicabut,
+                })
+                .ToList());
+        }
+        SiarState();
+    }
+
+    private void MuatPerangkat()
+    {
+        try
+        {
+            var jalur = Path.Combine(AppPaths.Data, "perangkat.json");
+            if (!File.Exists(jalur)) return;
+            var daftar = JsonSerializer.Deserialize<List<Perangkat>>(File.ReadAllText(jalur), Json.Opsi);
+            if (daftar is null) return;
+            lock (_perangkat)
+            {
+                foreach (var p in daftar)
+                {
+                    if (string.IsNullOrWhiteSpace(p.Id)) continue;
+                    p.Sambungan = 0;
+                    _perangkat[p.Id] = p;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Daftar perangkat tidak terbaca: " + ex.Message);
+        }
+    }
+
+    private void SimpanPerangkat()
+    {
+        try
+        {
+            Directory.CreateDirectory(AppPaths.Data);
+            var jalur = Path.Combine(AppPaths.Data, "perangkat.json");
+            var daftar = _perangkat.Values.Where(p => p.Token.Length > 0 || p.Dicabut).ToList();
+            File.WriteAllText(jalur, JsonSerializer.Serialize(daftar, Json.Opsi));
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Daftar perangkat tidak dapat disimpan: " + ex.Message);
+        }
+    }
+
+    private static string VersiRingkas()
+    {
+        try
+        {
+            return typeof(KumiServer).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
+        }
+        catch
+        {
+            return "0.0.0";
+        }
+    }
+
 
     public void CatatAktivitas(Aktivitas entri)
     {
@@ -385,6 +540,10 @@ public sealed partial class KumiServer
         {
             foreach (var (id, data) in _perangkat.ToList())
             {
+                /* Perangkat yang sudah dipasangkan (punya token) atau pernah
+                   dilupakan tetap disimpan sampai pengguna menghapusnya; hanya
+                   entri otomatis tanpa token yang dibersihkan. */
+                if (data.Token.Length > 0 || data.Dicabut) continue;
                 if (data.Sambungan <= 0 && data.LastSeen < batas)
                 {
                     _perangkat.Remove(id);
@@ -579,7 +738,9 @@ public sealed partial class KumiServer
     public bool Terautentikasi(HttpPermintaan req)
     {
         if (AlamatLokal(req)) return true;
-        return TokenDari(req) == Store.Token;
+        var token = TokenDari(req);
+        if (token.Length == 0) return false;
+        return token == Store.Token || TokenPerangkatSah(token);
     }
 
     private static string TokenDari(HttpPermintaan req)

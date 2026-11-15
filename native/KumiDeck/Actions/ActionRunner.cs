@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text.Json;
 using KumiDeck.Audio;
 using KumiDeck.Data;
@@ -29,6 +30,8 @@ public static class ActionRunner
                 return "Mengetik \"" + (aksi.Text ?? "")[..Math.Min(24, (aksi.Text ?? "").Length)] + "\"";
             case "buka":
                 return "Membuka " + (aksi.Target ?? "")[..Math.Min(40, (aksi.Target ?? "").Length)];
+            case "skrip":
+                return "Skrip " + Path.GetFileName(aksi.Target ?? "");
             case "http":
                 return (aksi.Method ?? "GET") + " " + (aksi.Url ?? "")[..Math.Min(48, (aksi.Url ?? "").Length)];
             case "media":
@@ -151,6 +154,18 @@ public static class ActionRunner
             case "buka":
             {
                 var hasil = Launch.Buka(aksi.Target);
+                return new HasilAksi(hasil.Ok, hasil.Pesan);
+            }
+
+            case "skrip":
+            {
+                /* Skrip hanya berjalan setelah izin tersimpan; pintu konfirmasi
+                   ada di /api/press (409 butuh-izin). */
+                if (!aksi.Izin)
+                {
+                    return new HasilAksi(false, "Skrip belum diizinkan di komputer ini.");
+                }
+                var hasil = await Task.Run(() => ScriptAction.Jalankan(aksi.Target, aksi.Args));
                 return new HasilAksi(hasil.Ok, hasil.Pesan);
             }
 

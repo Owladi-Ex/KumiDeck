@@ -7,6 +7,9 @@
 
   var TOKEN_KEY = "kumideck-token";
   var HALAMAN_KEY = "kumideck-remote-halaman";
+  var AWAL_KEY = "kumideck-remote-awal";
+  var KIOS_KEY = "kumideck-remote-kios";
+  var JAGA_KEY = "kumideck-remote-jaga-layar";
   var HINT_KEY = "kumideck-remote-hint";
 
   var $ = function (sel, akar) {
@@ -27,6 +30,7 @@
     pairing: false,
     stream: null,
     raf: 0,
+    wakeLock: null,
   };
 
   /* ------------------------------------------------------------ penyimpanan --- */
@@ -156,14 +160,32 @@
         if (key.widget) {
           /* Widget: hanya tampilan, tidak ada aksi yang dikirim. */
           tombol.setAttribute("aria-disabled", "true");
+        } else if (key.actionKedua) {
+          /* Tekan lama = aksi kedua; ketuk = aksi utama. */
+          tombol.setAttribute(
+            "aria-label",
+            key.label + " — ketuk: " + KD.jelaskan(key.action) + "; tekan lama: " + KD.jelaskan(key.actionKedua)
+          );
+          KD.pasangTekan(tombol, {
+            ketuk: function () {
+              tekanTombol(aktif.id, key.id, tombol, false);
+            },
+            lama: function () {
+              getar([0, 18, 40, 18]);
+              tekanTombol(aktif.id, key.id, tombol, true);
+            },
+          });
         } else {
           tombol.addEventListener("click", function () {
-            tekanTombol(aktif.id, key.id, tombol);
+            tekanTombol(aktif.id, key.id, tombol, false);
           });
         }
       }
       papan.appendChild(tombol);
     });
+
+    /* Skala tombol per halaman, sama seperti di desktop. */
+    papan.style.setProperty("--kd-skala", String((aktif.skala || 100) / 100));
 
     papan.hidden = false;
     papan.setAttribute("aria-busy", "false");
@@ -250,9 +272,12 @@
     S.online = true;
     S.siap = true;
 
+    /* Halaman awal perangkat ini menang atas setelan papan. */
+    var awalPerangkat = bacaLokal(AWAL_KEY);
     var tersimpan = bacaLokal(HALAMAN_KEY);
     if (!halamanAda(S.halamanId)) {
-      if (halamanAda(tersimpan)) S.halamanId = tersimpan;
+      if (halamanAda(awalPerangkat)) S.halamanId = awalPerangkat;
+      else if (halamanAda(tersimpan)) S.halamanId = tersimpan;
       else if (S.deck.settings && halamanAda(S.deck.settings.home)) S.halamanId = S.deck.settings.home;
       else S.halamanId = S.deck.pages[0].id;
     }
@@ -260,6 +285,8 @@
     sembunyikanPasangan();
     sembunyikanGalatMuat();
     renderSemua();
+    terapkanKios();
+    segarkanHalamanAwal();
   }
 
   function pesanGalat(galat) {
@@ -365,17 +392,17 @@
   }
 
   /* ---------------------------------------------------------------- tekan --- */
-  function tekanTombol(pageId, keyId, tombol) {
+  function tekanTombol(pageId, keyId, tombol, kedua) {
     if (!pageId || !keyId || !tombol || tombol.disabled) return;
 
     KD.kilat(tombol);
-    getar(10);
+    getar(kedua ? [0, 18, 40, 18] : 10);
     tombol.classList.add("kena-aksi");
     window.setTimeout(function () {
       tombol.classList.remove("kena-aksi");
     }, 520);
 
-    KD.tekan(pageId, keyId)
+    KD.tekan(pageId, keyId, kedua)
       .then(function (hasil) {
         if (!hasil) return;
         if (Array.isArray(hasil.activity)) {
@@ -394,11 +421,49 @@
           );
           return;
         }
+        if (galat && galat.status === 409 && galat.code === "butuh-izin") {
+          izinkanSkrip(pageId, keyId, kedua, galat.message, tombol);
+          return;
+        }
         if (galat && galat.status === 0) {
           S.online = false;
           renderStatus();
         }
         tolakTombol(tombol, (galat && galat.message) || "Server tidak menjawab. Coba lagi.");
+      });
+  }
+
+  /* Skrip di komputer host butuh izin sekali; konfirmasi ditampilkan di sini. */
+  function izinkanSkrip(pageId, keyId, kedua, pesan, tombol) {
+    var teks =
+      KD.t(pesan || "Jalankan skrip di komputer ini?") +
+      "\n\n" +
+      KD.t("Setujui hanya bila berkas skrip itu kamu pasang sendiri di komputer host.");
+    if (!window.confirm(teks)) {
+      KD.toast("Skrip tidak dijalankan.", "info");
+      return;
+    }
+    KD.izinkanSkrip(pageId, keyId, kedua)
+      .then(function (hasil) {
+        if (hasil && hasil.ok) {
+          KD.toast(hasil.message || "Skrip dijalankan.", "ok");
+          getar([0, 20, 30, 20]);
+          if (Array.isArray(hasil.activity)) {
+            S.aktivitas = hasil.activity;
+            renderAktivitasTerakhir();
+          }
+        } else {
+          tolakTombol(tombol, (hasil && hasil.message) || "Skrip gagal dijalankan.");
+        }
+      })
+      .catch(function (galat) {
+        if (galat && galat.status === 401) {
+          tanganiButuhPasangan(
+            "Kode pasangan tidak berlaku lagi. Masukkan kode baru dari layar komputer."
+          );
+          return;
+        }
+        tolakTombol(tombol, (galat && galat.message) || "Skrip gagal dijalankan.");
       });
   }
 
@@ -420,6 +485,7 @@
     renderJudul();
     renderHalaman();
     renderPapan();
+    segarkanHalamanAwal();
   }
 
   /* --------------------------------------------------------------- lapis --- */
@@ -607,7 +673,16 @@
       tombol.textContent = "Pasangkan";
     }
 
-    KD.api("/api/pair", { method: "POST", body: { code: mentah } })
+    KD.api("/api/pair", {
+      method: "POST",
+      body: {
+        code: mentah,
+        /* Token per perangkat: mencabut satu ponsel tidak mengganggu yang lain. */
+        deviceId: KD.deviceId,
+        platform: KD.platform,
+        nama: KD.namaPerangkat ? KD.namaPerangkat() : "",
+      },
+    })
       .then(function (hasil) {
         var token = hasil && hasil.token;
         if (!token) throw new Error("Server tidak mengirim kode pasangan.");
@@ -664,6 +739,103 @@
       .catch(function () {
         /* pesan galat sudah diperbarui */
       });
+  }
+
+  /* ------------------------------------------------- halaman awal & kios --- */
+  /* Favorit/halaman awal disimpan di perangkat, bukan di server, supaya tiap
+     ponsel bisa punya halaman pembuka sendiri. */
+  function segarkanHalamanAwal() {
+    var info = $("#info-halaman-awal");
+    var label = $("#label-halaman-awal");
+    var btn = $("#btn-halaman-awal");
+    var awal = bacaLokal(AWAL_KEY);
+    var aktif = halamanAktif();
+    if (info) {
+      info.textContent = halamanAda(awal)
+        ? "Halaman awal: " + (S.deck.pages.filter(function (h) { return h.id === awal; })[0] || {}).name
+        : "Mengikuti setelan papan.";
+    }
+    if (btn && label) {
+      var iniAwal = aktif && awal === aktif.id;
+      label.textContent = iniAwal ? "Halaman ini awal (ketuk untuk lepas)" : "Jadikan halaman ini awal";
+      btn.setAttribute("aria-pressed", iniAwal ? "true" : "false");
+    }
+  }
+
+  function toggleHalamanAwal() {
+    var aktif = halamanAktif();
+    if (!aktif) return;
+    if (bacaLokal(AWAL_KEY) === aktif.id) {
+      tulisLokal(AWAL_KEY, "");
+      KD.toast("Halaman awal mengikuti setelan papan.", "ok");
+    } else {
+      tulisLokal(AWAL_KEY, aktif.id);
+      KD.toast("Halaman " + aktif.name + " jadi halaman awal perangkat ini.", "ok");
+    }
+    segarkanHalamanAwal();
+    getar(12);
+  }
+
+  /* Mode kios: layar penuh. Wake Lock menjaga layar tetap menyala —
+     hanya tersedia di secure context (HTTPS lokal) dan peramban yang setuju. */
+  function terapkanKios(beriTahu) {
+    var kios = bacaLokal(KIOS_KEY) === "1";
+    var gagal = function () {
+      if (beriTahu) {
+        KD.toast("Layar penuh ditolak peramban. Ketuk sekali di halaman lalu coba lagi.", "danger");
+      }
+    };
+    if (kios) {
+      var el = document.documentElement;
+      var minta =
+        el.requestFullscreen ||
+        el.webkitRequestFullscreen ||
+        el.msRequestFullscreen;
+      if (minta && !document.fullscreenElement) {
+        try {
+          var hasil = minta.call(el);
+          if (hasil && typeof hasil.catch === "function") hasil.catch(gagal);
+        } catch (err) {
+          gagal();
+        }
+      }
+    } else if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(function () {});
+    }
+    perbaruiWakeLock();
+  }
+
+  function perbaruiWakeLock() {
+    var mau = bacaLokal(JAGA_KEY) === "1";
+    if (!("wakeLock" in navigator)) {
+      var info = $("#setelan-jaga-layar");
+      if (info) info.disabled = true;
+      return;
+    }
+    if (mau && S.siap && !S.wakeLock) {
+      navigator.wakeLock
+        .request("screen")
+        .then(function (kunci) {
+          S.wakeLock = kunci;
+          kunci.addEventListener("release", function () {
+            S.wakeLock = null;
+          });
+        })
+        .catch(function () {
+          /* peramban menolak (baterai rendah / bukan HTTPS) */
+        });
+    } else if (!mau && S.wakeLock) {
+      S.wakeLock.release().catch(function () {});
+      S.wakeLock = null;
+    }
+  }
+
+  function isiSakelarPerangkat() {
+    var kios = $("#setelan-kios");
+    var jaga = $("#setelan-jaga-layar");
+    if (kios) kios.checked = bacaLokal(KIOS_KEY) === "1";
+    if (jaga) jaga.checked = bacaLokal(JAGA_KEY) === "1";
+    segarkanHalamanAwal();
   }
 
   /* -------------------------------------------------------------- perangkat --- */
@@ -868,10 +1040,45 @@
     }
 
     var btnSetelan = $("#btn-setelan");
-    if (btnSetelan) btnSetelan.addEventListener("click", isiInfoPerangkat);
+    if (btnSetelan) {
+      btnSetelan.addEventListener("click", function () {
+        isiInfoPerangkat();
+        isiSakelarPerangkat();
+      });
+    }
 
     var btnPutus = $("#btn-putuskan");
     if (btnPutus) btnPutus.addEventListener("click", putuskanPasangan);
+
+    /* Halaman awal perangkat. */
+    var btnAwal = $("#btn-halaman-awal");
+    if (btnAwal) btnAwal.addEventListener("click", toggleHalamanAwal);
+
+    /* Mode kios + layar tetap menyala. */
+    var kios = $("#setelan-kios");
+    if (kios) {
+      kios.addEventListener("change", function () {
+        tulisLokal(KIOS_KEY, kios.checked ? "1" : "0");
+        terapkanKios(true);
+      });
+    }
+    var jaga = $("#setelan-jaga-layar");
+    if (jaga) {
+      jaga.addEventListener("change", function () {
+        tulisLokal(JAGA_KEY, jaga.checked ? "1" : "0");
+        perbaruiWakeLock();
+        if (jaga.checked && !("wakeLock" in navigator)) {
+          KD.toast("Peramban ini belum mendukung Wake Lock.", "danger");
+        }
+      });
+    }
+
+    /* Wake lock dilepas saat tab disembunyikan; minta ulang saat tampil. */
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState !== "visible") return;
+      if (S.wakeLock) return;
+      perbaruiWakeLock();
+    });
 
     var btnCobaLagi = $("#btn-coba-lagi");
     if (btnCobaLagi) btnCobaLagi.addEventListener("click", cobaMuatUlang);

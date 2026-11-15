@@ -192,6 +192,30 @@
         </div>
 
         <div class="kumi-field">
+          <span class="kumi-field__label">Halaman awal di perangkat ini</span>
+          <span class="kd-hint" id="info-halaman-awal">Mengikuti setelan papan.</span>
+          <button class="kumi-btn kumi-btn--soft kumi-btn--block" type="button" id="btn-halaman-awal">
+            <svg class="kumi-icon" aria-hidden="true"><use href="#i-star"></use></svg>
+            <span id="label-halaman-awal">Jadikan halaman ini awal</span>
+          </button>
+        </div>
+
+        <div class="kumi-field">
+          <span class="kumi-field__label">Mode kios tablet</span>
+          <label class="kumi-row kd-remote__sakelar">
+            <input type="checkbox" id="setelan-kios">
+            <span>Layar penuh, tanpa bilah peramban</span>
+          </label>
+          <label class="kumi-row kd-remote__sakelar">
+            <input type="checkbox" id="setelan-jaga-layar">
+            <span>Layar tetap menyala saat papan terbuka</span>
+          </label>
+          <span class="kumi-field__hint">
+            Layar tetap menyala butuh HTTPS dan peramban yang mendukung Wake Lock.
+          </span>
+        </div>
+
+        <div class="kumi-field">
           <span class="kumi-field__label">Aktivitas terakhir</span>
           <span class="kd-hint" id="info-aktivitas">Belum ada aktivitas.</span>
         </div>

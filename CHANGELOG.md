@@ -3,6 +3,53 @@
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 versi mengikuti [SemVer](https://semver.org/lang/id/).
 
+## [2.2.0] - 2026-11-15
+
+**"Lebih Cepat"** - templat siap pakai, aksi ganda, dan kendali Remote yang
+lebih lengkap.
+
+### Ditambahkan
+
+- **Templat papan bawaan**: Streaming, Ngoding, Media, dan Kerja. Satu klik
+  mengisi papan dengan halaman serta tombol siap pakai; papan lama tetap bisa
+  dipulihkan dari cadangan otomatis.
+- **Aksi tekan lama (aksi kedua)**: setiap tombol boleh punya dua aksi. Ketuk
+  menjalankan aksi utama, tekan lama (±550 ms) menjalankan aksi kedua. Berlaku
+  di papan desktop dan UI Remote; editor memakai pilihan "Ketuk / Tekan lama".
+- **Urungkan & ulangi** untuk papan: `Ctrl+Z` dan `Ctrl+Y` (juga
+  `Ctrl+Shift+Z`) dengan riwayat 30 langkah, plus tombol panah di kepala papan.
+- **Aksi skrip**: jalankan `.bat`, `.cmd`, `.ps1`, atau `.exe` di komputer host
+  tanpa jendela konsol. Saat pertama ditekan, KumiDeck meminta izin; setelah
+  disetujui, izin tersimpan untuk tombol itu saja.
+- **Header HTTP tambahan**: editor permintaan HTTP kini punya baris nama/nilai
+  header (mis. `Authorization: Bearer …`) di samping metode, URL, dan isi JSON.
+- **Skala tombol per halaman** (100–140%): ikon dan label menyesuaikan ukuran
+  tombol, berguna untuk tablet atau layar sentuh besar.
+- **Mode kios tablet & layar tetap menyala** di Remote: layar penuh tanpa bilah
+  peramban dan Wake Lock (bila peramban mendukung).
+- **Halaman awal per perangkat**: bintang di setelan Remote menjadikan halaman
+  yang sedang dibuka sebagai halaman pembuka khusus perangkat itu.
+- **Lupakan perangkat**: setiap perangkat Remote mendapat token sendiri, jadi
+  mencabut satu ponsel tidak mengganggu perangkat lain. Perangkat yang
+  dilupakan harus memasukkan kode pasangan baru.
+- **Cek pembaruan** dari setelan desktop: membandingkan versi terpasang dengan
+  rilis terbaru di GitHub (tanpa token).
+
+### Diperbaiki
+
+- **Slider volume soundboard**: kini selebar kolomnya dan memakai track sendiri,
+  tidak lagi terpotong padding kolom isian biasa.
+
+### Catatan teknis
+
+- Model papan bertambah: `Halaman.skala`, `Tombol.actionKedua`,
+  `Aksi.args`, dan `Aksi.izin`; semuanya dinormalkan di `DeckNormalizer`.
+- Endpoint: `POST /api/press` menerima `kedua`, `POST /api/press/izinkan`,
+  `POST /api/devices/revoke`; `/api/pair` mengeluarkan token per perangkat bila
+  `deviceId` dikirim.
+- Token perangkat disimpan di `data/perangkat.json`; token yang dicabut langsung
+  ditolak, termasuk setelah aplikasi dijalankan ulang.
+
 ## [2.1.0] - 2026-11-14
 
 **"Rapi & Aman"** - paket perapian kecil tanpa perubahan arsitektur.
