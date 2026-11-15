@@ -308,7 +308,9 @@
     var teks = $("#status-teks");
     status.classList.toggle("is-online", S.online);
     status.classList.toggle("is-offline", !S.online);
-    teks.textContent = S.online ? "Tersambung" : "Terputus — mencoba menyambung";
+    teks.textContent = S.online
+      ? KD.t("Tersambung")
+      : KD.t("Terputus — mencoba menyambung");
   }
 
   function renderKaki() {

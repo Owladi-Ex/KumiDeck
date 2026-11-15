@@ -1,6 +1,8 @@
 using System.IO;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using Microsoft.Win32;
 
 namespace KumiDeck.Platform;
 
@@ -10,6 +12,42 @@ namespace KumiDeck.Platform;
    Dibuat di thread UI WPF; pesan Windows ditangani oleh Dispatcher WPF. */
 public sealed class TrayIcon : IDisposable
 {
+    /* Nama yang tampil di atas notifikasi Windows. Tanpa ini Windows memakai
+       AUMID buatan ("NotifyIconGeneratedAumid_…"); dengan titik, Windows hanya
+       menampilkan bagian setelah titik terakhir ("…Desktop" jadi "Desktop"),
+       jadi AUMID ini sengaja tanpa titik. */
+    public const string Aumid = "KumiDeck";
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    private static extern int SetCurrentProcessExplicitAppUserModelID(string appId);
+
+    public static void DaftarkanAumid()
+    {
+        try
+        {
+            var hasil = SetCurrentProcessExplicitAppUserModelID(Aumid);
+            Core.Log.Info($"aumid: {Aumid} (hr={hasil})");
+        }
+        catch
+        {
+            /* Windows lama: notifikasi tetap jalan dengan nama bawaan */
+        }
+
+        try
+        {
+            using var kunci = Registry.CurrentUser.CreateSubKey(
+                @"Software\Classes\AppUserModelId\" + Aumid);
+            if (kunci is null) return;
+            kunci.SetValue("DisplayName", "KumiDeck");
+            var exe = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exe)) kunci.SetValue("IconUri", exe);
+        }
+        catch
+        {
+            /* registri tidak dapat ditulis: abaikan */
+        }
+    }
+
     private readonly NotifyIcon _ikon;
     private bool _dibuang;
 

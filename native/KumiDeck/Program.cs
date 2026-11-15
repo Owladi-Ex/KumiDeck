@@ -19,6 +19,8 @@ internal static class Program
 
         AppPaths.Initialize();
         Log.Initialize();
+        /* Nama aplikasi pada notifikasi Windows ("KumiDeck"). */
+        Platform.TrayIcon.DaftarkanAumid();
 
         var app = new App();
         app.InitializeComponent();

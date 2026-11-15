@@ -39,6 +39,10 @@ lebih lengkap.
 
 - **Slider volume soundboard**: kini selebar kolomnya dan memakai track sendiri,
   tidak lagi terpotong padding kolom isian biasa.
+- **Teks status saat terputus** ikut diterjemahkan ("Disconnected — reconnecting")
+  ketika antarmuka memakai bahasa Inggris.
+- **Nama aplikasi pada notifikasi Windows** kini "KumiDeck", bukan
+  `NotifyIconGeneratedAumid_…` buatan Windows.
 
 ### Catatan teknis
 

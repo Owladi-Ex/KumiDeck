@@ -10,6 +10,7 @@
     "Tata letak terkunci": "Layout locked",
     "Tersambung": "Connected",
     "Terputus": "Disconnected",
+    "Terputus — mencoba menyambung": "Disconnected — reconnecting",
     "Belum ada perangkat Remote terpasang": "No Remote device connected yet",
     "Desktop": "Desktop",
     "Remote terhubung": "Remote connected",
