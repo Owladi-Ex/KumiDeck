@@ -78,6 +78,7 @@ public class MainActivity extends Activity {
         akar.setBackgroundColor(WARNA_LATAR);
         setContentView(akar);
 
+        if (bukaDariIntent(getIntent())) return;
         if (mintaSetup(getIntent())) {
             tampilkanSetup(alamatTersimpan());
             return;
@@ -91,9 +92,37 @@ public class MainActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        if (bukaDariIntent(intent)) return;
         if (mintaSetup(intent)) {
             tampilkanSetup(alamatTersimpan());
         }
+    }
+
+    /* Tautan hasil pindai kode QR (VIEW) atau teks yang dibagikan (SEND)
+       membawa alamat lengkap, biasanya beserta ?kode=<token>. Simpan asalnya,
+       lalu muat tautannya apa adanya supaya token langsung terpakai UI web. */
+    private boolean bukaDariIntent(Intent intent) {
+        if (intent == null) return false;
+        String teks = null;
+        if (Intent.ACTION_VIEW.equals(intent.getAction()) && intent.getData() != null) {
+            teks = intent.getData().toString();
+        } else if (Intent.ACTION_SEND.equals(intent.getAction())) {
+            teks = intent.getStringExtra(Intent.EXTRA_TEXT);
+        }
+        if (teks == null) return false;
+
+        /* Aplikasi pemindai kadang menempelkan kalimat; ambil URL pertama. */
+        int awal = teks.indexOf("http://");
+        if (awal < 0) awal = teks.indexOf("https://");
+        if (awal < 0) return false;
+        int akhir = awal;
+        while (akhir < teks.length() && !Character.isWhitespace(teks.charAt(akhir))) akhir++;
+
+        String url = normalisasi(teks.substring(awal, akhir));
+        if (url.isEmpty()) return false;
+        prefs().edit().putString(KEY_ASAL, asalDari(url)).apply();
+        buka(url);
+        return true;
     }
 
     /* Pintasan tekan-lama ikon memakai aksi khusus; extra "setup" lama tetap
@@ -162,6 +191,12 @@ public class MainActivity extends Activity {
             12, WARNA_REDUP, false);
         petunjuk.setPadding(0, dp(8), 0, dp(22));
         isi.addView(petunjuk);
+
+        TextView pindai = teks(
+            "Bisa juga memindai kode QR dari layar komputer dengan aplikasi kamera: saat Android menanyakan aplikasi pembuka, pilih “KumiDeck Remote”.",
+            12, WARNA_REDUP, false);
+        pindai.setPadding(0, 0, 0, dp(18));
+        isi.addView(pindai);
 
         Button sambung = new Button(this);
         sambung.setText("Sambung");

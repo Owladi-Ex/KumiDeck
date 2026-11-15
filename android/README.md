@@ -78,6 +78,22 @@ Lewat kabel USB dan SDK yang dipakai untuk membangun:
    `/remote?kode=…` dari kode QR.
 3. Masukkan kode pasangan 8 karakter dari layar komputer, seperti di peramban.
 
+### Memindai kode QR
+
+APK ini **tidak** memuat pemindai kamera sendiri. Kode QR di layar komputer
+berisi tautan `http://<ip>:<port>/remote?kode=<token>`, dan aplikasi ini
+mendaftarkan diri sebagai pembuka tautan `/remote`:
+
+1. Pindai kode QR dengan aplikasi kamera ponsel (atau Google Lens).
+2. Ketuk tautan hasilnya, lalu pada dialog "Buka dengan" pilih
+   **KumiDeck Remote** (bila langsung terbuka di peramban, pilih "Selalu buka
+   dengan" lalu aplikasinya).
+3. Aplikasi terbuka, menyimpan alamat server, dan langsung memakai token dari
+   tautan — kode 8 karakter tidak perlu diketik lagi.
+
+Hasil pindai yang dibagikan sebagai teks juga diterima lewat **Bagikan ke
+KumiDeck Remote** (mis. dari aplikasi pemindai yang punya tombol bagikan).
+
 Aplikasi hanya menyimpan alamat asal server (`http://host:port`) di
 `SharedPreferences`. Token pasangan disimpan WebView di `localStorage`, sama
 seperti peramban. Server mengikat token ke perangkat, jadi pasangan tidak
