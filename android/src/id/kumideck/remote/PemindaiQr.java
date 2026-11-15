@@ -28,6 +28,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.zxing.BarcodeFormat;
@@ -64,6 +65,8 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
 
     private static final int KODE_IZIN = 71;
     private static final long JEDA_MIN_MS = 300;
+    private static final String PREFS = "kumideck-remote";
+    private static final String KEY_PUTAR = "putarKamera";
 
     private static final int WARNA_LATAR = 0xFF000000;
     private static final int WARNA_TEKS = 0xFFF4F4F0;
@@ -92,10 +95,18 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
     private boolean sedangJalan;
     private boolean sudahSelesai;
     private boolean izinDiminta;
+    private boolean transformTerpasang;
+
+    /* Koreksi putar dari pengguna (kelipatan 90° ke kiri). Sebagian
+       perangkat melaporkan orientasi sensor yang tidak cocok dengan
+       pratinjau, jadi hasilnya bisa disesuaikan sekali dan diingat. */
+    private int putarTambahan;
 
     public PemindaiQr(Activity aktivitas, Pendengar pendengar) {
         this.aktivitas = aktivitas;
         this.pendengar = pendengar;
+        putarTambahan = aktivitas.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getInt(KEY_PUTAR, 0);
 
         utas = new HandlerThread("pindai-qr");
         utas.start();
@@ -124,12 +135,30 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
         akar.addView(bingkai,
             new FrameLayout.LayoutParams(dp(240), dp(240), Gravity.CENTER));
 
+        LinearLayout kepala = new LinearLayout(aktivitas);
+        kepala.setOrientation(LinearLayout.VERTICAL);
+        kepala.setPadding(dp(18), dp(18), dp(18), dp(18));
+
         TextView judul = new TextView(aktivitas);
         judul.setText("Pindai kode QR");
         judul.setTextColor(WARNA_TEKS);
         judul.setTextSize(16);
-        judul.setPadding(dp(18), dp(18), dp(18), dp(18));
-        akar.addView(judul,
+        kepala.addView(judul);
+
+        TextView putar = new TextView(aktivitas);
+        putar.setText("↺ Putar kiri");
+        putar.setTextColor(WARNA_AKSEN);
+        putar.setTextSize(13);
+        putar.setPadding(0, dp(10), 0, 0);
+        putar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                putarKiri();
+            }
+        });
+        kepala.addView(putar);
+
+        akar.addView(kepala,
             new FrameLayout.LayoutParams(BUNGKUS, BUNGKUS, Gravity.TOP | Gravity.START));
 
         TextView tutup = new TextView(aktivitas);
@@ -156,7 +185,7 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
             new FrameLayout.LayoutParams(ISI, BUNGKUS, Gravity.BOTTOM));
 
         TextView catatan = new TextView(aktivitas);
-        catatan.setText("Kode QR di layar Remote komputer sudah memuat alamat dan kuncinya.");
+        catatan.setText("Kode QR di layar Remote komputer sudah memuat alamat dan kuncinya. Gambar miring? Tekan ↺ Putar kiri.");
         catatan.setTextColor(WARNA_REDUP);
         catatan.setTextSize(11);
         catatan.setGravity(Gravity.CENTER);
@@ -525,7 +554,7 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
                 break;
         }
 
-        int putar = (orientasiSensor - derajatTampilan + 360) % 360;
+        int putar = (orientasiSensor - derajatTampilan + 360 + putarTambahan) % 360;
         float lebarBuffer = ukuranPratinjau.getWidth();
         float tinggiBuffer = ukuranPratinjau.getHeight();
         float lebarIsi = (putar % 180 == 0) ? lebarBuffer : tinggiBuffer;
@@ -543,6 +572,16 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
         matriks.postScale(skala, skala);
         matriks.postTranslate(lebarTampilan / 2f, tinggiTampilan / 2f);
         pratinjau.setTransform(matriks);
+        transformTerpasang = true;
+    }
+
+    /* Dipanggil tombol “Putar kiri”: memutar pratinjau 90° berlawanan arah
+       jarum jam, lalu mengingatnya untuk pemindaian berikutnya. */
+    public void putarKiri() {
+        putarTambahan = (putarTambahan + 270) % 360;
+        aktivitas.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putInt(KEY_PUTAR, putarTambahan).apply();
+        aturTransformasi();
     }
 
     private void getar() {
@@ -592,6 +631,8 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
 
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture permukaan) {
-        /* tidak dipakai: pembacaan lewat ImageReader */
+        /* Jaring pengaman: bila transformasi belum sempat dipasang saat sesi
+           kamera siap, terapkan pada bingkai pertama. */
+        if (!transformTerpasang) aturTransformasi();
     }
 }

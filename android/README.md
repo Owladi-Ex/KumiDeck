@@ -94,6 +94,11 @@ tidak bisa dipakai; pada banyak ponsel Chrome sudah menjadi pembuka default
 untuk tautan `http`, sehingga tautan dari aplikasi kamera tetap terbuka di
 peramban — pakai tombol **Pindai kode QR** di aplikasi untuk hasil yang pasti.
 
+Bila pratinjau kamera miring, tekan **↺ Putar kiri** di layar pemindai. Setiap
+tekanan memutar 90° berlawanan arah jarum jam, dan pilihan itu diingat di
+`SharedPreferences` (`putarKamera`) untuk pemindaian berikutnya. Pembacaan kode
+QR tidak terpengaruh arah putar.
+
 Aplikasi hanya menyimpan alamat asal server (`http://host:port`) di
 `SharedPreferences`. Token pasangan disimpan WebView di `localStorage`, sama
 seperti peramban. Server mengikat token ke perangkat, jadi pasangan tidak
