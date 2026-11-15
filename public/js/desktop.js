@@ -171,6 +171,7 @@
     sinyal: null /* jendela depan + volume terakhir (#20) */,
     rekaman: null /* pendengar perekam pintasan */,
     kolomTerpasang: 0,
+    adaWidgetWaktu: false /* papan memuat widget jam/tanggal */,
     online: false,
     siap: false,
     stream: null,
@@ -355,6 +356,11 @@
 
     var halaman = halamanAktif();
     if (!halaman) return;
+
+    /* Interval 1 detik hanya perlu jalan bila papan memang punya widget waktu. */
+    S.adaWidgetWaktu = halaman.keys.some(function (k) {
+      return k && k.widget && (k.widget.type === "jam" || k.widget.type === "tanggal");
+    });
 
     papan.innerHTML = "";
     var kolom = kolomPapan();
@@ -1755,12 +1761,19 @@
 
       var cariApp = $("#param-cari-app");
       if (cariApp) {
+        /* Ketikan disaring 120 ms: daftar aplikasi bisa berisi ratusan tombol
+           dan SVG, jadi jangan dibangun ulang pada setiap huruf. */
+        var jamCariApp = 0;
         cariApp.addEventListener("input", function () {
-          if (!S.editor) return;
-          S.editor.cari = cariApp.value;
-          var daftar = $("#param-app-daftar");
-          if (daftar) daftar.innerHTML = htmlDaftarApp();
-          segarkanStatusApps();
+          if (jamCariApp) window.clearTimeout(jamCariApp);
+          jamCariApp = window.setTimeout(function () {
+            jamCariApp = 0;
+            if (!S.editor) return;
+            S.editor.cari = cariApp.value;
+            var daftar = $("#param-app-daftar");
+            if (daftar) daftar.innerHTML = htmlDaftarApp();
+            segarkanStatusApps();
+          }, 120);
         });
       }
 
@@ -4690,9 +4703,7 @@
     /* Jam dan tanggal diperbarui dari jam perangkat; hanya berjalan bila
        papan memuat widget waktu (hemat tenaga). */
     window.setInterval(function () {
-      if (document.querySelector('[data-widget="jam"], [data-widget="tanggal"]')) {
-        KD.segarkanWidget();
-      }
+      if (S.adaWidgetWaktu) KD.segarkanWidget();
     }, 1000);
 
     muatState()

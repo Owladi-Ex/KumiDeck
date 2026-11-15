@@ -37,6 +37,22 @@ lebih lengkap.
 
 ### Diperbaiki
 
+- **Izin skrip tidak lagi dipercaya dari berkas**: deck impor atau JSON kiriman
+  klien yang mencantumkan `"izin": true` tetap meminta persetujuan. Izin hanya
+  diwarisi dari papan tersimpan bila tombol dan target skripnya sama persis.
+- **Daftar aktivitas aman dari perubahan bersamaan**: salinan diambil di dalam
+  lock sebelum disiarkan ke klien SSE.
+- **Pengalih HTTPS tidak bisa dipakai open redirect**: alamat tujuan selalu
+  menunjuk ke alamat LAN mesin ini dan hanya menerima jalur lokal (`/…`).
+- **Tukar posisi tombol** (`/api/deck/pindah`) memvalidasi dan menukar di dalam
+  satu lock, jadi tidak bisa balapan dengan permintaan lain.
+- **Detak 500 ms tidak lagi menumpuk** saat pemanggilan media/volume lambat;
+  kontrol volume juga berhenti ditanyakan selama 60 detik bila endpoint audio
+  tidak tersedia.
+- **Pencarian aplikasi di editor** disaring 120 ms sehingga mengetik tidak
+  membangun ulang ratusan tombol pada setiap huruf.
+- **Pengamat bahasa hanya aktif saat antarmuka berbahasa Inggris**, dan interval
+  jam hanya berjalan bila papan benar-benar memuat widget waktu.
 - **Slider volume soundboard**: kini selebar kolomnya dan memakai track sendiri,
   tidak lagi terpotong padding kolom isian biasa.
 - **Teks status saat terputus** ikut diterjemahkan ("Disconnected — reconnecting")

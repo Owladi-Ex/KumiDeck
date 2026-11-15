@@ -768,23 +768,41 @@ public sealed partial class KumiServer
                 var pageId = Teks(body, "pageId");
                 var dari = Angka(body, "dari", -1);
                 var ke = Angka(body, "ke", -1);
-                var halaman = Store.Deck.Pages.FirstOrDefault(h => h.Id == pageId);
-                if (halaman is null)
+                if (dari == ke)
                 {
-                    KirimJson(res, 404, new { ok = false, message = "Halaman tidak ditemukan." });
+                    /* Posisi sama = tidak ada yang perlu diubah. */
+                    KirimJson(res, 200, new { ok = true, deck = Store.Deck });
                     return;
                 }
-                if (dari < 0 || ke < 0 || dari >= halaman.Keys.Count || ke >= halaman.Keys.Count)
+                if (dari < 0 || ke < 0)
                 {
                     KirimJson(res, 400, new { ok = false, message = "Posisi tombol tidak valid." });
                     return;
                 }
-                if (dari != ke)
+
+                /* Validasi dan tukar di dalam satu lock Store.Ubah, supaya
+                   permintaan lain tidak bisa mengubah halaman di antaranya. */
+                var hasil = Store.Ubah(deck =>
                 {
+                    var halaman = deck.Pages.FirstOrDefault(h => h.Id == pageId);
+                    if (halaman is null) return "halaman";
+                    if (dari >= halaman.Keys.Count || ke >= halaman.Keys.Count) return "posisi";
                     (halaman.Keys[dari], halaman.Keys[ke]) = (halaman.Keys[ke], halaman.Keys[dari]);
-                    Store.Simpan();
-                    SiarState();
+                    return "ok";
+                });
+
+                if (hasil == "halaman")
+                {
+                    KirimJson(res, 404, new { ok = false, message = "Halaman tidak ditemukan." });
+                    return;
                 }
+                if (hasil == "posisi")
+                {
+                    KirimJson(res, 400, new { ok = false, message = "Posisi tombol tidak valid." });
+                    return;
+                }
+
+                SiarState();
                 KirimJson(res, 200, new { ok = true, deck = Store.Deck });
                 return;
             }

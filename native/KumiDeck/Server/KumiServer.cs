@@ -63,6 +63,8 @@ public sealed partial class KumiServer
     private readonly System.Threading.Timer _timerBersih;
 
     private VolumeState? _volumeTerakhir;
+    private volatile bool _volumeTersedia = true;
+    private long _volumeCekBerikut;
     private string _liveTerakhir = "";
     private string _sinyalTerakhir = "";
     private long _akhirLive;
@@ -524,12 +526,16 @@ public sealed partial class KumiServer
 
     public void CatatAktivitas(Aktivitas entri)
     {
+        List<Aktivitas> salinan;
         lock (_kunciAktivitas)
         {
             _aktivitas.Insert(0, entri);
             if (_aktivitas.Count > 30) _aktivitas.RemoveRange(30, _aktivitas.Count - 30);
+            /* Ambil salinan di dalam lock supaya siaran tidak membaca daftar
+               yang sedang diubah permintaan lain. */
+            salinan = _aktivitas.ToList();
         }
-        _hub.Siar("activity", _aktivitas.ToList());
+        _hub.Siar("activity", salinan);
     }
 
     private void BersihkanPerangkat()
@@ -590,9 +596,14 @@ public sealed partial class KumiServer
     }
 
     /* Satu detak 500 ms: widget media + sinyal (jendela/volume) hanya dikirim
-       bila berubah, saat tombol ditekan, atau tiap 5 detik sebagai detak. */
+       bila berubah, saat tombol ditekan, atau tiap 5 detik sebagai detak.
+       Penjaga reentrasi: timer bisa menumpuk bila satu detak lambat (COM
+       volume/media), jadi detak berikutnya dilewati sampai yang ini selesai. */
+    private int _detakBerjalan;
+
     private void Detak()
     {
+        if (Interlocked.CompareExchange(ref _detakBerjalan, 1, 0) != 0) return;
         try
         {
             var sekarang = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -616,7 +627,17 @@ public sealed partial class KumiServer
                 if (VolumeControlAda())
                 {
                     var hasil = VolumeControl.Baca();
-                    if (hasil.Ok) _volumeTerakhir = hasil;
+                    if (hasil.Ok)
+                    {
+                        _volumeTerakhir = hasil;
+                    }
+                    else
+                    {
+                        /* Endpoint tidak ada (mis. tanpa perangkat keluaran):
+                           berhenti menanyakan tiap detak, coba lagi tiap 60 detik. */
+                        _volumeTersedia = false;
+                        _volumeCekBerikut = sekarang + 60000;
+                    }
                 }
 
                 var sinyal = MuatanSinyal();
@@ -637,9 +658,23 @@ public sealed partial class KumiServer
         {
             Log.Warn("detak live: " + ex.Message);
         }
+        finally
+        {
+            Interlocked.Exchange(ref _detakBerjalan, 0);
+        }
     }
 
-    private static bool VolumeControlAda() => true;
+    /* Kontrol volume hanya ditanyakan bila endpoint-nya ada. Setelah gagal,
+       tunggu 60 detik sebelum mencoba lagi supaya detak tidak memanggil COM
+       tiap 700 ms di mesin tanpa perangkat keluaran. */
+    private bool VolumeControlAda()
+    {
+        if (_volumeTersedia) return true;
+        var sekarang = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        if (sekarang < Interlocked.Read(ref _volumeCekBerikut)) return false;
+        _volumeTersedia = true;
+        return true;
+    }
 
     public void TandaiTekan()
     {
@@ -725,7 +760,17 @@ public sealed partial class KumiServer
         res.Status = 308;
         res.Tipe = "text/plain; charset=utf-8";
         res.Isi = Array.Empty<byte>();
-        res.Header["Location"] = "https://" + (string.IsNullOrEmpty(req.Host) ? Lan + ":" + Port : req.Host) + req.Target;
+        /* Jangan percaya Host kiriman klien: pengalih hanya menunjuk ke alamat
+           LAN mesin ini. Target dibatasi ke jalur lokal ("/...", bukan "//...")
+           supaya permintaan tidak bisa dipakai sebagai open redirect. */
+        var tujuan = req.Target;
+        if (string.IsNullOrEmpty(tujuan) ||
+            tujuan[0] != '/' ||
+            tujuan.StartsWith("//", StringComparison.Ordinal))
+        {
+            tujuan = "/";
+        }
+        res.Header["Location"] = "https://" + Lan + ":" + Port + tujuan;
         return Task.CompletedTask;
     }
 

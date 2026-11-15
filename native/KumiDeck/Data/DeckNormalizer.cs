@@ -131,7 +131,10 @@ public static class DeckNormalizer
                     Type = "skrip",
                     Target = target,
                     Args = args,
-                    Izin = Bool(Prop(aksi, "izin"), false),
+                    /* Izin tidak pernah diambil dari masukan: deck impor atau
+                       JSON kiriman klien bisa mencantumkan "izin": true. Izin
+                       hanya diwarisi dari papan tersimpan di WarisiIzin(). */
+                    Izin = false,
                 };
             }
             case "http":
@@ -427,6 +430,64 @@ public static class DeckNormalizer
         return hasil;
     }
 
+    /* ---------------------------------------------------------- izin -------- */
+    /* Izin menjalankan skrip hanya boleh diwarisi dari papan yang sudah
+       tersimpan: tombol dan target skripnya harus sama persis. Dengan begitu
+       deck impor tidak bisa membawa "izin": true untuk skrip asing, sementara
+       tombol yang sudah disetujui tetap berjalan tanpa bertanya lagi. */
+    private static void WarisiIzin(Deck baru, Deck lama)
+    {
+        foreach (var halaman in baru.Pages)
+        {
+            var halamanLama = lama.Pages.FirstOrDefault(h => h.Id == halaman.Id);
+            if (halamanLama is null) continue;
+            foreach (var tombol in halaman.Keys)
+            {
+                if (tombol is null) continue;
+                var tombolLama = halamanLama.Keys.FirstOrDefault(k => k is not null && k.Id == tombol.Id);
+                if (tombolLama is null) continue;
+
+                var disetujui = new HashSet<string>(StringComparer.Ordinal);
+                KumpulkanIzin(tombolLama.Action, disetujui);
+                if (tombolLama.ActionKedua is not null) KumpulkanIzin(tombolLama.ActionKedua, disetujui);
+                if (disetujui.Count == 0) continue;
+
+                TerapkanIzin(tombol.Action, disetujui);
+                if (tombol.ActionKedua is not null) TerapkanIzin(tombol.ActionKedua, disetujui);
+            }
+        }
+    }
+
+    private static void KumpulkanIzin(Aksi aksi, HashSet<string> target)
+    {
+        if (aksi.Type == "skrip")
+        {
+            if (aksi.Izin && !string.IsNullOrEmpty(aksi.Target)) target.Add(aksi.Target!);
+            return;
+        }
+        if (aksi.Steps is not null)
+        {
+            foreach (var langkah in aksi.Steps) KumpulkanIzin(langkah.Action, target);
+        }
+        if (aksi.Aktif is not null) KumpulkanIzin(aksi.Aktif, target);
+        if (aksi.TidakAktif is not null) KumpulkanIzin(aksi.TidakAktif, target);
+    }
+
+    private static void TerapkanIzin(Aksi aksi, HashSet<string> disetujui)
+    {
+        if (aksi.Type == "skrip")
+        {
+            aksi.Izin = !string.IsNullOrEmpty(aksi.Target) && disetujui.Contains(aksi.Target!);
+            return;
+        }
+        if (aksi.Steps is not null)
+        {
+            foreach (var langkah in aksi.Steps) TerapkanIzin(langkah.Action, disetujui);
+        }
+        if (aksi.Aktif is not null) TerapkanIzin(aksi.Aktif, disetujui);
+        if (aksi.TidakAktif is not null) TerapkanIzin(aksi.TidakAktif, disetujui);
+    }
+
     public static Deck NormalDeck(JsonElement? masukan, Deck? deckLama = null)
     {
         var sumber = Objek(masukan) ? masukan : null;
@@ -494,7 +555,7 @@ public static class DeckNormalizer
         var homeId = pages.Any(h => h.Id == homeDiminta) ? homeDiminta : pages[0].Id;
         var idHalamanFinal = pages.Select(h => h.Id).ToList();
 
-        return new Deck
+        var hasilDeck = new Deck
         {
             Version = 1,
             Profile = new Profil { Name = namaProfil, Columns = kolom, Rows = baris },
@@ -511,6 +572,9 @@ public static class DeckNormalizer
                 Aksen = NormalAksen(Prop(Prop(sumber, "settings"), "aksen")),
             },
         };
+
+        if (deckLama is not null) WarisiIzin(hasilDeck, deckLama);
+        return hasilDeck;
     }
 
     /* ------------------------------------------------------------ contoh ---- */

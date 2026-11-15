@@ -31,6 +31,7 @@
     stream: null,
     raf: 0,
     wakeLock: null,
+    adaWidgetWaktu: false /* papan memuat widget jam/tanggal */,
   };
 
   /* ------------------------------------------------------------ penyimpanan --- */
@@ -141,10 +142,16 @@
 
     var aktif = halamanAktif();
     if (!aktif) {
+      S.adaWidgetWaktu = false;
       papan.hidden = true;
       if (kosong) kosong.hidden = true;
       return;
     }
+
+    /* Interval 1 detik hanya perlu jalan bila papan memang punya widget waktu. */
+    S.adaWidgetWaktu = aktif.keys.some(function (k) {
+      return k && k.widget && (k.widget.type === "jam" || k.widget.type === "tanggal");
+    });
 
     terapkanKolom();
     papan.innerHTML = "";
@@ -1113,9 +1120,7 @@
 
     /* Jam dan tanggal diperbarui tiap detik, hanya bila widget waktu tampil. */
     window.setInterval(function () {
-      if (document.querySelector('[data-widget="jam"], [data-widget="tanggal"]')) {
-        KD.segarkanWidget();
-      }
+      if (S.adaWidgetWaktu) KD.segarkanWidget();
     }, 1000);
 
     if (!KD.token) {

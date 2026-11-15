@@ -369,6 +369,9 @@
         /* penyimpanan penuh: abaikan */
       }
       document.documentElement.lang = KD.bahasa;
+      /* Pengamat DOM hanya hidup saat bahasa Inggris. */
+      if (KD.bahasa === "en") KD.amatiBahasa();
+      else KD.lepasAmatiBahasa();
       KD.terapkanBahasa();
       try {
         window.dispatchEvent(new CustomEvent("kd:bahasa", { detail: { bahasa: KD.bahasa } }));
@@ -464,8 +467,14 @@
       }
     },
 
-    /* Amati perubahan DOM supaya teks dinamis ikut diterjemahkan. */
+    /* Amati perubahan DOM supaya teks dinamis ikut diterjemahkan. Pengamat
+       hanya perlu hidup saat bahasa Inggris; pada bahasa Indonesia simpul baru
+       dibiarkan apa adanya supaya tidak ada kerja tambahan tiap render. */
     amatiBahasa: function () {
+      if (KD.bahasa !== "en") {
+        KD.lepasAmatiBahasa();
+        return;
+      }
       if (KD._pengamatBahasa || typeof MutationObserver !== "function") return;
       KD._pengamatBahasa = new MutationObserver(function (daftar) {
         /* Tanpa pengaman "sedang memproses": hasil terjemahan tidak lagi cocok
@@ -493,6 +502,16 @@
         attributes: true,
         attributeFilter: ["aria-label", "title", "placeholder", "alt"],
       });
+    },
+
+    lepasAmatiBahasa: function () {
+      if (!KD._pengamatBahasa) return;
+      try {
+        KD._pengamatBahasa.disconnect();
+      } catch (err) {
+        /* diabaikan */
+      }
+      KD._pengamatBahasa = null;
     },
 
     /* ------------------------------------------------------- tombol --- */    /* KD.buatTombol(key, { kosong, sunting, aktif, indeks }) → <button> */
