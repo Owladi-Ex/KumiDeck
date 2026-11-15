@@ -13,6 +13,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Getaran saat tombol ditekan (navigator.vibrate di UI Remote). -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Pemindai kode QR di layar alamat server. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <application
         android:allowBackup="false"

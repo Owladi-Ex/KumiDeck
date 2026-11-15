@@ -1,9 +1,9 @@
 # KumiDeck Remote untuk Android
 
-APK ringan (sekitar 70 KB) yang membungkus UI Remote KumiDeck di dalam WebView.
-Aplikasi ini **tidak berisi papan tombol**: papan, pasangan, skrip, dan aksi tetap
-dijalankan KumiDeck di komputer. Karena itu, setiap pembaruan UI di desktop
-langsung terpakai tanpa memasang ulang APK.
+APK ringan (sekitar 0,5 MB) yang membungkus UI Remote KumiDeck di dalam WebView,
+dengan pemindai kode QR bawaan. Aplikasi ini **tidak berisi papan tombol**:
+papan, pasangan, skrip, dan aksi tetap dijalankan KumiDeck di komputer. Karena
+itu, setiap pembaruan UI di desktop langsung terpakai tanpa memasang ulang APK.
 
 ## Kenapa perlu APK, bukan sekadar PWA?
 
@@ -35,6 +35,7 @@ Syarat:
 - JDK 17 (`javac`, `keytool`, dipakai juga oleh `d8` dan `apksigner`)
 - Android SDK dengan `build-tools` (aapt2, d8, zipalign, apksigner) dan
   `platforms/android-35`
+- Pustaka `android/libs/core-3.5.3.jar` (ZXing) — sudah disertakan di repositori
 
 Tidak perlu Gradle atau Android Studio. Skrip memakai `ANDROID_HOME` dan
 `JAVA_HOME` bila tersedia, atau menerima path eksplisit:
@@ -72,27 +73,26 @@ Lewat kabel USB dan SDK yang dipakai untuk membangun:
 
 ## Pemakaian
 
-1. Jalankan KumiDeck di komputer, buka layar **Remote**.
-2. Di ponsel, isi alamat server, mis. `192.168.1.10:4173`, lalu tekan
-   **Sambung**. Alamat juga boleh ditempel lengkap, termasuk tautan
-   `/remote?kode=…` dari kode QR.
-3. Masukkan kode pasangan 8 karakter dari layar komputer, seperti di peramban.
+1. Jalankan KumiDeck di komputer, buka layar **Remote** (kode QR tampil di sana).
+2. Di ponsel, tekan **Pindai kode QR**, izinkan kamera sekali, lalu arahkan ke
+   kode QR di layar komputer. Aplikasi langsung tersambung.
+3. Kalau kamera tidak bisa dipakai, tempel tautan `/remote?kode=…` atau isi
+   alamat server (mis. `192.168.1.10:4173`) lalu masukkan kode pasangan
+   8 karakter dari layar komputer.
 
 ### Memindai kode QR
 
-APK ini **tidak** memuat pemindai kamera sendiri. Kode QR di layar komputer
-berisi tautan `http://<ip>:<port>/remote?kode=<token>`, dan aplikasi ini
-mendaftarkan diri sebagai pembuka tautan `/remote`:
+Pemindai berjalan di dalam aplikasi: `PemindaiQr` memakai Camera2
+(`TextureView` + `ImageReader` YUV) dan decoder ZXing. Bingkai dibaca paling
+cepat setiap 300 ms. Kode QR di layar komputer berisi
+`http://<ip>:<port>/remote?kode=<token>`, jadi sekali pindai alamat dan token
+langsung terpakai — kode 8 karakter tidak perlu diketik.
 
-1. Pindai kode QR dengan aplikasi kamera ponsel (atau Google Lens).
-2. Ketuk tautan hasilnya, lalu pada dialog "Buka dengan" pilih
-   **KumiDeck Remote** (bila langsung terbuka di peramban, pilih "Selalu buka
-   dengan" lalu aplikasinya).
-3. Aplikasi terbuka, menyimpan alamat server, dan langsung memakai token dari
-   tautan — kode 8 karakter tidak perlu diketik lagi.
-
-Hasil pindai yang dibagikan sebagai teks juga diterima lewat **Bagikan ke
-KumiDeck Remote** (mis. dari aplikasi pemindai yang punya tombol bagikan).
+Aplikasi juga mendaftarkan diri sebagai pembuka tautan `http(s)://…/remote`
+dan menerima **Bagikan ke KumiDeck Remote**. Ini cadangan bila pemindai kamera
+tidak bisa dipakai; pada banyak ponsel Chrome sudah menjadi pembuka default
+untuk tautan `http`, sehingga tautan dari aplikasi kamera tetap terbuka di
+peramban — pakai tombol **Pindai kode QR** di aplikasi untuk hasil yang pasti.
 
 Aplikasi hanya menyimpan alamat asal server (`http://host:port`) di
 `SharedPreferences`. Token pasangan disimpan WebView di `localStorage`, sama
@@ -100,12 +100,16 @@ seperti peramban. Server mengikat token ke perangkat, jadi pasangan tidak
 berpindah ke ponsel lain.
 
 Bila alamat server berubah, buka aplikasi saat server lama tidak terjangkau —
-layar "Tidak tersambung" menyediakan tombol **Ganti alamat server**.
+layar "Tidak tersambung" menyediakan tombol **Ganti alamat server**; atau tekan
+lama ikon aplikasi dan pilih **Ganti alamat**.
 
 ## Catatan teknis
 
 - `minSdkVersion 24`, `targetSdkVersion 34`, `usesCleartextTraffic="true"`.
-- Izin: `INTERNET`, `ACCESS_NETWORK_STATE`, `VIBRATE` (getaran tombol).
+- Izin: `INTERNET`, `ACCESS_NETWORK_STATE`, `VIBRATE` (getaran tombol), dan
+  `CAMERA` (diminta saat memindai; kamera bersifat opsional).
+- Pustaka pihak ketiga: `libs/core-3.5.3.jar` (ZXing core, Apache-2.0) untuk
+  decoder QR. Lihat `libs/README.md`.
 - Layar tetap menyala selama aplikasi terbuka (`FLAG_KEEP_SCREEN_ON`), karena
   `navigator.wakeLock` tidak tersedia pada konteks HTTP.
 - Video layar penuh dari UI web didukung lewat `onShowCustomView`; tombol

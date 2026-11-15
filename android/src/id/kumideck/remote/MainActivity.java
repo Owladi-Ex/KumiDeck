@@ -64,6 +64,7 @@ public class MainActivity extends Activity {
     private TextView pesanGalat;
     private String alamatTampil = "";
     private boolean diSetup = false;
+    private PemindaiQr pemindai;
     private View tampilanPenuh;
     private WebChromeClient.CustomViewCallback callbackPenuh;
 
@@ -109,6 +110,12 @@ public class MainActivity extends Activity {
         } else if (Intent.ACTION_SEND.equals(intent.getAction())) {
             teks = intent.getStringExtra(Intent.EXTRA_TEXT);
         }
+        return bukaDariTeks(teks);
+    }
+
+    /* Menerima teks bebas (hasil pindai kamera, tautan yang dibagikan, atau
+       tautan yang ditempel): ambil URL pertama, simpan asalnya, lalu buka. */
+    private boolean bukaDariTeks(String teks) {
         if (teks == null) return false;
 
         /* Aplikasi pemindai kadang menempelkan kalimat; ambil URL pertama. */
@@ -131,6 +138,47 @@ public class MainActivity extends Activity {
         if (intent == null) return false;
         return AKSI_SETUP.equals(intent.getAction())
             || intent.getBooleanExtra("setup", false);
+    }
+
+    /* -------------------------------------------------------------- pindai -- */
+
+    private void bukaPemindai() {
+        lepasWeb();
+        akar.removeAllViews();
+        alamatTampil = "";
+        lepasPemindai();
+
+        pemindai = new PemindaiQr(this, new PemindaiQr.Pendengar() {
+            @Override
+            public void padaHasil(String teks) {
+                lepasPemindai();
+                if (!bukaDariTeks(teks)) {
+                    Toast.makeText(MainActivity.this,
+                        "Kode QR itu bukan tautan KumiDeck.", Toast.LENGTH_LONG).show();
+                    tampilkanSetup(alamatTersimpan());
+                }
+            }
+
+            @Override
+            public void padaBatal() {
+                lepasPemindai();
+                tampilkanSetup(alamatTersimpan());
+            }
+
+            @Override
+            public void padaGalat(String pesan) {
+                /* pesan sudah tampil di layar pemindai */
+            }
+        });
+        akar.addView(pemindai.tampilan(), new FrameLayout.LayoutParams(ISI, ISI));
+        pemindai.mulai();
+    }
+
+    private void lepasPemindai() {
+        if (pemindai != null) {
+            pemindai.lepas();
+            pemindai = null;
+        }
     }
 
     /* ------------------------------------------------------------- setelan -- */
@@ -192,19 +240,35 @@ public class MainActivity extends Activity {
         petunjuk.setPadding(0, dp(8), 0, dp(22));
         isi.addView(petunjuk);
 
-        TextView pindai = teks(
-            "Bisa juga memindai kode QR dari layar komputer dengan aplikasi kamera: saat Android menanyakan aplikasi pembuka, pilih “KumiDeck Remote”.",
+        TextView pindaiKet = teks(
+            "Tekan “Pindai kode QR” untuk memindai kode di layar komputer; izin kamera diminta sekali. Kalau kamera tidak bisa dipakai, tempel tautan /remote?kode=… di atas.",
             12, WARNA_REDUP, false);
-        pindai.setPadding(0, 0, 0, dp(18));
-        isi.addView(pindai);
+        pindaiKet.setPadding(0, 0, 0, dp(18));
+        isi.addView(pindaiKet);
+
+        Button pindai = new Button(this);
+        pindai.setText("Pindai kode QR");
+        pindai.setAllCaps(false);
+        pindai.setTextSize(16);
+        pindai.setTextColor(WARNA_LATAR);
+        pindai.setBackgroundTintList(ColorStateList.valueOf(WARNA_AKSEN));
+        isi.addView(pindai, new LinearLayout.LayoutParams(ISI, dp(52)));
+        pindai.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                bukaPemindai();
+            }
+        });
 
         Button sambung = new Button(this);
-        sambung.setText("Sambung");
+        sambung.setText("Sambung dengan alamat");
         sambung.setAllCaps(false);
         sambung.setTextSize(16);
-        sambung.setTextColor(WARNA_LATAR);
-        sambung.setBackgroundTintList(ColorStateList.valueOf(WARNA_AKSEN));
-        isi.addView(sambung, new LinearLayout.LayoutParams(ISI, dp(52)));
+        sambung.setTextColor(WARNA_AKSEN);
+        sambung.setBackgroundTintList(ColorStateList.valueOf(0xFF23232A));
+        LinearLayout.LayoutParams lpSambung = new LinearLayout.LayoutParams(ISI, dp(52));
+        lpSambung.topMargin = dp(10);
+        isi.addView(sambung, lpSambung);
 
         sambung.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -538,6 +602,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         if (web != null) web.onPause();
+        if (pemindai != null) pemindai.hentikan();
         super.onPause();
     }
 
@@ -545,10 +610,21 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (web != null) web.onResume();
+        if (pemindai != null) pemindai.mulai();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int kode, String[] izin, int[] hasil) {
+        if (pemindai != null && pemindai.tanganiIzin(kode, hasil)) return;
+        super.onRequestPermissionsResult(kode, izin, hasil);
     }
 
     @Override
     public void onBackPressed() {
+        if (pemindai != null) {
+            pemindai.batal();
+            return;
+        }
         if (tampilanPenuh != null) {
             if (chrome != null) chrome.onHideCustomView();
             return;
@@ -566,6 +642,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        lepasPemindai();
         lepasWeb();
         super.onDestroy();
     }

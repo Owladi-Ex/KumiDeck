@@ -262,14 +262,24 @@ Langkah "javac"
 $sumber = Get-ChildItem (Join-Path $FolderAndroid "src") -Recurse -Filter *.java |
     ForEach-Object { $_.FullName }
 if (-not $sumber) { Gagal "Tidak ada berkas .java di $(Join-Path $FolderAndroid 'src')" }
-Jalankan "javac" (@(
+
+# Pustaka pihak ketiga (ZXing untuk decoder kode QR), disimpan di android/libs.
+$folderLibs = Join-Path $FolderAndroid "libs"
+$pustaka = @()
+if (Test-Path $folderLibs) {
+    $pustaka = Get-ChildItem $folderLibs -Filter *.jar | ForEach-Object { $_.FullName }
+}
+
+$argumenJavac = @(
     "-encoding", "UTF-8",
     "-source", "8",
     "-target", "8",
     "-bootclasspath", $androidJar,
     "-Xlint:-options",
     "-d", $FolderKelas
-) + $sumber)
+)
+if ($pustaka.Count -gt 0) { $argumenJavac += @("-cp", ($pustaka -join ";")) }
+Jalankan "javac" ($argumenJavac + $sumber)
 
 Langkah "d8"
 $kelas = Get-ChildItem $FolderKelas -Recurse -Filter *.class | ForEach-Object { $_.FullName }
@@ -279,7 +289,7 @@ Jalankan $d8 (@(
     "--min-api", "24",
     "--lib", $androidJar,
     "--output", $FolderDex
-) + $kelas)
+) + $pustaka + $kelas)
 
 $dex = Join-Path $FolderDex "classes.dex"
 if (-not (Test-Path $dex)) { Gagal "d8 tidak menghasilkan classes.dex" }
