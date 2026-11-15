@@ -10,6 +10,8 @@ import android.graphics.Typeface;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -33,6 +35,9 @@ import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.net.InetSocketAddress;
+import java.net.Socket;
 
 /* KumiDeck Remote — pembungkus WebView untuk UI /remote yang disajikan
    KumiDeck di komputer. Tidak ada papan atau aksi yang disimpan di sini:
@@ -60,6 +65,7 @@ public class MainActivity extends Activity {
     private WebView web;
     private WebChromeClient chrome;
     private View memuat;
+    private TextView infoMemuat;
     private View lapisGalat;
     private TextView pesanGalat;
     private String alamatTampil = "";
@@ -67,6 +73,20 @@ public class MainActivity extends Activity {
     private PemindaiQr pemindai;
     private View tampilanPenuh;
     private WebChromeClient.CustomViewCallback callbackPenuh;
+
+    /* Batas tunggu halaman: koneksi ke alamat LAN yang salah bisa menggantung
+       puluhan detik tanpa memicu onReceivedError. */
+    private final Handler penunda = new Handler(Looper.getMainLooper());
+    private final Runnable batasMuat = new Runnable() {
+        @Override
+        public void run() {
+            if (web != null) {
+                tampilkanGalat("Tidak ada jawaban dari " + alamatTampil
+                    + " setelah 15 detik. Pastikan KumiDeck berjalan dan ponsel"
+                    + " ada di Wi-Fi yang sama dengan komputer.");
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -364,7 +384,16 @@ public class MainActivity extends Activity {
             }
 
             @Override
+            public void onPageCommitVisible(WebView view, String url) {
+                /* Halaman sudah punya isi; jangan biarkan overlay menutupinya
+                   hanya karena onPageFinished belum tiba. */
+                batalBatas();
+                tampilkanMemuat(false);
+            }
+
+            @Override
             public void onPageFinished(WebView view, String url) {
+                batalBatas();
                 tampilkanMemuat(false);
                 sembunyikanAjakanPwa(view);
             }
@@ -372,6 +401,7 @@ public class MainActivity extends Activity {
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) {
+                    batalBatas();
                     tampilkanGalat("Tidak dapat terhubung ke " + alamatTampil +
                         ". Pastikan KumiDeck berjalan dan ponsel ada di Wi-Fi yang sama.");
                 }
@@ -431,13 +461,98 @@ public class MainActivity extends Activity {
         info.setPadding(0, dp(12), 0, 0);
         kotakMemuat.addView(info, new LinearLayout.LayoutParams(BUNGKUS, BUNGKUS));
         memuat = kotakMemuat;
+        infoMemuat = info;
+        info.setText("Menyambung ke " + ringkasAlamat(url) + "…");
+
+        TextView ulangMuat = teks("Muat ulang", 13, WARNA_AKSEN, true);
+        ulangMuat.setPadding(0, dp(20), 0, 0);
+        ulangMuat.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (alamatTampil != null && !alamatTampil.isEmpty()) buka(alamatTampil);
+            }
+        });
+        kotakMemuat.addView(ulangMuat, new LinearLayout.LayoutParams(BUNGKUS, BUNGKUS));
+
         akar.addView(memuat, new FrameLayout.LayoutParams(ISI, ISI));
 
         lapisGalat = buatLapisGalat();
         lapisGalat.setVisibility(View.GONE);
         akar.addView(lapisGalat, new FrameLayout.LayoutParams(ISI, ISI));
 
-        web.loadUrl(url);
+        /* WebView bisa menggantung lama pada alamat yang tidak menjawab
+           (mis. IP salah atau Wi-Fi berbeda) tanpa memicu onReceivedError.
+           Jadi sambungan diperiksa lebih dulu dengan batas 1,5 detik. */
+        cekJangkauan(url);
+    }
+
+    private void cekJangkauan(final String url) {
+        Uri u = Uri.parse(url);
+        final String host = u.getHost();
+        final int port = u.getPort();
+        if (host == null || host.isEmpty() || port <= 0) {
+            jadwalkanBatas();
+            if (web != null) web.loadUrl(url);
+            return;
+        }
+
+        jadwalkanBatas();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean bisa;
+                Socket soket = new Socket();
+                try {
+                    soket.connect(new InetSocketAddress(host, port), 1500);
+                    bisa = true;
+                } catch (Exception e) {
+                    bisa = false;
+                } finally {
+                    try {
+                        soket.close();
+                    } catch (Exception e) {
+                        /* diabaikan */
+                    }
+                }
+
+                final boolean hasil = bisa;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (web == null || !url.equals(alamatTampil)) return;
+                        if (hasil) {
+                            web.loadUrl(url);
+                        } else {
+                            tampilkanGalat("Tidak ada jawaban dari " + host + ":" + port
+                                + ". Pastikan KumiDeck masih berjalan, ponsel ada di"
+                                + " Wi-Fi yang sama dengan komputer, dan jaringan di"
+                                + " komputer berstatus Privat (bukan Publik).");
+                        }
+                    }
+                });
+            }
+        }, "cek-jangkauan").start();
+    }
+
+    private void jadwalkanBatas() {
+        penunda.removeCallbacks(batasMuat);
+        penunda.postDelayed(batasMuat, 15000);
+    }
+
+    private void batalBatas() {
+        penunda.removeCallbacks(batasMuat);
+    }
+
+    /* host:port saja, supaya pesan muat tidak menampilkan token. */
+    private String ringkasAlamat(String url) {
+        try {
+            Uri u = Uri.parse(url);
+            String host = u.getHost();
+            if (host == null || host.isEmpty()) return url;
+            return u.getPort() > 0 ? host + ":" + u.getPort() : host;
+        } catch (Exception e) {
+            return url;
+        }
     }
 
     private View buatLapisGalat() {
@@ -466,6 +581,27 @@ public class MainActivity extends Activity {
         });
         lapis.addView(ulang, new LinearLayout.LayoutParams(ISI, dp(48)));
 
+        Button diChrome = new Button(this);
+        diChrome.setText("Buka di Chrome");
+        diChrome.setAllCaps(false);
+        diChrome.setTextColor(WARNA_TEKS);
+        LinearLayout.LayoutParams lpChrome = new LinearLayout.LayoutParams(ISI, dp(48));
+        lpChrome.topMargin = dp(10);
+        diChrome.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (alamatTampil == null || alamatTampil.isEmpty()) return;
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(alamatTampil)));
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this,
+                        "Tidak ada peramban untuk membuka alamat itu.",
+                        Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+        lapis.addView(diChrome, lpChrome);
+
         Button ganti = new Button(this);
         ganti.setText("Ganti alamat server");
         ganti.setAllCaps(false);
@@ -489,6 +625,7 @@ public class MainActivity extends Activity {
     }
 
     private void tampilkanGalat(String pesan) {
+        batalBatas();
         if (lapisGalat == null) return;
         if (memuat != null) memuat.setVisibility(View.GONE);
         if (pesanGalat != null) pesanGalat.setText(pesan);
@@ -526,6 +663,7 @@ public class MainActivity extends Activity {
     }
 
     private void lepasWeb() {
+        batalBatas();
         if (tampilanPenuh != null) {
             if (chrome != null) chrome.onHideCustomView();
         }
@@ -541,6 +679,7 @@ public class MainActivity extends Activity {
             web = null;
         }
         memuat = null;
+        infoMemuat = null;
         lapisGalat = null;
         pesanGalat = null;
     }

@@ -108,6 +108,12 @@ lama ikon aplikasi dan pilih **Ganti alamat**.
 - `minSdkVersion 24`, `targetSdkVersion 34`, `usesCleartextTraffic="true"`.
 - Izin: `INTERNET`, `ACCESS_NETWORK_STATE`, `VIBRATE` (getaran tombol), dan
   `CAMERA` (diminta saat memindai; kamera bersifat opsional).
+- Sebelum memuat halaman, aplikasi mencoba menyambung ke `host:port` dengan
+  batas 1,5 detik. Bila tidak menjawab, muncul pesan berisi alamat itu
+  (mis. "Tidak ada jawaban dari 192.168.1.10:4173") plus tombol **Coba lagi**,
+  **Buka di Chrome**, dan **Ganti alamat server** — jadi tidak perlu menunggu
+  layar "Menyambung…" menggantung. Bila halaman belum selesai dalam 15 detik,
+  batas waktu kedua menampilkan galat yang sama.
 - Pustaka pihak ketiga: `libs/core-3.5.3.jar` (ZXing core, Apache-2.0) untuk
   decoder QR. Lihat `libs/README.md`.
 - Layar tetap menyala selama aplikasi terbuka (`FLAG_KEEP_SCREEN_ON`), karena

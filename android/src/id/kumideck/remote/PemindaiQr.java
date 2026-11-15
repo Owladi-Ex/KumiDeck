@@ -528,15 +528,18 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
         int putar = (orientasiSensor - derajatTampilan + 360) % 360;
         float lebarBuffer = ukuranPratinjau.getWidth();
         float tinggiBuffer = ukuranPratinjau.getHeight();
-
-        /* Pusatkan buffer, putar, lalu skala seragam supaya memenuhi layar
-           tanpa gambar gepeng (center-crop). */
-        Matrix matriks = new Matrix();
-        matriks.postTranslate(-lebarBuffer / 2f, -tinggiBuffer / 2f);
-        matriks.postRotate(putar);
         float lebarIsi = (putar % 180 == 0) ? lebarBuffer : tinggiBuffer;
         float tinggiIsi = (putar % 180 == 0) ? tinggiBuffer : lebarBuffer;
         float skala = Math.max(lebarTampilan / lebarIsi, tinggiTampilan / tinggiIsi);
+
+        /* TextureView meregangkan buffer (lebarBuffer x tinggiBuffer) agar
+           memenuhi layar. Transformasi ini membalik peregangan itu lebih dulu,
+           memusatkan buffer, memutar, lalu memperbesar seragam supaya penuh
+           tanpa gambar gepeng. */
+        Matrix matriks = new Matrix();
+        matriks.postScale(lebarBuffer / lebarTampilan, tinggiBuffer / tinggiTampilan);
+        matriks.postTranslate(-lebarBuffer / 2f, -tinggiBuffer / 2f);
+        matriks.postRotate(putar);
         matriks.postScale(skala, skala);
         matriks.postTranslate(lebarTampilan / 2f, tinggiTampilan / 2f);
         pratinjau.setTransform(matriks);
