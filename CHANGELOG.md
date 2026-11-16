@@ -49,6 +49,14 @@ kontrolnya. Versi APK Remote: 2.3.0 (versionCode 230).
   Pilihan perangkat per suara dihapus dari panel Soundboard; pemisahan channel
   dikerjakan aplikasi mixer (mis. Elgato Wave Link) dengan mengarahkan
   `KumiDeck.exe` ke channel yang diinginkan.
+- **Tautan soundboard tidak lagi membuat ping game melonjak.** Tautan `http`/
+  `https` kini mulai diunduh begitu item disimpan (bukan saat tombol ditekan),
+  di thread berprioritas rendah dengan laju dibatasi sekitar 2 MB/s, lalu
+  diputar dari berkas lokal. Pemutar juga dipanaskan saat aplikasi mulai dan
+  permintaan putar dibalas cepat (≤120 ms), jadi menekan tombol tidak lagi
+  menyedot bandwidth atau menahan UI. Status tiap tautan tampil di kartu
+  soundboard: *Siap diputar*, *Mengunduh n%*, *Unduhan gagal*, atau *Belum
+  diunduh*; menghapus item ikut membersihkan cache tautannya.
 
 ### Dipoles
 
