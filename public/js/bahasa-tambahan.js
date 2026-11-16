@@ -242,7 +242,23 @@
     "Cadangan dibuat otomatis saat papan berubah. Pilih waktu, lalu tekan Pulihkan.":
       "Backups are created automatically when the board changes. Pick a time, then press Restore.",
     "Belum ada cadangan": "No backups yet",
-    "Daftar cadangan tidak dapat dimuat": "The backup list could not be loaded"
+    "Daftar cadangan tidak dapat dimuat": "The backup list could not be loaded",
+
+    /* Soundboard: pra-unduh tautan dan pembatas laju. */
+    "Mengunduh": "Downloading",
+    "Mengunduh…": "Downloading…",
+    "Unduhan gagal": "Download failed",
+    "Belum diunduh": "Not downloaded yet",
+    "Siap diputar": "Ready to play",
+    "Suara disimpan. Tautan diunduh di latar.":
+      "Sound saved. The link is downloading in the background.",
+    "Tautan http(s) diunduh dulu ke komputer (maks 40 MB, kecepatan dibatasi) lalu diputar dari berkas lokal, jadi ping game tidak tersedot.":
+      "http(s) links are downloaded to this computer first (max 40 MB, throttled) and then played from the local file, so your game's ping is not drained."
   });
+
+  window.KD_EN_POLA.push([
+    /^Suara sedang diunduh \((\d+)%\)\. Coba lagi sebentar\.$/i,
+    "The sound is still downloading ($1%). Try again in a moment.",
+  ]);
 })();
 

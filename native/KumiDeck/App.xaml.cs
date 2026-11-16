@@ -1,4 +1,5 @@
 using System.Windows;
+using KumiDeck.Audio;
 using KumiDeck.Core;
 using KumiDeck.Server;
 
@@ -38,6 +39,10 @@ public partial class App : System.Windows.Application
         _server.TangkapPapan = _jendela.TangkapPapanAsync;
         _jendela.Show();
         _jendela.TerapkanSelaluDiAtas(_server.SelaluDiAtas);
+
+        /* Panaskan pemutar soundboard di latar supaya pemutaran pertama tidak
+           memakan ~100 ms CPU saat pengguna sedang bermain game. */
+        SoundBoard.Panaskan();
 
         if (Environment.GetEnvironmentVariable("KD_OPEN") == "1")
         {

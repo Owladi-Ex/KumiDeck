@@ -388,6 +388,18 @@ public sealed partial class KumiServer
                 return;
             }
 
+            /* Status cache tautan soundboard: siap / mengunduh / gagal / belum.
+               Dipakai UI untuk menampilkan persentase pra-unduh. */
+            if (jalur == "/api/audio/unduhan")
+            {
+                if (ButuhToken(req, res, this)) return;
+                var tautan = Store.Deck.Soundboard
+                    .Where(s => s.Jenis == "url")
+                    .Select(s => s.Sumber);
+                KirimJson(res, 200, new { ok = true, unduhan = SoundBoard.StatusUnduhan(tautan) });
+                return;
+            }
+
             if (jalur == "/api/audio/mainkan")
             {
                 if (ButuhToken(req, res, this)) return;
@@ -584,6 +596,10 @@ public sealed partial class KumiServer
                 Store.Deck.Soundboard = daftar;
                 Store.Simpan();
 
+                /* Pra-unduh tautan sekarang juga (di latar, laju dibatasi)
+                   supaya ketukan pertama tidak menunggu unduhan penuh. */
+                SoundBoard.MulaiUnduhLatar(item.Sumber);
+
                 try
                 {
                     var status = await SoundBoard.StatusAsync();
@@ -612,8 +628,12 @@ public sealed partial class KumiServer
                 }
                 using var dok = BodyJson(req);
                 var id = dok is null ? "" : Teks(dok.RootElement, "id");
+                var dihapus = Store.Deck.Soundboard.FirstOrDefault(s => s.Id == id);
                 Store.Deck.Soundboard = Store.Deck.Soundboard.Where(s => s.Id != id).ToList();
                 Store.Simpan();
+                /* Cache tautan ikut dibuang supaya data/suara/tautan tidak
+                   menumpuk setelah item dihapus. */
+                SoundBoard.LupakanSuara(dihapus?.Sumber);
                 SiarState();
                 KirimJson(res, 200, new { ok = true, soundboard = Store.Deck.Soundboard });
                 return;

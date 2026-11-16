@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -15,6 +16,11 @@ namespace KumiDeck.Audio;
 public sealed record PutarHasil(bool Ok, string Pesan, int Volume = 0);
 public sealed record PemutarStatus(bool Ok, bool Memutar, string Sumber, int Volume, string? Pesan = null);
 
+/* Keadaan unduhan satu tautan soundboard untuk UI:
+   "siap" (ada di cache), "mengunduh" (persen 0-100 atau -1), "gagal",
+   "belum" (belum pernah diunduh). */
+public sealed record StatusUnduh(string Sumber, string Status, int Persen, string Pesan);
+
 /* Pemutar soundboard native: berkas lokal / tautan http(s) dan volume per
    suara.
 
@@ -28,7 +34,20 @@ public sealed record PemutarStatus(bool Ok, bool Memutar, string Sumber, int Vol
 public static class SoundBoard
 {
     private const string PesanMati = "Pemutar audio sudah dihentikan.";
-    private const int BatasMulaiMs = 2500;
+
+    /* Balas cepat: media yang belum selesai dibuka tetap dianggap berhasil
+       dimulai, jadi permintaan tidak menahan UI ~0,5 detik setiap kali putar.
+       Jendela singkat ini masih cukup untuk menangkap MediaFailed. */
+    private const int BatasBalasMs = 120;
+
+    /* Bila tautan sedang diunduh di latar, tunggu sebentar saja; selebihnya
+       balas dengan persentase supaya UI tidak menggantung. */
+    private const int BatasTungguUnduhMs = 5000;
+    private const int BatasUnduhDetik = 120;
+
+    /* Laju unduhan dibatasi supaya tautan tidak menyedot seluruh bandwidth
+       (ping game melonjak) saat unduhan berjalan di latar. */
+    private const int KecepatanUnduhBps = 2 * 1024 * 1024;
 
     private static readonly HashSet<string> Ekstensi = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -37,7 +56,9 @@ public static class SoundBoard
 
     /* MediaPlayer WPF tidak bisa membuka URL jaringan ("Only site-of-origin
        pack URIs are supported for media"), jadi tautan http(s) diunduh dulu ke
-       cache lokal. Batas 40 MB dan cache dibersihkan setelah 30 hari. */
+       cache lokal lalu diputar dari sana. Unduhan dimulai saat item disimpan
+       (pra-unduh), berjalan di thread berprioritas rendah dengan laju dibatasi.
+       Batas 40 MB dan cache dibersihkan setelah 30 hari. */
     private const long BatasUnduh = 40L * 1024 * 1024;
     private static readonly HttpClient Klien = BuatKlien();
 
@@ -66,6 +87,25 @@ public static class SoundBoard
     private sealed record Unduhan(bool Ok, string Jalur, string Pesan);
     private sealed record MulaiInfo(bool Ok, string Pesan, Task<bool>? Siap, int Sesi);
 
+    /* Satu unduhan tautan yang sedang berjalan. Tugas yang sama dipakai ulang
+       oleh pra-unduh (saat disimpan) dan oleh permintaan putar, jadi tautan
+       tidak pernah diunduh dua kali bersamaan. */
+    private sealed class UnduhanBerjalan
+    {
+        public readonly TaskCompletionSource<Unduhan> Tugas =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public int Persen = -1;
+        public bool Selesai;
+        public bool Gagal;
+        public string Jalur = "";
+        public string Pesan = "";
+    }
+
+    private static readonly object KunciUnduh = new();
+    private static readonly Dictionary<string, UnduhanBerjalan> _unduhan =
+        new(StringComparer.OrdinalIgnoreCase);
+
     /* ---------- API publik ---------- */
 
     /* Putar suara dari berkas lokal atau alamat http(s). Suara selalu keluar
@@ -79,14 +119,30 @@ public static class SoundBoard
             var cek = PeriksaSumber(sumber);
             if (!cek.Ok) return new PutarHasil(false, cek.Pesan);
 
-            /* Tautan http(s) diunduh ke cache; MediaPlayer hanya menerima
-               berkas lokal. Sumber yang dilaporkan tetap URL aslinya. */
+            /* Tautan http(s) dipakai dari cache; MediaPlayer hanya menerima
+               berkas lokal. Bila cache belum ada, unduhan latar ditunggu
+               sebentar saja supaya permintaan tidak menggantung. Sumber yang
+               dilaporkan tetap URL aslinya. */
             string jalurMain = cek.Jalur;
             if (cek.Tautan)
             {
-                var unduh = await UnduhAsync(cek.Jalur).ConfigureAwait(false);
-                if (!unduh.Ok) return new PutarHasil(false, unduh.Pesan);
-                jalurMain = unduh.Jalur;
+                var tersimpan = BerkasCache(cek.Jalur);
+                if (tersimpan == null)
+                {
+                    var tugas = AmbilUnduhan(cek.Jalur);
+                    if (!tugas.IsCompleted)
+                    {
+                        var menang = await Task
+                            .WhenAny(tugas, Task.Delay(BatasTungguUnduhMs))
+                            .ConfigureAwait(false);
+                        if (!ReferenceEquals(menang, tugas))
+                            return new PutarHasil(false, PesanUnduhBerjalan(cek.Jalur));
+                    }
+                    var unduh = await tugas.ConfigureAwait(false);
+                    if (!unduh.Ok) return new PutarHasil(false, unduh.Pesan);
+                    tersimpan = unduh.Jalur;
+                }
+                jalurMain = tersimpan;
             }
 
             if (volume >= 0) Volatile.Write(ref _volume, NormaVolume(volume));
@@ -104,7 +160,7 @@ public static class SoundBoard
             if (!mulai.Ok || mulai.Siap == null)
                 return new PutarHasil(false, Mati() ? PesanMati : mulai.Pesan);
 
-            bool siap = await TungguSiapAsync(mulai.Siap, BatasMulaiMs).ConfigureAwait(false);
+            bool siap = await TungguSiapAsync(mulai.Siap, BatasBalasMs).ConfigureAwait(false);
 
             return await JalankanDiAsync(
                 dispatcher,
@@ -166,6 +222,116 @@ public static class SoundBoard
         catch
         {
             return Task.FromResult(new PemutarStatus(false, false, "", Volatile.Read(ref _volume), "Keadaan pemutar tidak dapat dibaca."));
+        }
+    }
+
+    /* Siapkan pemutar saat aplikasi mulai: thread audio dan Media Foundation
+       dibuka sekali memakai wav senyap. Tanpa ini, pemutaran pertama memakan
+       ~100 ms CPU tepat saat pengguna sedang bermain game. */
+    public static void Panaskan()
+    {
+        _ = Task.Run(async () =>
+        {
+            string? berkas = null;
+            try
+            {
+                berkas = BuatWavSenyap();
+                if (berkas == null) return;
+                await MainkanAsync(berkas, -1).ConfigureAwait(false);
+                await HentikanAsync().ConfigureAwait(false);
+                Log.Info("soundboard: pemutar audio siap");
+            }
+            catch
+            {
+                /* diabaikan: pemanasan hanya pengoptimalan */
+            }
+            finally
+            {
+                if (berkas != null) HapusBerkas(berkas);
+            }
+        });
+    }
+
+    /* Mulai unduh tautan di latar belakang supaya ketukan pertama tidak perlu
+       menunggu unduhan penuh. Aman dipanggil berulang: tugas yang sama dipakai
+       ulang, dan tautan yang sudah ada di cache tidak diunduh lagi. */
+    public static void MulaiUnduhLatar(string? sumber)
+    {
+        try
+        {
+            if (Mati()) return;
+            var cek = PeriksaSumber(sumber);
+            if (!cek.Ok || !cek.Tautan) return;
+            if (BerkasCache(cek.Jalur) != null) return;
+            _ = AmbilUnduhan(cek.Jalur);
+        }
+        catch
+        {
+            /* diabaikan: pra-unduh hanya pemanasan */
+        }
+    }
+
+    /* Status unduhan untuk daftar tautan soundboard. "siap" berarti berkas ada
+       di cache, jadi pemutaran tidak menyentuh jaringan sama sekali. */
+    public static List<StatusUnduh> StatusUnduhan(IEnumerable<string> sumber)
+    {
+        var hasil = new List<StatusUnduh>();
+        var aktif = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var url in sumber)
+        {
+            if (string.IsNullOrWhiteSpace(url)) continue;
+            var cek = PeriksaSumber(url);
+            if (!cek.Ok || !cek.Tautan) continue;
+            aktif.Add(cek.Jalur);
+
+            UnduhanBerjalan? catatan;
+            lock (KunciUnduh) _unduhan.TryGetValue(cek.Jalur, out catatan);
+
+            if (catatan is { Selesai: false })
+            {
+                hasil.Add(new StatusUnduh(url, "mengunduh", catatan.Persen, ""));
+                continue;
+            }
+            if (catatan is { Gagal: true })
+            {
+                hasil.Add(new StatusUnduh(url, "gagal", -1, catatan.Pesan));
+                continue;
+            }
+
+            var jalur = catatan?.Jalur is { Length: > 0 } j && File.Exists(j) ? j : BerkasCache(cek.Jalur);
+            hasil.Add(jalur != null
+                ? new StatusUnduh(url, "siap", 100, "")
+                : new StatusUnduh(url, "belum", -1, ""));
+        }
+
+        /* Buang catatan yang sudah selesai untuk tautan yang tidak lagi ada di
+           soundboard supaya map tidak menumpuk seiring waktu. Unduhan yang
+           masih berjalan dibiarkan sampai tuntas. */
+        lock (KunciUnduh)
+        {
+            var basi = _unduhan
+                .Where(p => p.Value.Selesai && !aktif.Contains(p.Key))
+                .Select(p => p.Key)
+                .ToList();
+            foreach (var k in basi) _unduhan.Remove(k);
+        }
+        return hasil;
+    }
+
+    /* Buang cache tautan milik satu suara, dipanggil saat item dihapus supaya
+       data/suara/tautan tidak menumpuk. */
+    public static void LupakanSuara(string? sumber)
+    {
+        try
+        {
+            var cek = PeriksaSumber(sumber);
+            if (!cek.Ok || !cek.Tautan) return;
+            lock (KunciUnduh) _unduhan.Remove(cek.Jalur);
+            foreach (var berkas in BerkasUntuk(cek.Jalur)) HapusBerkas(berkas);
+        }
+        catch
+        {
+            /* diabaikan */
         }
     }
 
@@ -570,9 +736,63 @@ public static class SoundBoard
 
     /* ---------- unduhan tautan ---------- */
 
+    /* Jalankan satu unduhan di thread khusus berprioritas rendah. Unduhan
+       berjalan sinkron di thread itu (bukan thread pool) supaya prioritasnya
+       benar-benar di bawah normal dan CPU tidak direbut dari game. */
+    private static Task<Unduhan> AmbilUnduhan(string url)
+    {
+        lock (KunciUnduh)
+        {
+            if (_unduhan.TryGetValue(url, out var ada))
+            {
+                /* Unduhan yang masih berjalan atau sudah sukses dipakai ulang.
+                   Unduhan yang gagal dibiarkan tercatat (agar UI sempat
+                   menampilkan "Unduhan gagal") tapi boleh dicoba lagi. */
+                if (!ada.Selesai || !ada.Gagal) return ada.Tugas.Task;
+            }
+
+            var catatan = new UnduhanBerjalan();
+            _unduhan[url] = catatan;
+
+            var pekerja = new Thread(() => JalankanUnduh(url, catatan))
+            {
+                IsBackground = true,
+                Name = "KumiDeck-UnduhSuara",
+                Priority = ThreadPriority.BelowNormal,
+            };
+            pekerja.Start();
+            return catatan.Tugas.Task;
+        }
+    }
+
+    private static void JalankanUnduh(string url, UnduhanBerjalan catatan)
+    {
+        Unduhan hasil;
+        try
+        {
+            hasil = UnduhSinkron(url, catatan);
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("soundboard: unduh tautan gagal (" + url + "): " + ex);
+            hasil = new Unduhan(false, "", "Tautan suara tidak dapat diunduh.");
+        }
+
+        catatan.Jalur = hasil.Jalur;
+        catatan.Pesan = hasil.Pesan;
+        catatan.Gagal = !hasil.Ok;
+        catatan.Selesai = true;
+
+        /* Catatan gagal sengaja tidak dibuang supaya UI bisa menampilkan
+           "Unduhan gagal". AmbilUnduhan akan mencoba lagi bila statusnya
+           gagal, dan MembersihkanUnduhan membuangnya agar map tidak menumpuk. */
+        catatan.Tugas.TrySetResult(hasil);
+    }
+
     /* Unduh tautan http(s) ke cache lokal. Berkas yang sama dipakai ulang
-       (hash URL menjadi nama berkas) dan cache lebih dari 30 hari dibuang. */
-    private static async Task<Unduhan> UnduhAsync(string url)
+       (hash URL menjadi nama berkas) dan cache lebih dari 30 hari dibuang.
+       Laju dibatasi KecepatanUnduhBps supaya ping game tidak melonjak. */
+    private static Unduhan UnduhSinkron(string url, UnduhanBerjalan catatan)
     {
         string sementara = "";
         try
@@ -581,25 +801,15 @@ public static class SoundBoard
             Directory.CreateDirectory(cache);
             BersihkanCache(cache);
 
-            string hash = HashUrl(url);
-            foreach (var lama in Directory.EnumerateFiles(cache, hash + ".*"))
-            {
-                try
-                {
-                    if (new FileInfo(lama).Length > 0) return new Unduhan(true, lama, "");
-                }
-                catch
-                {
-                    /* berkas cache rusak: lanjut unduh ulang */
-                }
-            }
+            var tersimpan = BerkasCache(url);
+            if (tersimpan != null) return new Unduhan(true, tersimpan, "");
 
-            using var batal = new CancellationTokenSource(TimeSpan.FromSeconds(90));
             using var permintaan = new HttpRequestMessage(HttpMethod.Get, url);
             permintaan.Headers.UserAgent.ParseAdd("KumiDeck/2.0");
-            using var jawaban = await Klien
-                .SendAsync(permintaan, HttpCompletionOption.ResponseHeadersRead, batal.Token)
-                .ConfigureAwait(false);
+            /* Batas waktu juga menutup koneksi yang menggantung sebelum data
+               pertama datang. */
+            using var batal = new CancellationTokenSource(TimeSpan.FromSeconds(BatasUnduhDetik));
+            using var jawaban = Klien.Send(permintaan, HttpCompletionOption.ResponseHeadersRead, batal.Token);
 
             if (!jawaban.IsSuccessStatusCode)
             {
@@ -619,31 +829,55 @@ public static class SoundBoard
             if (!TipeAudio(tipe))
                 return new Unduhan(false, "", "Tautan suara bukan berkas audio.");
 
-            string ekstensi = EkstensiDariTipe(jawaban.Content.Headers.ContentType?.MediaType)
-                ?? EkstensiDariUrl(url)
-                ?? ".mp3";
-            string tujuan = Path.Combine(cache, hash + ekstensi);
+            string ekstensi = EkstensiDariTipe(tipe) ?? EkstensiDariUrl(url) ?? ".mp3";
+            string tujuan = Path.Combine(cache, HashUrl(url) + ekstensi);
             sementara = tujuan + ".part";
 
             long total = 0;
             bool terlalu = false;
-            await using (var masukan = await jawaban.Content.ReadAsStreamAsync(batal.Token).ConfigureAwait(false))
-            await using (var keluaran = new FileStream(sementara, FileMode.Create, FileAccess.Write,
-                FileShare.None, 81920, useAsync: true))
+            bool kedaluwarsa = false;
+            var jam = Stopwatch.StartNew();
+
+            using (var masukan = jawaban.Content.ReadAsStream())
+            using (var keluaran = new FileStream(sementara, FileMode.Create, FileAccess.Write,
+                FileShare.None, 81920))
             {
                 var buffer = new byte[81920];
                 while (true)
                 {
-                    int n = await masukan.ReadAsync(buffer, batal.Token).ConfigureAwait(false);
+                    if (jam.Elapsed.TotalSeconds > BatasUnduhDetik)
+                    {
+                        kedaluwarsa = true;
+                        break;
+                    }
+
+                    int n = masukan.Read(buffer, 0, buffer.Length);
                     if (n <= 0) break;
+
                     total += n;
                     if (total > BatasUnduh)
                     {
                         terlalu = true;
                         break;
                     }
-                    await keluaran.WriteAsync(buffer.AsMemory(0, n), batal.Token).ConfigureAwait(false);
+                    keluaran.Write(buffer, 0, n);
+
+                    catatan.Persen = panjang is > 0
+                        ? (int)Math.Min(100, total * 100 / panjang.Value)
+                        : -1;
+
+                    /* Rem laju: tidur sepanjang sisa waktu yang "terutang"
+                       terhadap target byte per detik. */
+                    double harusnyaMs = total * 1000.0 / KecepatanUnduhBps;
+                    double sisaMs = harusnyaMs - jam.Elapsed.TotalMilliseconds;
+                    if (sisaMs > 4) Thread.Sleep((int)Math.Min(sisaMs, 250));
                 }
+            }
+
+            if (kedaluwarsa)
+            {
+                HapusBerkas(sementara);
+                return new Unduhan(false, "", "Tautan suara terlalu lama diunduh.");
             }
 
             if (terlalu)
@@ -659,7 +893,7 @@ public static class SoundBoard
             }
 
             /* Ganti berkas lama dengan ekstensi berbeda (bila ada). */
-            foreach (var lama in Directory.EnumerateFiles(cache, hash + ".*"))
+            foreach (var lama in BerkasUntuk(url))
             {
                 if (string.Equals(lama, sementara, StringComparison.OrdinalIgnoreCase)) continue;
                 HapusBerkas(lama);
@@ -689,6 +923,89 @@ public static class SoundBoard
         }
     }
 
+    /* Pesan singkat saat pengguna menekan suara yang tautannya masih diunduh. */
+    private static string PesanUnduhBerjalan(string url)
+    {
+        int persen = -1;
+        lock (KunciUnduh)
+        {
+            if (_unduhan.TryGetValue(url, out var catatan)) persen = catatan.Persen;
+        }
+        return persen >= 0
+            ? $"Suara sedang diunduh ({persen}%). Coba lagi sebentar."
+            : "Suara sedang diunduh. Coba lagi sebentar.";
+    }
+
+    /* Semua berkas cache milik satu URL (termasuk sisa .part). */
+    private static string[] BerkasUntuk(string url)
+    {
+        try
+        {
+            string cache = CacheTautan;
+            if (!Directory.Exists(cache)) return Array.Empty<string>();
+            return Directory.GetFiles(cache, HashUrl(url) + ".*");
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
+
+    /* Berkas cache yang utuh untuk satu URL, atau null bila belum ada. */
+    private static string? BerkasCache(string url)
+    {
+        foreach (var berkas in BerkasUntuk(url))
+        {
+            if (berkas.EndsWith(".part", StringComparison.OrdinalIgnoreCase)) continue;
+            try
+            {
+                if (new FileInfo(berkas).Length > 0) return berkas;
+            }
+            catch
+            {
+                /* berkas rusak: perlakukan sebagai belum ada */
+            }
+        }
+        return null;
+    }
+
+    /* Wav senyap 50 ms di folder temp untuk pemanasan Media Foundation. */
+    private static string? BuatWavSenyap()
+    {
+        try
+        {
+            const int rate = 22050;
+            const int sampel = rate / 20;
+            int dataBytes = sampel * 2;
+            string jalur = Path.Combine(
+                Path.GetTempPath(),
+                "kumideck-panas-" + Environment.ProcessId + ".wav");
+
+            using (var berkas = new FileStream(jalur, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var tulis = new BinaryWriter(berkas))
+            {
+                tulis.Write(Encoding.ASCII.GetBytes("RIFF"));
+                tulis.Write(36 + dataBytes);
+                tulis.Write(Encoding.ASCII.GetBytes("WAVEfmt "));
+                tulis.Write(16);
+                tulis.Write((short)1);
+                tulis.Write((short)1);
+                tulis.Write(rate);
+                tulis.Write(rate * 2);
+                tulis.Write((short)2);
+                tulis.Write((short)16);
+                tulis.Write(Encoding.ASCII.GetBytes("data"));
+                tulis.Write(dataBytes);
+                tulis.Write(new byte[dataBytes]);
+            }
+            return jalur;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private static HttpClient BuatKlien()
     {
         var penangan = new HttpClientHandler
@@ -697,7 +1014,8 @@ public static class SoundBoard
             MaxAutomaticRedirections = 5,
             AutomaticDecompression = System.Net.DecompressionMethods.All,
         };
-        /* Batas waktu diatur per unduhan lewat CancellationTokenSource. */
+        /* Batas waktu diatur per unduhan lewat CancellationTokenSource, jadi
+           klien tidak perlu batas sendiri. */
         return new HttpClient(penangan) { Timeout = Timeout.InfiniteTimeSpan };
     }
 

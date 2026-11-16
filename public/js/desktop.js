@@ -184,6 +184,7 @@
     pairInfo: null,
     contohTahap: 0,
     cadangan: null /* cache daftar cadangan supaya modal tidak berkedip */,
+    unduhan: null /* status cache tautan soundboard: sumber -> { status, persen } */,
   };
 
   /* ------------------------------------------------------------- pembantu --- */
@@ -3842,6 +3843,59 @@
     return (S.deck && Array.isArray(S.deck.soundboard)) ? S.deck.soundboard : [];
   }
 
+  /* Tautan soundboard diunduh dulu ke data/suara/tautan oleh server (laju
+     dibatasi). Status cache-nya ditanyakan supaya UI bisa menampilkan
+     persentase pra-unduh, bukan diam saja saat ketukan pertama. */
+  var unduhTimer = 0;
+
+  function statusUnduh(sumber) {
+    return (S.unduhan && S.unduhan[sumber]) || null;
+  }
+
+  function masihMengunduh() {
+    return daftarSuara().some(function (item) {
+      var u = statusUnduh(item.sumber);
+      return !!u && u.status === "mengunduh";
+    });
+  }
+
+  function teksStatusUnduh(item) {
+    if (item.jenis !== "url") return "";
+    var u = statusUnduh(item.sumber);
+    if (!u) return "";
+    if (u.status === "mengunduh") {
+      return " · " + (u.persen >= 0 ? KD.t("Mengunduh") + " " + u.persen + "%" : KD.t("Mengunduh…"));
+    }
+    if (u.status === "gagal") return " · " + KD.t("Unduhan gagal");
+    if (u.status === "belum") return " · " + KD.t("Belum diunduh");
+    return " · " + KD.t("Siap diputar");
+  }
+
+  function jadwalkanUnduhan() {
+    if (unduhTimer) return;
+    unduhTimer = window.setTimeout(function () {
+      unduhTimer = 0;
+      muatUnduhan();
+    }, 800);
+  }
+
+  function muatUnduhan() {
+    if (!S.deck) return Promise.resolve();
+    return KD.api("/api/audio/unduhan")
+      .then(function (hasil) {
+        var peta = {};
+        ((hasil && hasil.unduhan) || []).forEach(function (u) {
+          if (u && u.sumber) peta[u.sumber] = u;
+        });
+        S.unduhan = peta;
+        renderSoundboard();
+        if (masihMengunduh()) jadwalkanUnduhan();
+      })
+      .catch(function () {
+        /* status unduhan hanya pelengkap: diamkan bila gagal */
+      });
+  }
+
   function renderSoundboard() {
     var daftar = $("#suara-daftar");
     var kosong = $("#suara-kosong");
@@ -3865,6 +3919,7 @@
         '<span class="kd-suara-item__meta">' +
         (item.jenis === "url" ? "Tautan" : "Berkas") +
         " · volume " + item.volume + "%" +
+        teksStatusUnduh(item) +
         "</span></span>";
       main.addEventListener("click", function () {
         mainkanSuara(item.id);
@@ -3981,7 +4036,12 @@
         aturFormSuara(false);
         $("#suara-status").textContent = "Suara disimpan.";
         if (window.Kumi) Kumi.sound.play("success");
-        KD.toast("Suara disimpan.", "ok");
+        /* Tautan mulai diunduh di latar oleh server; tampilkan progresnya. */
+        muatUnduhan();
+        KD.toast(
+          KD.t(item.sumber.indexOf("http") === 0 ? "Suara disimpan. Tautan diunduh di latar." : "Suara disimpan."),
+          "ok"
+        );
       })
       .catch(function (galat) {
         if (window.Kumi) Kumi.sound.play("error");
@@ -3994,6 +4054,8 @@
       .then(function (hasil) {
         if (S.deck && hasil && hasil.soundboard) S.deck.soundboard = hasil.soundboard;
         renderSoundboard();
+        /* Server juga membuang cache tautannya; segarkan peta status. */
+        muatUnduhan();
         if (window.Kumi) Kumi.sound.play("success");
         KD.toast("Suara “" + item.name + "” dihapus.", "ok");
       })
@@ -4037,6 +4099,7 @@
     isiFormSuara(null);
     aturFormSuara(false);
     bukaModal("modal-suara");
+    muatUnduhan();
   }
 
   /* -------------------------------------------------- editor: ikon kustom --- */
