@@ -410,7 +410,6 @@ public static class DeckNormalizer
                 ? "url"
                 : "berkas",
             Volume = Math.Clamp(AngkaBulat(Prop(item, "volume"), 100), 0, 100),
-            PerangkatId = Teks(Prop(item, "perangkatId"), 200),
         };
     }
 

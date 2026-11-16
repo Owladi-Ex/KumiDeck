@@ -49,7 +49,9 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
 - **Templat papan bawaan**: Streaming, Ngoding, Media, dan Kerja, siap diisi
   dalam satu klik.
 - **Urungkan/ulangi** (`Ctrl+Z`/`Ctrl+Y`) untuk perubahan papan.
-- **Soundboard**: unggah berkas atau tautan, volume dan perangkat output per suara.
+- **Soundboard**: unggah berkas atau tautan dan atur volume per suara; semua
+  suara diputar lewat perangkat default Windows, tanpa mengubah endpoint
+  sistem (pemisahan channel lewat aplikasi mixer seperti Wave Link).
 - **Mute/unmute mikrofon** dari tombol papan.
 - **Ikon asli aplikasi** diekstrak otomatis saat menambah aplikasi terpasang.
 - **Widget** jam, tanggal, dan lagu yang sedang diputar.

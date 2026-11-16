@@ -161,11 +161,6 @@
   color: var(--kumi-fg-muted);
 }
 
-.kd-suara-alat .kumi-select {
-  flex: 1 1 220px;
-  min-height: 40px;
-}
-
 .kd-suara-daftar {
   list-style: none;
   margin: 0 0 var(--kumi-space-2);

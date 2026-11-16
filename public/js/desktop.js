@@ -1537,7 +1537,7 @@
             })
             .join("") +
           "</select>" +
-          '<span class="kumi-field__hint">Volume dan perangkat output mengikuti setelan suara di panel Soundboard.</span></div>';
+          '<span class="kumi-field__hint">Volume mengikuti setelan suara di panel Soundboard.</span></div>';
       }
     } else if (jenis === "widget") {
       var tipeWidget = (S.editor.draft.widget && S.editor.draft.widget.type) || "jam";
@@ -3036,7 +3036,6 @@
         '<span class="kd-suara-item__meta">' +
         (item.jenis === "url" ? "Tautan" : "Berkas") +
         " · volume " + item.volume + "%" +
-        (item.perangkatId ? " · perangkat khusus" : "") +
         "</span></span>";
       main.addEventListener("click", function () {
         mainkanSuara(item.id);
@@ -3099,7 +3098,6 @@
     $("#suara-sumber").value = item ? item.sumber : "";
     $("#suara-volume").value = String(item ? item.volume : 100);
     $("#suara-volume-nilai").textContent = (item ? item.volume : 100) + "%";
-    $("#suara-perangkat-item").value = item ? item.perangkatId || "" : "";
     var tombol = $("#btn-suara-simpan");
     if (tombol) {
       tombol.innerHTML = KD.ikon(item ? "i-check" : "i-plus") + (item ? " Simpan perubahan" : " Tambah suara");
@@ -3123,7 +3121,6 @@
       name: nama.slice(0, 32),
       sumber: sumber,
       volume: isNaN(nilaiVolume) ? 100 : Math.max(0, Math.min(100, Math.round(nilaiVolume))),
-      perangkatId: $("#suara-perangkat-item").value || "",
     };
     KD.api("/api/soundboard/simpan", { method: "POST", body: { item: item } })
       .then(function (hasil) {
@@ -3183,39 +3180,10 @@
     pembaca.readAsDataURL(berkas);
   }
 
-  /* Muat daftar perangkat output untuk soundboard. */
-  function muatPerangkatAudio() {
-    return KD.api("/api/audio/perangkat")
-      .then(function (hasil) {
-        S.perangkatAudio = (hasil && hasil.perangkat) || [];
-        [["#suara-perangkat", "Ikuti perangkat default"], ["#suara-perangkat-item", "Perangkat default"]].forEach(
-          function (pasangan) {
-            var pilih = $(pasangan[0]);
-            if (!pilih) return;
-            var nilai = pilih.value;
-            pilih.innerHTML = '<option value="">' + pasangan[1] + "</option>";
-            S.perangkatAudio.forEach(function (d) {
-              var opt = document.createElement("option");
-              opt.value = d.id;
-              opt.textContent = d.nama + (d.bawaan ? " (bawaan)" : "");
-              pilih.appendChild(opt);
-            });
-            if (nilai) pilih.value = nilai;
-          }
-        );
-        return S.perangkatAudio;
-      })
-      .catch(function () {
-        S.perangkatAudio = [];
-        return [];
-      });
-  }
-
   function bukaSoundboard() {
     renderSoundboard();
     isiFormSuara(null);
     bukaModal("modal-suara");
-    muatPerangkatAudio();
   }
 
   /* -------------------------------------------------- editor: ikon kustom --- */
@@ -4283,40 +4251,6 @@
     if (sliderSuara) {
       sliderSuara.addEventListener("input", function () {
         $("#suara-volume-nilai").textContent = sliderSuara.value + "%";
-      });
-    }
-    /* Pilih perangkat output untuk SEMUA suara: disimpan ke server satu per satu
-       agar benar-benar dipakai saat memutar. */
-    var pilihPerangkatSuara = $("#suara-perangkat");
-    if (pilihPerangkatSuara) {
-      pilihPerangkatSuara.addEventListener("change", function () {
-        var nilai = pilihPerangkatSuara.value || "";
-        var semua = daftarSuara();
-        if (!semua.length) {
-          KD.toast("Belum ada suara untuk diatur.", "danger");
-          return;
-        }
-        var berurutan = semua.reduce(function (rantai, item) {
-          return rantai.then(function () {
-            return KD.api("/api/soundboard/simpan", {
-              method: "POST",
-              body: { item: Object.assign({}, item, { perangkatId: nilai }) },
-            }).then(function (hasil) {
-              if (hasil && hasil.soundboard && S.deck) S.deck.soundboard = hasil.soundboard;
-            });
-          });
-        }, Promise.resolve());
-        berurutan
-          .then(function () {
-            renderSoundboard();
-            KD.toast(
-              nilai ? "Perangkat output soundboard diperbarui." : "Soundboard memakai perangkat default.",
-              "ok"
-            );
-          })
-          .catch(function (galat) {
-            KD.toast(galat.message || "Perangkat output gagal disimpan.", "danger");
-          });
       });
     }
 

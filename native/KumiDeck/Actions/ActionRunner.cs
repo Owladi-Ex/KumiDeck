@@ -106,7 +106,7 @@ public static class ActionRunner
 
                 try
                 {
-                    var hasil = await SoundBoard.MainkanAsync(item.Sumber, item.Volume, item.PerangkatId);
+                    var hasil = await SoundBoard.MainkanAsync(item.Sumber, item.Volume);
                     var pesan = hasil.Ok
                         ? "Memutar \u201c" + item.Name + "\u201d." + (string.IsNullOrWhiteSpace(hasil.Pesan) ? "" : " " + hasil.Pesan)
                         : hasil.Pesan;

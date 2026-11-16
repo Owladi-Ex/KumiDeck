@@ -124,7 +124,6 @@ public sealed class SuaraItem
     [JsonPropertyName("sumber")] public string Sumber { get; set; } = "";
     [JsonPropertyName("jenis")] public string Jenis { get; set; } = "berkas";
     [JsonPropertyName("volume")] public int Volume { get; set; } = 100;
-    [JsonPropertyName("perangkatId")] public string PerangkatId { get; set; } = "";
 }
 
 public sealed class Setelan

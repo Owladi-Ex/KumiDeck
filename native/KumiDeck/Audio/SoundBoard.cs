@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -13,19 +12,19 @@ using KumiDeck.Core;
 
 namespace KumiDeck.Audio;
 
-public sealed record AudioDevice(string Id, string Nama, bool Bawaan);
-public sealed record PerangkatHasil(bool Ok, List<AudioDevice> Perangkat, string Galat);
-public sealed record PutarHasil(bool Ok, string Pesan, bool RouteSementara = false, string PerangkatId = "", int Volume = 0);
-public sealed record PemutarStatus(bool Ok, bool Memutar, string Sumber, int Volume, string PerangkatId, string? Pesan = null);
+public sealed record PutarHasil(bool Ok, string Pesan, int Volume = 0);
+public sealed record PemutarStatus(bool Ok, bool Memutar, string Sumber, int Volume, string? Pesan = null);
 
-/* Pemutar soundboard native: berkas lokal / tautan http(s), volume per suara,
-   dan perangkat output pilihan.
+/* Pemutar soundboard native: berkas lokal / tautan http(s) dan volume per
+   suara.
 
    MediaPlayer WPF (Media Foundation) hidup di satu thread STA dengan
    Dispatcher sendiri; semua perintah pemutaran dijalankan lewat dispatcher
-   itu. Perangkat output dipilih dengan mengalihkan endpoint default sistem
-   lewat IPolicyConfig (seperti versi PowerShell), lalu dipulihkan saat
-   pemutaran selesai, dihentikan, atau gagal. Tidak ada proses eksternal. */
+   itu. Suara selalu keluar lewat perangkat default Windows: mengalihkan
+   endpoint default (IPolicyConfig) membuat aplikasi lain -- termasuk game --
+   membangun ulang mesin audionya dan berhenti sesaat, jadi jalur itu tidak
+   dipakai. Pemisahan per channel dikerjakan aplikasi mixer (mis. Elgato Wave
+   Link) yang mengarahkan KumiDeck.exe ke channel yang diinginkan. */
 public static class SoundBoard
 {
     private const string PesanMati = "Pemutar audio sudah dihentikan.";
@@ -54,18 +53,11 @@ public static class SoundBoard
     /* Keadaan pemutaran: hanya disentuh di thread audio (dispatcher). */
     private static int _volume = 50;
     private static string _sumber = "";
-    private static string _perangkatId = "";
     private static bool _memutar;
-    private static bool _ruteAktif;
-    private static string _ruteSebelumnya = "";
     private static int _sesi;
 
     /* Keadaan satu permintaan putar yang sedang berjalan. */
     private static string _sumberIni = "";
-    private static string _devIni = "";
-    private static bool _ruteIni;
-    private static bool _ruteGagalIni;
-    private static string _namaRute = "";
     private static bool _mediaTerbuka;
     private static bool _mediaGagal;
     private static TaskCompletionSource<bool>? _tungguMulai;
@@ -76,61 +68,9 @@ public static class SoundBoard
 
     /* ---------- API publik ---------- */
 
-    /* Daftar perangkat output aktif beserta nama dan penanda bawaan. */
-    public static PerangkatHasil DaftarPerangkat()
-    {
-        try
-        {
-            if (Mati()) return new PerangkatHasil(false, new List<AudioDevice>(), PesanMati);
-            var hasil = new List<AudioDevice>();
-            IMMDeviceEnumerator? en = null;
-            IMMDeviceCollection? kumpulan = null;
-            try
-            {
-                en = BuatEnumerator();
-                int hr = en.EnumAudioEndpoints(0, 1, out kumpulan);
-                if (hr != 0 || kumpulan == null)
-                    return new PerangkatHasil(false, hasil, "Perangkat output tidak dapat dibaca.");
-
-                if (kumpulan.GetCount(out int jumlah) != 0)
-                    return new PerangkatHasil(false, hasil, "Perangkat output tidak dapat dibaca.");
-
-                string bawaan = BacaDefaultId(en);
-                for (int i = 0; i < jumlah; i++)
-                {
-                    IMMDevice? dev = null;
-                    try
-                    {
-                        if (kumpulan.Item(i, out dev) != 0 || dev == null) continue;
-                        if (dev.GetId(out string id) != 0) id = "";
-                        id ??= "";
-                        string nama = NamaPerangkat(dev);
-                        bool utama = id.Length > 0 && string.Equals(id, bawaan, StringComparison.OrdinalIgnoreCase);
-                        hasil.Add(new AudioDevice(id, nama, utama));
-                    }
-                    finally
-                    {
-                        Lepas(dev);
-                    }
-                }
-            }
-            finally
-            {
-                Lepas(kumpulan);
-                Lepas(en);
-            }
-            return new PerangkatHasil(true, hasil, "");
-        }
-        catch
-        {
-            return new PerangkatHasil(false, new List<AudioDevice>(), "Perangkat output tidak dapat dibaca.");
-        }
-    }
-
-    /* Putar suara dari berkas lokal atau alamat http(s). Bila perangkatId
-       diisi dan berbeda dari default, endpoint default dialihkan sementara
-       sampai suara selesai/stop/gagal. */
-    public static async Task<PutarHasil> MainkanAsync(string sumber, int volume, string perangkatId)
+    /* Putar suara dari berkas lokal atau alamat http(s). Suara selalu keluar
+       lewat perangkat default Windows; endpoint default tidak pernah diubah. */
+    public static async Task<PutarHasil> MainkanAsync(string sumber, int volume)
     {
         try
         {
@@ -151,7 +91,6 @@ public static class SoundBoard
 
             if (volume >= 0) Volatile.Write(ref _volume, NormaVolume(volume));
             int vol = Volatile.Read(ref _volume);
-            string dev = (perangkatId ?? "").Trim();
 
             var dispatcher = AmbilDispatcher();
             if (dispatcher == null)
@@ -159,7 +98,7 @@ public static class SoundBoard
 
             var mulai = await JalankanDiAsync(
                 dispatcher,
-                () => MulaiPutar(jalurMain, cek.Jalur, vol, dev),
+                () => MulaiPutar(jalurMain, cek.Jalur, vol),
                 new MulaiInfo(false, "Suara tidak dapat diputar.", null, -1)).ConfigureAwait(false);
 
             if (!mulai.Ok || mulai.Siap == null)
@@ -213,20 +152,20 @@ public static class SoundBoard
         {
             int vol = Volatile.Read(ref _volume);
             if (Mati())
-                return Task.FromResult(new PemutarStatus(false, false, "", vol, "", PesanMati));
+                return Task.FromResult(new PemutarStatus(false, false, "", vol, PesanMati));
 
             var dispatcher = AmbilDispatcher();
             if (dispatcher == null)
-                return Task.FromResult(new PemutarStatus(false, false, "", vol, "", "Keadaan pemutar tidak dapat dibaca."));
+                return Task.FromResult(new PemutarStatus(false, false, "", vol, "Keadaan pemutar tidak dapat dibaca."));
 
             return JalankanDiAsync(
                 dispatcher,
-                () => new PemutarStatus(true, _memutar, _sumber, Volatile.Read(ref _volume), _perangkatId),
-                new PemutarStatus(false, false, "", vol, "", "Keadaan pemutar tidak dapat dibaca."));
+                () => new PemutarStatus(true, _memutar, _sumber, Volatile.Read(ref _volume)),
+                new PemutarStatus(false, false, "", vol, "Keadaan pemutar tidak dapat dibaca."));
         }
         catch
         {
-            return Task.FromResult(new PemutarStatus(false, false, "", Volatile.Read(ref _volume), "", "Keadaan pemutar tidak dapat dibaca."));
+            return Task.FromResult(new PemutarStatus(false, false, "", Volatile.Read(ref _volume), "Keadaan pemutar tidak dapat dibaca."));
         }
     }
 
@@ -265,8 +204,8 @@ public static class SoundBoard
         }
     }
 
-    /* Hentikan pemutaran, pulihkan rute, lalu matikan thread STA. Setelah ini
-       semua operasi gagal dengan aman dan thread tidak dihidupkan lagi. */
+    /* Hentikan pemutaran, lalu matikan thread STA. Setelah ini semua operasi
+       gagal dengan aman dan thread tidak dihidupkan lagi. */
     public static void Shutdown()
     {
         Thread? thread;
@@ -415,10 +354,10 @@ public static class SoundBoard
 
     /* ---------- perintah pemutaran (thread audio) ---------- */
 
-    /* Siapkan rute, buka media, dan kembalikan tugas "media mulai".
+    /* Buka media dan kembalikan tugas "media mulai".
        jalur = berkas lokal yang dibuka; tampil = sumber asli (URL/berkas)
        yang dilaporkan ke UI. */
-    private static MulaiInfo MulaiPutar(string jalur, string tampil, int vol, string dev)
+    private static MulaiInfo MulaiPutar(string jalur, string tampil, int vol)
     {
         if (Mati()) return new MulaiInfo(false, PesanMati, null, -1);
         if (_pemutar == null) return new MulaiInfo(false, "Suara tidak dapat diputar.", null, -1);
@@ -435,33 +374,7 @@ public static class SoundBoard
             /* diabaikan */
         }
 
-        _ruteIni = false;
-        _ruteGagalIni = false;
-        _namaRute = "";
-
-        if (dev.Length > 0)
-        {
-            string sekarang = BacaDefaultId();
-            if (!string.Equals(sekarang, dev, StringComparison.OrdinalIgnoreCase))
-            {
-                if (SetDefault(dev, 1) == 0)
-                {
-                    _ruteAktif = true;
-                    _ruteSebelumnya = sekarang;
-                    _ruteIni = true;
-                    _namaRute = BacaNama(dev);
-                    /* Beri waktu Windows memindahkan aliran sebelum media dibuka. */
-                    try { Thread.Sleep(200); } catch { }
-                }
-                else
-                {
-                    _ruteGagalIni = true;
-                }
-            }
-        }
-
         _sumberIni = tampil;
-        _devIni = dev;
         _mediaTerbuka = false;
         _mediaGagal = false;
         _memutar = true;
@@ -481,7 +394,6 @@ public static class SoundBoard
             Log.Warn("soundboard: buka media gagal (" + jalur + "): " + ex);
             if (ReferenceEquals(_tungguMulai, tcs)) _tungguMulai = null;
             _memutar = false;
-            PulihkanRute();
             return new MulaiInfo(false, "Suara tidak dapat diputar.", null, -1);
         }
 
@@ -516,28 +428,11 @@ public static class SoundBoard
         }
 
         _sumber = _sumberIni;
-        _perangkatId = _ruteIni ? _devIni : BacaDefaultId();
 
-        string pesan;
-        if (_ruteIni)
-        {
-            pesan = _namaRute.Length > 0
-                ? "Memutar lewat " + _namaRute + "; perangkat default sistem dialihkan sementara."
-                : "Memutar lewat perangkat pilihan; perangkat default sistem dialihkan sementara.";
-        }
-        else if (_ruteGagalIni)
-        {
-            pesan = "Perangkat output tidak dapat dipilih; memakai perangkat default.";
-        }
-        else
-        {
-            pesan = "Memutar lewat perangkat default.";
-        }
-
-        return new PutarHasil(true, pesan, _ruteIni, _perangkatId, Volatile.Read(ref _volume));
+        return new PutarHasil(true, "", Volatile.Read(ref _volume));
     }
 
-    /* Hentikan media, batalkan permintaan yang menggantung, pulihkan rute. */
+    /* Hentikan media dan batalkan permintaan yang menggantung. */
     private static void HentikanInti()
     {
         _sesi++;
@@ -548,7 +443,6 @@ public static class SoundBoard
         _tungguMulai = null;
         try { _pemutar?.Stop(); } catch { }
         try { _pemutar?.Close(); } catch { }
-        PulihkanRute();
     }
 
     private static void Bersihkan()
@@ -558,7 +452,6 @@ public static class SoundBoard
         _tungguMulai?.TrySetResult(false);
         _tungguMulai = null;
         try { _pemutar?.Stop(); } catch { }
-        PulihkanRute();
         try { _pemutar?.Close(); } catch { }
     }
 
@@ -574,7 +467,6 @@ public static class SoundBoard
         {
             _memutar = false;
             try { _pemutar?.Stop(); } catch { }
-            PulihkanRute();
         }
         _tungguMulai?.TrySetResult(true);
     }
@@ -588,18 +480,8 @@ public static class SoundBoard
         {
             _memutar = false;
             try { _pemutar?.Stop(); } catch { }
-            PulihkanRute();
         }
         _tungguMulai?.TrySetResult(false);
-    }
-
-    private static void PulihkanRute()
-    {
-        if (!_ruteAktif) return;
-        _ruteAktif = false;
-        string id = _ruteSebelumnya;
-        _ruteSebelumnya = "";
-        if (id.Length > 0) SetDefault(id, 1);
     }
 
     /* ---------- validasi sumber ---------- */
@@ -883,267 +765,5 @@ public static class SoundBoard
     private static void HapusBerkas(string jalur)
     {
         try { File.Delete(jalur); } catch { /* diabaikan */ }
-    }
-
-    /* ---------- Windows Core Audio (COM) ---------- */
-
-    private static IMMDeviceEnumerator BuatEnumerator()
-    {
-        var tipe = Type.GetTypeFromCLSID(new Guid("BCDE0395-E52F-467C-8E3D-C4579291692E"));
-        if (tipe == null) throw new InvalidOperationException("Enumerator audio tidak tersedia.");
-        object? obj = Activator.CreateInstance(tipe);
-        if (obj == null) throw new InvalidOperationException("Enumerator audio tidak tersedia.");
-        return (IMMDeviceEnumerator)obj;
-    }
-
-    private static string BacaDefaultId() => BacaDefaultId(null);
-
-    private static string BacaDefaultId(IMMDeviceEnumerator? en)
-    {
-        IMMDevice? dev = null;
-        bool milikSendiri = false;
-        try
-        {
-            if (en == null)
-            {
-                en = BuatEnumerator();
-                milikSendiri = true;
-            }
-            if (en.GetDefaultAudioEndpoint(0, 1, out dev) != 0 || dev == null) return "";
-            if (dev.GetId(out string id) != 0 || id == null) return "";
-            return id;
-        }
-        catch
-        {
-            return "";
-        }
-        finally
-        {
-            Lepas(dev);
-            if (milikSendiri) Lepas(en);
-        }
-    }
-
-    private static string BacaNama(string id)
-    {
-        if (string.IsNullOrEmpty(id)) return "";
-        IMMDeviceEnumerator? en = null;
-        IMMDevice? dev = null;
-        try
-        {
-            en = BuatEnumerator();
-            if (en.GetDevice(id, out dev) != 0 || dev == null) return "";
-            return NamaPerangkat(dev);
-        }
-        catch
-        {
-            return "";
-        }
-        finally
-        {
-            Lepas(dev);
-            Lepas(en);
-        }
-    }
-
-    private static string NamaPerangkat(IMMDevice dev)
-    {
-        IPropertyStore? store = null;
-        try
-        {
-            if (dev.OpenPropertyStore(0, out store) != 0 || store == null) return "";
-
-            var kunci = new PROPERTYKEY
-            {
-                fmtid = new Guid("a45c254e-df1c-4efd-8020-67d146a850e0"),
-                pid = 14,
-            };
-
-            if (store.GetValue(ref kunci, out PROPVARIANT nilai) != 0) return "";
-            try
-            {
-                /* VT_LPWSTR = 31: nama perangkat tersimpan sebagai string lebar. */
-                if (nilai.vt == 31 && nilai.pointer != IntPtr.Zero)
-                    return Marshal.PtrToStringUni(nilai.pointer) ?? "";
-                return "";
-            }
-            finally
-            {
-                try { PropVariantClear(ref nilai); } catch { }
-            }
-        }
-        catch
-        {
-            return "";
-        }
-        finally
-        {
-            Lepas(store);
-        }
-    }
-
-    /* IPolicyConfig::SetDefaultEndpoint; 0 berarti berhasil. */
-    private static int SetDefault(string id, int role)
-    {
-        object? obj = null;
-        try
-        {
-            if (string.IsNullOrEmpty(id)) return -1;
-            var tipe = Type.GetTypeFromCLSID(new Guid("870af99c-171d-4f9e-af0d-e63df40c2bc9"));
-            if (tipe == null) return -1;
-            obj = Activator.CreateInstance(tipe);
-            if (obj is not IPolicyConfig pc) return -1;
-            return pc.SetDefaultEndpoint(id, role);
-        }
-        catch
-        {
-            return -1;
-        }
-        finally
-        {
-            Lepas(obj);
-        }
-    }
-
-    private static void Lepas(object? obj)
-    {
-        if (obj == null) return;
-        try
-        {
-            if (Marshal.IsComObject(obj)) Marshal.ReleaseComObject(obj);
-        }
-        catch
-        {
-            /* diabaikan */
-        }
-    }
-
-    [DllImport("ole32.dll")]
-    private static extern int PropVariantClear(ref PROPVARIANT pv);
-
-    [ComImport, Guid("A95664D2-9614-4F35-A746-DE8DB63617E6")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    private interface IMMDeviceEnumerator
-    {
-        [PreserveSig]
-        int EnumAudioEndpoints(int dataFlow, int stateMask, out IMMDeviceCollection? devices);
-
-        [PreserveSig]
-        int GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice? device);
-
-        [PreserveSig]
-        int GetDevice([MarshalAs(UnmanagedType.LPWStr)] string id, out IMMDevice? device);
-
-        [PreserveSig]
-        int RegisterEndpointNotificationCallback(IntPtr client);
-
-        [PreserveSig]
-        int UnregisterEndpointNotificationCallback(IntPtr client);
-    }
-
-    [ComImport, Guid("0BD7A1BE-7A1A-44DB-8397-CC5392387B5E")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    private interface IMMDeviceCollection
-    {
-        [PreserveSig]
-        int GetCount(out int count);
-
-        [PreserveSig]
-        int Item(int index, out IMMDevice? device);
-    }
-
-    [ComImport, Guid("D666063F-1587-4E43-81F1-B948E807363F")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    private interface IMMDevice
-    {
-        [PreserveSig]
-        int Activate(ref Guid iid, uint clsCtx, IntPtr activationParams,
-            [MarshalAs(UnmanagedType.IUnknown)] out object? iface);
-
-        [PreserveSig]
-        int OpenPropertyStore(uint access, out IPropertyStore? store);
-
-        [PreserveSig]
-        int GetId([MarshalAs(UnmanagedType.LPWStr)] out string id);
-
-        [PreserveSig]
-        int GetState(out int state);
-    }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
-    private struct PROPERTYKEY
-    {
-        public Guid fmtid;
-        public int pid;
-    }
-
-    /* Ukuran eksplisit 24 byte (x64) agar native tidak menulis melewati
-       buffer saat PROPVARIANT dimarshal balik. */
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
-    private struct PROPVARIANT
-    {
-        [FieldOffset(0)] public ushort vt;
-        [FieldOffset(8)] public IntPtr pointer;
-    }
-
-    [ComImport, Guid("886d8eeb-8cf2-4446-8d02-cdba1dbdcf99")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    private interface IPropertyStore
-    {
-        [PreserveSig]
-        int GetCount(out int count);
-
-        [PreserveSig]
-        int GetAt(int index, out PROPERTYKEY key);
-
-        [PreserveSig]
-        int GetValue(ref PROPERTYKEY key, out PROPVARIANT value);
-
-        [PreserveSig]
-        int SetValue(ref PROPERTYKEY key, ref PROPVARIANT value);
-
-        [PreserveSig]
-        int Commit();
-    }
-
-    [ComImport, Guid("f8679f50-850a-41cf-9c72-430f290290c8")]
-    [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    private interface IPolicyConfig
-    {
-        [PreserveSig]
-        int GetMixFormat([MarshalAs(UnmanagedType.LPWStr)] string deviceId, out IntPtr format);
-
-        [PreserveSig]
-        int GetDeviceFormat([MarshalAs(UnmanagedType.LPWStr)] string deviceId, int bDefault, out IntPtr format);
-
-        [PreserveSig]
-        int ResetDeviceFormat([MarshalAs(UnmanagedType.LPWStr)] string deviceId);
-
-        [PreserveSig]
-        int SetDeviceFormat([MarshalAs(UnmanagedType.LPWStr)] string deviceId, IntPtr format, IntPtr endpointFormat);
-
-        [PreserveSig]
-        int GetProcessingPeriod([MarshalAs(UnmanagedType.LPWStr)] string deviceId, int bDefault, out long a, out long b);
-
-        [PreserveSig]
-        int SetProcessingPeriod([MarshalAs(UnmanagedType.LPWStr)] string deviceId, ref long period);
-
-        [PreserveSig]
-        int GetShareMode([MarshalAs(UnmanagedType.LPWStr)] string deviceId, out IntPtr mode);
-
-        [PreserveSig]
-        int SetShareMode([MarshalAs(UnmanagedType.LPWStr)] string deviceId, IntPtr mode);
-
-        [PreserveSig]
-        int GetPropertyValue([MarshalAs(UnmanagedType.LPWStr)] string deviceId, ref PROPERTYKEY key, out PROPVARIANT value);
-
-        [PreserveSig]
-        int SetPropertyValue([MarshalAs(UnmanagedType.LPWStr)] string deviceId, ref PROPERTYKEY key, ref PROPVARIANT value);
-
-        [PreserveSig]
-        int SetDefaultEndpoint([MarshalAs(UnmanagedType.LPWStr)] string deviceId, int role);
-
-        [PreserveSig]
-        int SetEndpointVisibility([MarshalAs(UnmanagedType.LPWStr)] string deviceId, int visible);
     }
 }

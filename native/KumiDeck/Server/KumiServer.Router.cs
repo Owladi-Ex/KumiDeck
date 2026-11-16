@@ -376,14 +376,6 @@ public sealed partial class KumiServer
             }
 
             /* --- audio --------------------------------------------------- */
-            if (jalur == "/api/audio/perangkat")
-            {
-                if (ButuhToken(req, res, this)) return;
-                var hasil = await Task.Run(() => SoundBoard.DaftarPerangkat());
-                KirimJson(res, 200, new { ok = hasil.Ok, perangkat = hasil.Perangkat, galat = hasil.Galat });
-                return;
-            }
-
             if (jalur == "/api/audio/status")
             {
                 if (ButuhToken(req, res, this)) return;
@@ -418,8 +410,7 @@ public sealed partial class KumiServer
 
                 var hasil = await SoundBoard.MainkanAsync(
                     sumber,
-                    item?.Volume ?? Angka(body.Value, "volume", 100),
-                    item?.PerangkatId ?? Teks(body.Value, "perangkatId"));
+                    item?.Volume ?? Angka(body.Value, "volume", 100));
                 KirimJson(res, hasil.Ok ? 200 : 502, hasil);
                 return;
             }

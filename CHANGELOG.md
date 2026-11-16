@@ -3,6 +3,20 @@
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 versi mengikuti [SemVer](https://semver.org/lang/id/).
 
+## [Belum dirilis]
+
+### Diperbaiki
+
+- **Soundboard tidak lagi mengganti perangkat default Windows.** Dulu, bila
+  sebuah suara disetel ke perangkat lain, KumiDeck mengalihkan endpoint default
+  sistem selama pemutaran lalu mengembalikannya. Banyak aplikasi (termasuk
+  game) membangun ulang mesin audionya setiap kali endpoint berubah, sehingga
+  terasa berhenti sesaat. Sekarang semua suara diputar lewat perangkat default:
+  tanpa pengalihan, tanpa jeda 200 ms, dan audio aplikasi lain tidak terganggu.
+  Pilihan perangkat per suara dihapus dari panel Soundboard; pemisahan channel
+  dikerjakan aplikasi mixer (mis. Elgato Wave Link) dengan mengarahkan
+  `KumiDeck.exe` ke channel yang diinginkan.
+
 ## [2.2.0] - 2026-11-15
 
 **"Lebih Cepat"** - templat siap pakai, aksi ganda, dan kendali Remote yang
