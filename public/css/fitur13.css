@@ -342,21 +342,17 @@
 
 
 /* ============================ Sakelar kepala halaman (seragam) ========== */
-/* Suara, tema, tray, dan kunci memakai satu pola: tombol ikon yang sama,
-   `aria-pressed="true"` berarti fitur sedang AKTIF, dan keadaan aktif selalu
-   ditandai warna aksen + latar tint. Ikonnya berganti sendiri per keadaan. */
+/* Suara, tema, tray, pin, dan kunci memakai satu pola: tombol ikon yang sama,
+   `aria-pressed="true"` berarti fitur sedang AKTIF. Penanda aktifnya ikon yang
+   berganti (volume/lonceng/pin terisi, gembok tertutup, matahari/bulan);
+   polish.css menghapus latar dan bingkainya. */
 .kd-toggle {
   position: relative;
-  color: var(--kumi-fg-muted);
   transition:
     color var(--kumi-dur-fast) var(--kumi-ease),
     background-color var(--kumi-dur-fast) var(--kumi-ease),
     border-color var(--kumi-dur-fast) var(--kumi-ease),
     transform var(--kumi-dur-fast) var(--kumi-ease);
-}
-
-.kd-toggle:hover {
-  color: var(--kumi-fg);
 }
 
 .kd-toggle:active {
@@ -366,17 +362,6 @@
 .kd-toggle:focus-visible {
   outline: 2px solid var(--kumi-accent);
   outline-offset: 2px;
-}
-
-.kd-toggle[aria-pressed="true"] {
-  color: var(--kumi-accent);
-  border-color: var(--kumi-accent);
-  background: var(--kumi-tint);
-}
-
-.kd-toggle .kumi-icon {
-  width: 18px;
-  height: 18px;
 }
 
 @media (prefers-reduced-motion: reduce) {

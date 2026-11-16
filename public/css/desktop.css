@@ -693,13 +693,7 @@
   flex-wrap: wrap;
 }
 
-.kd-cadangan {
-  gap: 8px;
-  max-height: 220px;
-  overflow-y: auto;
-}
-
-.kd-cadangan-baris {
+.kd-perangkat-baris {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -708,11 +702,11 @@
   border-top: 1px solid var(--kumi-line);
 }
 
-.kd-cadangan-baris:first-child {
+.kd-perangkat-baris:first-child {
   border-top: 0;
 }
 
-.kd-cadangan-baris__info {
+.kd-perangkat-baris__info {
   font-size: var(--kumi-text-sm);
   color: var(--kumi-muted);
 }

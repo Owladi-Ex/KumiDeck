@@ -230,7 +230,19 @@
     "Rilis terbaru tidak menyebut versi.": "The latest release does not name a version.",
     "Buka halaman rilis": "Open the release page",
     "Tidak dapat memeriksa pembaruan. Periksa koneksi internet.":
-      "Could not check for updates. Check your internet connection."
+      "Could not check for updates. Check your internet connection.",
+
+    "Pratinjau": "Preview",
+    "Nama tombol": "Button name",
+    "Widget": "Widget",
+    "Tekan lama:": "Hold action:",
+    "Bawaan": "Default",
+    "Lembut": "Soft",
+    "Aksen": "Accent",
+    "Cadangan dibuat otomatis saat papan berubah. Pilih waktu, lalu tekan Pulihkan.":
+      "Backups are created automatically when the board changes. Pick a time, then press Restore.",
+    "Belum ada cadangan": "No backups yet",
+    "Daftar cadangan tidak dapat dimuat": "The backup list could not be loaded"
   });
 })();
 

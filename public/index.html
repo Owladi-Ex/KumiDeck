@@ -31,36 +31,44 @@
       </div>
 
       <div class="kumi-row kd-kepala__aksi">
-        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon" type="button" id="btn-soundboard" aria-label="Soundboard" title="Soundboard">
-          <svg class="kumi-icon" aria-hidden="true"><use href="#i-play"></use></svg>
-        </button>
-        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon" type="button" id="btn-templat" aria-label="Templat" title="Templat">
-          <svg class="kumi-icon" aria-hidden="true"><use href="#i-grid"></use></svg>
-        </button>
-        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon" type="button" id="btn-cari" aria-label="Cari tombol (Ctrl+K)" title="Cari tombol (Ctrl+K)">
-          <svg class="kumi-icon" aria-hidden="true"><use href="#i-search"></use></svg>
-        </button>
-        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" data-kumi-toggle-sound aria-label="Suara antarmuka" aria-pressed="true" title="Suara antarmuka">
-          <!-- Kumi menukar ikon berdasarkan atribut data-kumi-sound di <html>:
-               isi (aktif) saat nyala, polos (dibisukan) saat mati. -->
-          <svg class="kumi-icon kumi-icon--sound-on" aria-hidden="true"><use href="#kd-volume-on"></use></svg>
-          <svg class="kumi-icon kumi-icon--sound-off" aria-hidden="true"><use href="#kd-volume-off"></use></svg>
-        </button>
-        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-tray" aria-pressed="false" aria-label="Tampilkan ikon di baki sistem" title="Tampilkan ikon di baki sistem">
-          <svg class="kumi-icon" aria-hidden="true"><use href="#kd-bell"></use></svg>
-        </button>
-        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-teratas" aria-pressed="false" aria-label="Selalu di atas" title="Selalu di atas">
-          <svg class="kumi-icon" aria-hidden="true"><use href="#kd-pin"></use></svg>
-        </button>
-        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-kunci" aria-pressed="false" aria-label="Kunci tata letak" title="Kunci tata letak">
-          <svg class="kumi-icon" aria-hidden="true"><use href="#kd-lock-open"></use></svg>
-        </button>
-        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon" type="button" id="btn-setelan" aria-label="Setelan" title="Setelan">
-          <svg class="kumi-icon" aria-hidden="true"><use href="#i-settings"></use></svg>
-        </button>
-        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" data-kumi-toggle-theme aria-label="Ganti tema" title="Ganti tema">
-          <svg class="kumi-icon" aria-hidden="true"><use href="#i-moon"></use></svg>
-        </button>
+        <!-- Kelompok aksi: Soundboard, Templat, Cari, lalu Setelan di kanan Cari. -->
+        <div class="kd-kepala__grup">
+          <button class="kumi-btn kumi-btn--ghost kumi-btn--icon" type="button" id="btn-soundboard" aria-label="Soundboard" title="Soundboard">
+            <svg class="kumi-icon" aria-hidden="true"><use href="#i-play"></use></svg>
+          </button>
+          <button class="kumi-btn kumi-btn--ghost kumi-btn--icon" type="button" id="btn-templat" aria-label="Templat" title="Templat">
+            <svg class="kumi-icon" aria-hidden="true"><use href="#i-grid"></use></svg>
+          </button>
+          <button class="kumi-btn kumi-btn--ghost kumi-btn--icon" type="button" id="btn-cari" aria-label="Cari tombol (Ctrl+K)" title="Cari tombol (Ctrl+K)">
+            <svg class="kumi-icon" aria-hidden="true"><use href="#i-search"></use></svg>
+          </button>
+          <button class="kumi-btn kumi-btn--ghost kumi-btn--icon" type="button" id="btn-setelan" aria-label="Setelan" title="Setelan">
+            <svg class="kumi-icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+          </button>
+        </div>
+
+        <!-- Kelompok sakelar: suara, baki, pin, kunci, tema. -->
+        <div class="kd-kepala__grup">
+          <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" data-kumi-toggle-sound aria-label="Suara antarmuka" aria-pressed="true" title="Suara antarmuka">
+            <!-- Kumi menukar ikon berdasarkan atribut data-kumi-sound di <html>:
+                 isi (aktif) saat nyala, polos (dibisukan) saat mati. -->
+            <svg class="kumi-icon kumi-icon--sound-on" aria-hidden="true"><use href="#kd-volume-on"></use></svg>
+            <svg class="kumi-icon kumi-icon--sound-off" aria-hidden="true"><use href="#kd-volume-off"></use></svg>
+          </button>
+          <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-tray" aria-pressed="false" aria-label="Tampilkan ikon di baki sistem" title="Tampilkan ikon di baki sistem">
+            <svg class="kumi-icon" aria-hidden="true"><use href="#kd-bell"></use></svg>
+          </button>
+          <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-teratas" aria-pressed="false" aria-label="Selalu di atas" title="Selalu di atas">
+            <svg class="kumi-icon" aria-hidden="true"><use href="#kd-pin"></use></svg>
+          </button>
+          <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-kunci" aria-pressed="false" aria-label="Kunci tata letak" title="Kunci tata letak">
+            <svg class="kumi-icon" aria-hidden="true"><use href="#kd-lock-open"></use></svg>
+          </button>
+          <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" data-kumi-toggle-theme aria-label="Ganti tema" title="Ganti tema">
+            <svg class="kumi-icon" aria-hidden="true"><use href="#i-moon"></use></svg>
+          </button>
+        </div>
+
         <button class="kumi-btn kumi-btn--primary" type="button" id="btn-sunting" aria-pressed="false">
           <svg class="kumi-icon" aria-hidden="true"><use href="#i-pencil"></use></svg>
           <span id="btn-sunting-label">Sunting meja</span>
@@ -203,7 +211,6 @@
 
       <div class="kumi-modal__foot kd-bilah">
         <span class="kd-hint" id="cepat-status">Aplikasi terpasang dipindai otomatis.</span>
-        <button class="kumi-btn kumi-btn--ghost" type="button" data-tutup>Tutup</button>
       </div>
     </div>
   </div>
@@ -219,6 +226,17 @@
         <button class="kumi-btn kumi-btn--icon kumi-btn--ghost" type="button" data-tutup aria-label="Tutup">
           <svg class="kumi-icon" aria-hidden="true"><use href="#i-close"></use></svg>
         </button>
+      </div>
+
+      <!-- Pratinjau hidup: tampak seperti tombol di papan, ikut label, ikon,
+           warna, dan ukuran yang sedang dipilih. -->
+      <div class="kd-editor-lihat">
+        <div class="kd-editor-lihat__papan" id="editor-pratinjau" aria-hidden="true"></div>
+        <div class="kd-editor-lihat__teks">
+          <span class="kumi-field__label">Pratinjau</span>
+          <span class="kd-hint" id="editor-pratinjau-ket">1 × 1 slot</span>
+          <span class="kd-hint" id="editor-pratinjau-aksi">Aksi ketuk belum diatur.</span>
+        </div>
       </div>
 
       <form id="form-editor" class="kumi-stack kd-form" novalidate>
@@ -317,7 +335,6 @@
           Hapus
         </button>
         <div class="kumi-row kd-foot-aksi">
-          <button class="kumi-btn kumi-btn--ghost" type="button" data-tutup>Batal</button>
           <button class="kumi-btn kumi-btn--primary" type="submit" form="form-editor" id="editor-simpan">Simpan tombol</button>
         </div>
       </div>
@@ -407,7 +424,6 @@
       </div>
 
       <div class="kumi-modal__foot">
-        <button class="kumi-btn kumi-btn--ghost" type="button" data-tutup>Batal</button>
         <button class="kumi-btn kumi-btn--primary" type="button" id="btn-pangkas-simpan">
           <svg class="kumi-icon" aria-hidden="true"><use href="#i-check"></use></svg>
           Simpan ikon
@@ -461,7 +477,6 @@
             <svg class="kumi-icon" aria-hidden="true"><use href="#i-copy"></use></svg>
             Salin tautan
           </button>
-          <button class="kumi-btn kumi-btn--ghost" type="button" data-tutup>Tutup</button>
         </div>
       </div>
     </div>
@@ -528,18 +543,14 @@
           </div>
           <div class="kumi-row kd-foot-aksi">
             <span class="kd-hint" id="suara-status"></span>
-            <button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" id="btn-suara-batal">Batal</button>
             <button class="kumi-btn kumi-btn--primary kumi-btn--sm" type="submit" id="btn-suara-simpan">
               <svg class="kumi-icon" aria-hidden="true"><use href="#i-plus"></use></svg>
               <span id="btn-suara-simpan-label">Tambah suara</span>
             </button>
           </div>
         </form>
-      </div>
 
-      <div class="kumi-modal__foot">
         <span class="kd-hint">Tombol soundboard juga bisa dipasang di papan lewat editor tombol.</span>
-        <button class="kumi-btn kumi-btn--ghost" type="button" data-tutup>Tutup</button>
       </div>
     </div>
   </div>
@@ -713,13 +724,20 @@
 
         <section class="kd-setelan__panel" id="panel-setelan-data" role="tabpanel" aria-labelledby="tab-setelan-data" hidden>
         <div class="kumi-field">
-          <div class="kd-bilah">
-            <span class="kumi-field__label">Cadangan otomatis</span>
+          <span class="kumi-field__label" id="setelan-cadangan-label">Cadangan otomatis</span>
+          <div class="kd-cadangan-pilih">
+            <select class="kumi-select" id="setelan-cadangan" aria-labelledby="setelan-cadangan-label">
+              <option value="">Memuat cadangan…</option>
+            </select>
             <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kumi-btn--sm" type="button" id="btn-cadangan-muat" aria-label="Muat ulang daftar cadangan" title="Muat ulang daftar">
               <svg class="kumi-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
             </button>
+            <button class="kumi-btn kumi-btn--soft kumi-btn--sm" type="button" id="btn-cadangan-pulihkan">
+              <svg class="kumi-icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+              <span id="btn-cadangan-pulihkan-label">Pulihkan</span>
+            </button>
           </div>
-          <div class="kumi-stack kd-cadangan" id="daftar-cadangan"></div>
+          <span class="kumi-field__hint">Cadangan dibuat otomatis saat papan berubah. Pilih waktu, lalu tekan Pulihkan.</span>
         </div>
 
         <div class="kumi-field">
@@ -729,7 +747,7 @@
               <svg class="kumi-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
             </button>
           </div>
-          <div class="kumi-stack" id="daftar-perangkat-setelan" style="gap:8px"></div>
+          <div class="kumi-stack kd-perangkat-setelan" id="daftar-perangkat-setelan"></div>
         </div>
 
         <div class="kumi-field">
@@ -762,7 +780,6 @@
 
       <div class="kumi-modal__foot">
         <div class="kumi-row kd-foot-aksi">
-          <button class="kumi-btn kumi-btn--ghost" type="button" data-tutup>Batal</button>
           <button class="kumi-btn kumi-btn--primary" type="submit" form="form-setelan" id="setelan-simpan">Simpan setelan</button>
         </div>
       </div>
@@ -791,9 +808,6 @@
 
       <div class="kumi-modal__foot kd-bilah">
         <span class="kd-hint" id="templat-status"></span>
-        <div class="kumi-row kd-foot-aksi">
-          <button class="kumi-btn kumi-btn--ghost" type="button" data-tutup>Batal</button>
-        </div>
       </div>
     </div>
   </div>

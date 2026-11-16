@@ -361,6 +361,17 @@
         Array.prototype.forEach.call(pakai, function (use) {
           use.setAttribute("href", gelap ? "#i-sun" : "#i-moon");
         });
+        /* Status sakelar disamakan dengan sakelar lain: aria-pressed dan
+           is-active selalu mengikuti tema, bukan hanya ikonnya. */
+        var tombolTema = document.querySelectorAll("[data-kumi-toggle-theme]");
+        var t = window.KD && typeof window.KD.t === "function" ? window.KD.t : function (s) {
+          return s;
+        };
+        Array.prototype.forEach.call(tombolTema, function (btn) {
+          btn.setAttribute("aria-pressed", gelap ? "true" : "false");
+          btn.setAttribute("aria-label", t(gelap ? "Ganti ke tema terang" : "Ganti ke tema gelap"));
+          btn.setAttribute("title", t(gelap ? "Tema terang" : "Tema gelap"));
+        });
       };
       terapkan();
       if (typeof MutationObserver === "function") {

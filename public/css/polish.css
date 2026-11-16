@@ -149,6 +149,151 @@ body.kumi-page .kd-shell {
   transform: translateY(-1px);
 }
 
+/* Dua kelompok tombol di kepala: aksi (Soundboard/Templat/Cari/Setelan) dan
+   sakelar (suara/baki/pin/kunci/tema). Latar dan bingkai kelompok dihapus agar
+   kepala hanya berisi ikon; jarak antar ikon yang memisahkan kelompok. */
+.kd-kepala__grup {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.kd-kepala__grup .kumi-btn {
+  border-color: transparent;
+  background: transparent;
+}
+
+.kd-kepala__grup .kumi-btn:hover {
+  border-color: transparent;
+  background: transparent;
+}
+
+/* Sakelar ikon seragam: ikon putih polos, tanpa latar maupun bingkai saat
+   menyala. Keadaan aktif terbaca dari ikonnya sendiri (volume terisi, lonceng
+   terisi, gembok tertutup, pin terisi, matahari/bulan). */
+.kd-toggle,
+.kd-toggle:hover,
+.kd-toggle:active,
+.kd-toggle.is-active,
+.kd-toggle[aria-pressed="true"],
+.kd-toggle[aria-pressed="true"]:hover {
+  color: var(--kumi-fg);
+  border-color: transparent;
+  background: transparent;
+}
+
+/* Ikon sakelar disamakan dengan ikon tombol aksi di sebelahnya. */
+.kd-toggle .kumi-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Jarak antar kelompok sedikit lebih lebar daripada jarak antar ikon. */
+.kd-kepala__grup + .kd-kepala__grup {
+  margin-inline-start: 4px;
+}
+
+/* Chip pilihan di editor (warna tombol, ketuk/tekan lama): latar aksen penuh
+   supaya pilihan yang sedang aktif langsung terlihat. Tanpa ini, chip aktif
+   memakai --kumi-ink-surface yang di tema gelap sama dengan --kumi-surface-2. */
+#editor-varian .kumi-chip[aria-pressed="true"],
+#editor-varian .kumi-chip.is-active,
+#editor-slot .kumi-chip[aria-pressed="true"],
+#editor-slot .kumi-chip.is-active {
+  background: var(--kumi-accent);
+  border-color: transparent;
+  color: #fff;
+}
+
+#editor-varian .kumi-chip[aria-pressed="true"]:hover,
+#editor-varian .kumi-chip.is-active:hover,
+#editor-slot .kumi-chip[aria-pressed="true"]:hover,
+#editor-slot .kumi-chip.is-active:hover {
+  background: var(--kumi-accent);
+  border-color: transparent;
+  transform: none;
+}
+
+/* Pratinjau hidup di modal editor: kotak tetap di atas form, tidak ikut
+   menggulir, jadi bentuk tombol selalu terlihat saat atributnya diubah. */
+.kd-editor-lihat {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--kumi-space-2);
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--kumi-line) 75%, transparent);
+  border-radius: var(--kumi-r-md);
+  background: color-mix(in srgb, var(--kumi-surface-2) 55%, transparent);
+}
+
+.kd-editor-lihat__papan {
+  flex: 0 1 236px;
+  display: grid;
+  place-items: center;
+  height: 132px;
+  border-radius: var(--kumi-r-sm);
+  background: var(--kumi-tile);
+  overflow: hidden;
+}
+
+.kd-editor-lihat__teks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.kd-editor-lihat__papan .kd-key {
+  aspect-ratio: auto;
+  width: calc(var(--pv-sel, 72px) * var(--pv-c, 1));
+  height: calc(var(--pv-sel, 72px) * var(--pv-r, 1));
+  min-height: 0;
+  margin: 0;
+  align-self: center;
+  justify-self: center;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+/* Pemilih cadangan: satu dropdown sebaris dengan tombol Pulihkan. */
+.kd-cadangan-pilih {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kd-cadangan-pilih .kumi-select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.kd-cadangan-pilih .kumi-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Daftar perangkat Remote di tab Data. */
+.kd-perangkat-setelan {
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .kd-editor-lihat {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .kd-editor-lihat__papan {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+}
+
 /* ======================================== 10. Sorotan masuk untuk modal === */
 .kumi-overlay.is-open .kumi-modal {
   animation: kd-masuk var(--kumi-dur) var(--kumi-ease);
@@ -512,30 +657,6 @@ body.kumi-page .kd-shell {
   background: color-mix(in srgb, var(--kumi-accent) 16%, var(--kumi-surface-2));
 }
 
-/* Sakelar ikon: penanda aktif = ikon berwarna penuh + latar netral, tanpa
-   bingkai. Warna aksen tidak dipakai supaya tidak terkesan norak. */
-.kd-toggle,
-.kd-toggle:hover,
-.kd-toggle:active,
-.kd-toggle[aria-pressed="true"] {
-  border-color: transparent;
-}
-
-.kd-toggle:hover {
-  color: var(--kumi-fg);
-  background: color-mix(in srgb, var(--kumi-fg) 9%, transparent);
-}
-
-.kd-toggle[aria-pressed="true"] {
-  color: var(--kumi-fg);
-  background: color-mix(in srgb, var(--kumi-fg) 16%, transparent);
-}
-
-.kd-toggle[aria-pressed="true"]:hover {
-  color: var(--kumi-fg);
-  background: color-mix(in srgb, var(--kumi-fg) 22%, transparent);
-}
-
 /* Tombol utama kepala: latar aksen sudah cukup, tanpa bayangan tebal. */
 .kd-kepala__aksi .kumi-btn--primary {
   box-shadow: none;
@@ -618,7 +739,7 @@ body.kumi-page .kd-shell {
    supaya tidak terbaca sebagai garis tebal. */
 .kd-panel .kumi-list__item,
 .kumi-modal .kumi-list__item,
-.kd-cadangan-baris {
+.kd-perangkat-baris {
   border-top-color: color-mix(in srgb, var(--kumi-line) 50%, transparent);
 }
 
@@ -854,11 +975,8 @@ body.kumi-page .kd-shell {
   padding-inline-end: 2px;
 }
 
-/* Tab Data dipadatkan: daftar cadangan/perangkat tidak perlu terlalu tinggi. */
-.kd-modal--setelan .kd-cadangan {
-  max-height: 180px;
-}
-
+/* Tab Data dipadatkan: daftar cadangan dan perangkat dibuat ringkas, jadi isi
+   panel muat tanpa gulir. */
 @media (max-width: 640px) {
   .kd-modal--setelan #form-setelan {
     grid-template-rows: auto minmax(0, 1fr);
@@ -873,8 +991,7 @@ body.kumi-page .kd-shell {
   height: min(620px, 88vh);
 }
 
-.kd-modal--suara .kumi-modal__head,
-.kd-modal--suara .kumi-modal__foot {
+.kd-modal--suara .kumi-modal__head {
   flex: 0 0 auto;
 }
 

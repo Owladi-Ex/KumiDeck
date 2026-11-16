@@ -362,10 +362,16 @@
 
   function syncThemeButtons() {
     var dark = theme.current() === "dark";
+    var t =
+      window.KD && typeof window.KD.t === "function"
+        ? window.KD.t
+        : function (s) {
+            return s;
+          };
     $$("[data-kumi-toggle-theme]").forEach(function (btn) {
       btn.setAttribute("aria-pressed", String(dark));
-      btn.setAttribute("aria-label", dark ? "Ganti ke tema terang" : "Ganti ke tema gelap");
-      btn.setAttribute("title", dark ? "Tema terang" : "Tema gelap");
+      btn.setAttribute("aria-label", t(dark ? "Ganti ke tema terang" : "Ganti ke tema gelap"));
+      btn.setAttribute("title", t(dark ? "Tema terang" : "Tema gelap"));
     });
   }
 

@@ -38,5 +38,9 @@
     <path d="M9.2 3.5h5.6l-.9 5.4 3.2 3.2v2.1H6.9v-2.1l3.2-3.2z"/>
     <path d="M12 14.2v6.3"/>
   </symbol>
+  <symbol id="kd-pin-fill" viewBox="0 0 24 24">
+    <path fill="currentColor" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" d="M9.2 3.5h5.6l-.9 5.4 3.2 3.2v2.1H6.9v-2.1l3.2-3.2z"/>
+    <path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M12 14.2v6.3"/>
+  </symbol>
 </svg>
 

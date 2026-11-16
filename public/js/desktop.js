@@ -183,6 +183,7 @@
     stream: null,
     pairInfo: null,
     contohTahap: 0,
+    cadangan: null /* cache daftar cadangan supaya modal tidak berkedip */,
   };
 
   /* ------------------------------------------------------------- pembantu --- */
@@ -385,6 +386,9 @@
     btn.setAttribute("aria-label", aktif ? "Lepas pin selalu di atas" : "Selalu di atas");
     btn.setAttribute("title", aktif ? "Selalu di atas: aktif" : "Selalu di atas: mati");
     btn.classList.toggle("is-active", aktif);
+    /* Ikon terisi saat pin aktif, sama seperti sakelar lain (lonceng, gembok). */
+    var use = btn.querySelector("use");
+    if (use) use.setAttribute("href", aktif ? "#kd-pin-fill" : "#kd-pin");
   }
 
   function ubahTeratas() {
@@ -1538,6 +1542,7 @@
     if (terpilih && terpilih.scrollIntoView) {
       terpilih.scrollIntoView({ block: "nearest" });
     }
+    gambarPratinjauEditor();
   }
 
   function $$(sel, akar) {
@@ -1552,7 +1557,7 @@
       chip.type = "button";
       chip.className = "kumi-chip";
       chip.dataset.varian = v.id;
-      chip.textContent = v.label;
+      chip.textContent = KD.t(v.label);
       chip.setAttribute("aria-pressed", "false");
       chip.addEventListener("click", function () {
         if (!S.editor) return;
@@ -1606,6 +1611,72 @@
       nilai.textContent = KD.t(sp.c + " × " + sp.r + " slot");
       nilai.hidden = sp.c <= 1 && sp.r <= 1;
     }
+    gambarPratinjauEditor();
+  }
+
+  /* Pratinjau hidup di editor: tombol digambar dengan fungsi yang sama seperti
+     di papan, jadi ikon, warna, label, dan ukuran terlihat persis sebelum
+     disimpan. Ukuran besar diperkecil agar tetap muat di kotak pratinjau. */
+  function gambarPratinjauEditor() {
+    var papan = $("#editor-pratinjau");
+    if (!papan || !S.editor) return;
+    var d = S.editor.draft;
+    var label = (($("#editor-label") || {}).value || "").trim();
+    var lebar = Number((($("#editor-ukuran-lebar .kumi-chip.is-active") || {}).dataset || {}).lebar) || 1;
+    var tinggi = Number((($("#editor-ukuran-tinggi .kumi-chip.is-active") || {}).dataset || {}).tinggi) || 1;
+    var jenis = ($("#editor-jenis") || {}).value || "";
+    var widget = !S.editor.slot && jenis === "widget" ? d.widget || { type: "jam" } : null;
+    var kunci = {
+      id: d.id || "pratinjau",
+      label: label || KD.t("Nama tombol"),
+      icon: d.icon || "i-grid",
+      variant: d.variant || "default",
+      warna: d.warna || null,
+      widget: widget,
+      action: d.action || { type: "kosong" },
+    };
+
+    var tombol = KD.buatTombol(kunci, {});
+    tombol.tabIndex = -1;
+    /* Penanda rentang dipakai juga di papan: ikon/label ikut membesar sehingga
+       pratinjau benar-benar mewakili tombol besar. */
+    if (lebar > 1 || tinggi > 1) {
+      tombol.setAttribute("data-rentang", lebar + "x" + tinggi);
+      tombol.style.setProperty("--kd-sc", String(lebar));
+      tombol.style.setProperty("--kd-sr", String(tinggi));
+    }
+    papan.innerHTML = "";
+    papan.appendChild(tombol);
+
+    /* Ukuran sel dihitung dalam piksel (bukan transform) supaya tombol terbesar
+       (6 × 4) tetap utuh di dalam kotak pratinjau, tidak terpotong. */
+    var sel = Math.max(20, Math.min(72, 228 / lebar, 118 / tinggi));
+    papan.style.setProperty("--pv-c", String(lebar));
+    papan.style.setProperty("--pv-r", String(tinggi));
+    papan.style.setProperty("--pv-sel", sel.toFixed(2) + "px");
+    /* Ikon dan label ikut mengecil bersama sel supaya perbandingannya tetap
+       sama dengan tombol aslinya di papan. */
+    tombol.style.setProperty("--kd-skala", (sel / 72).toFixed(3));
+
+    var ket = $("#editor-pratinjau-ket");
+    if (ket) {
+      var namaVarian = VARIAN.filter(function (v) {
+        return v.id === (d.variant || "default");
+      })[0];
+      ket.textContent =
+        KD.t(lebar + " × " + tinggi + " slot") +
+        (namaVarian ? " · " + KD.t(namaVarian.label) : "");
+    }
+    var aksi = $("#editor-pratinjau-aksi");
+    if (aksi) {
+      var teks = widget
+        ? KD.t("Widget") + " · " + KD.t((KD.namaWidget && KD.namaWidget[widget.type]) || widget.type)
+        : KD.jelaskan(kunci.action);
+      if (!widget && d.actionKedua && d.actionKedua.type && d.actionKedua.type !== "kosong") {
+        teks += " · " + KD.t("Tekan lama:") + " " + KD.jelaskan(d.actionKedua);
+      }
+      aksi.textContent = teks;
+    }
   }
 
   function tandaiVarianTerpilih() {
@@ -1621,6 +1692,7 @@
     var fg = $("#editor-warna-fg");
     if (bg) bg.value = (warna && warna.bg) || "#3d5afe";
     if (fg) fg.value = (warna && warna.fg) || "#ffffff";
+    gambarPratinjauEditor();
   }
 
   function buatPilihanJenis() {
@@ -1919,7 +1991,9 @@
     $("#editor-hint").textContent = PETUNJUK_JENIS[jenis] || "";
     if ($("#editor-slot")) {
       Array.prototype.forEach.call($("#editor-slot").children, function (chip) {
-        chip.classList.toggle("is-active", Number(chip.getAttribute("data-slot")) === S.editor.slot);
+        var aktif = Number(chip.getAttribute("data-slot")) === S.editor.slot;
+        chip.classList.toggle("is-active", aktif);
+        chip.setAttribute("aria-pressed", aktif ? "true" : "false");
       });
     }
 
@@ -2388,6 +2462,7 @@
         });
       }
     }
+    gambarPratinjauEditor();
   }
 
   /* ---------------------------------------------------- perekam pintasan --- */
@@ -4328,10 +4403,10 @@
     }
     daftar.forEach(function (p) {
       var baris = document.createElement("div");
-      baris.className = "kd-cadangan-baris";
+      baris.className = "kd-perangkat-baris";
 
       var info = document.createElement("div");
-      info.className = "kd-cadangan-baris__info";
+      info.className = "kd-perangkat-baris__info";
       var nama = document.createElement("span");
       nama.className = "kumi-text kumi-text--strong";
       nama.textContent = p.name || "Perangkat";
@@ -4673,59 +4748,71 @@
     }
   }
 
+  /* Cadangan ringkas: satu dropdown berisi versi terakhir. Daftar panjang
+     tidak perlu digambar, jadi tab Data tidak lagi butuh gulir. */
+  function isiPilihanCadangan(items) {
+    var pilih = $("#setelan-cadangan");
+    if (!pilih) return;
+    var sebelumnya = pilih.value;
+    pilih.innerHTML = "";
+    if (!items.length) {
+      var kosong = document.createElement("option");
+      kosong.value = "";
+      kosong.textContent = KD.t("Belum ada cadangan");
+      pilih.appendChild(kosong);
+      pilih.disabled = true;
+      var tombolKosong = $("#btn-cadangan-pulihkan");
+      if (tombolKosong) tombolKosong.disabled = true;
+      return;
+    }
+    pilih.disabled = false;
+    var tombol = $("#btn-cadangan-pulihkan");
+    if (tombol) tombol.disabled = false;
+    items.forEach(function (c) {
+      var opt = document.createElement("option");
+      opt.value = c.nama;
+      opt.textContent =
+        formatWaktu(c.waktu) + " · " + Math.max(1, Math.round(c.ukuran / 1024)) + " KB";
+      pilih.appendChild(opt);
+    });
+    var masihAda = items.some(function (c) {
+      return c.nama === sebelumnya;
+    });
+    pilih.value = masihAda ? sebelumnya : items[0].nama;
+  }
+
   function muatCadangan() {
-    var daftar = $("#daftar-cadangan");
-    if (!daftar) return;
-    daftar.innerHTML = '<div class="kd-hint">Memuat cadangan…</div>';
+    var pilih = $("#setelan-cadangan");
+    if (!pilih) return;
+    /* Tampilkan hasil terakhir lebih dulu supaya tidak ada kedipan saat
+       modal dibuka berulang kali. */
+    if (S.cadangan && S.cadangan.length) isiPilihanCadangan(S.cadangan);
+    else pilih.innerHTML = '<option value="">' + KD.escapeHtml(KD.t("Memuat cadangan…")) + "</option>";
     KD.api("/api/cadangan")
       .then(function (hasil) {
-        var items = (hasil && hasil.cadangan) || [];
-        daftar.innerHTML = "";
-        if (!items.length) {
-          var kosong = document.createElement("div");
-          kosong.className = "kd-hint";
-          kosong.textContent = "Belum ada cadangan. Cadangan dibuat otomatis saat papan berubah.";
-          daftar.appendChild(kosong);
-          return;
-        }
-
-        items.forEach(function (c) {
-          var baris = document.createElement("div");
-          baris.className = "kd-cadangan-baris";
-
-          var info = document.createElement("span");
-          info.className = "kd-cadangan-baris__info";
-          info.textContent =
-            formatWaktu(c.waktu) + " · " + Math.max(1, Math.round(c.ukuran / 1024)) + " KB";
-
-          var pulih = document.createElement("button");
-          pulih.type = "button";
-          pulih.className = "kumi-btn kumi-btn--ghost kumi-btn--sm";
-          pulih.textContent = "Pulihkan";
-          pulih.addEventListener("click", function () {
-            pulihkanCadangan(c.nama, pulih);
-          });
-
-          baris.appendChild(info);
-          baris.appendChild(pulih);
-          daftar.appendChild(baris);
-        });
+        S.cadangan = (hasil && hasil.cadangan) || [];
+        isiPilihanCadangan(S.cadangan);
       })
       .catch(function () {
-        daftar.innerHTML = '<div class="kd-hint">Daftar cadangan tidak dapat dimuat.</div>';
+        if (S.cadangan && S.cadangan.length) return;
+        pilih.innerHTML = '<option value="">' + KD.escapeHtml(KD.t("Daftar cadangan tidak dapat dimuat.")) + "</option>";
+        pilih.disabled = true;
       });
   }
 
+  /* Dua klik: cegah pemulihan tidak sengaja. Label tombol ditukar lewat span
+     supaya ikon di dalamnya tidak hilang. */
   function pulihkanCadangan(nama, tombol) {
-    if (!tombol) return;
-    /* Dua klik: cegah pemulihan tidak sengaja. */
+    if (!nama || !tombol) return;
+    var label = tombol.querySelector("#btn-cadangan-pulihkan-label") || tombol;
     if (tombol.dataset.siap !== "1") {
       tombol.dataset.siap = "1";
-      tombol.textContent = "Yakin?";
+      tombol.dataset.teksAsli = label.textContent.trim();
+      label.textContent = KD.t("Yakin?");
       window.setTimeout(function () {
         if (!tombol) return;
         tombol.dataset.siap = "";
-        tombol.textContent = "Pulihkan";
+        label.textContent = tombol.dataset.teksAsli || KD.t("Pulihkan");
       }, 4000);
       return;
     }
@@ -4733,6 +4820,9 @@
     tombol.disabled = true;
     KD.api("/api/cadangan/pulihkan", { method: "POST", body: { nama: nama } })
       .then(function (hasil) {
+        tombol.dataset.siap = "";
+        label.textContent = tombol.dataset.teksAsli || KD.t("Pulihkan");
+        tombol.disabled = false;
         if (!hasil || !hasil.deck) return;
         S.deck = hasil.deck;
         S.halamanId =
@@ -4742,14 +4832,14 @@
         isiFormSetelan();
         muatCadangan();
         if (window.Kumi) Kumi.sound.play("success");
-        KD.toast("Cadangan dipulihkan.", "ok");
+        KD.toast(KD.t("Cadangan dipulihkan."), "ok");
       })
       .catch(function (galat) {
         if (window.Kumi) Kumi.sound.play("error");
-        KD.toast(galat.message || "Cadangan tidak dapat dipulihkan.", "danger");
+        KD.toast(galat.message || KD.t("Cadangan tidak dapat dipulihkan."), "danger");
         tombol.disabled = false;
         tombol.dataset.siap = "";
-        tombol.textContent = "Pulihkan";
+        label.textContent = tombol.dataset.teksAsli || KD.t("Pulihkan");
       });
   }
 
@@ -5139,13 +5229,6 @@
         aturFormSuara(akanBuka);
       });
     }
-    var btnSuaraBatal = $("#btn-suara-batal");
-    if (btnSuaraBatal) {
-      btnSuaraBatal.addEventListener("click", function () {
-        isiFormSuara(null);
-        aturFormSuara(false);
-      });
-    }
     var btnSuaraBerkas = $("#btn-suara-berkas");
     var berkasSuara = $("#berkas-suara");
     if (btnSuaraBerkas && berkasSuara) {
@@ -5243,6 +5326,7 @@
         bg: warnaBg.value || "#3d5afe",
         fg: warnaFg.value || "#ffffff",
       };
+      gambarPratinjauEditor();
       if (window.Kumi) Kumi.sound.play("tap");
     };
     if (warnaBg) warnaBg.addEventListener("input", pasangWarna);
@@ -5374,6 +5458,7 @@
     }
     $("#editor-label").addEventListener("input", function () {
       $("#editor-label").removeAttribute("aria-invalid");
+      gambarPratinjauEditor();
     });
 
     /* Halaman. */
@@ -5520,6 +5605,13 @@
     /* Cadangan, log, dan ekspor PNG. */
     var btnCadanganMuat = $("#btn-cadangan-muat");
     if (btnCadanganMuat) btnCadanganMuat.addEventListener("click", muatCadangan);
+    var btnCadanganPulih = $("#btn-cadangan-pulihkan");
+    if (btnCadanganPulih) {
+      btnCadanganPulih.addEventListener("click", function () {
+        var pilih = $("#setelan-cadangan");
+        pulihkanCadangan(pilih ? pilih.value : "", btnCadanganPulih);
+      });
+    }
     var btnUnduhLog = $("#btn-unduh-log");
     if (btnUnduhLog) btnUnduhLog.addEventListener("click", unduhLog);
     var btnEksporPng = $("#btn-ekspor-png");
@@ -5713,7 +5805,10 @@
     /* Label ukuran memuat angka dinamis, jadi perlu digambar ulang saat
        bahasa berganti (kamus hanya menjangkau teks tetap). */
     window.addEventListener("kd:bahasa", function () {
-      if (S.editor) tandaiUkuranTerpilih();
+      if (!S.editor) return;
+      buatPilihanVarian();
+      tandaiVarianTerpilih();
+      tandaiUkuranTerpilih();
     });
 
     /* Jam dan tanggal diperbarui dari jam perangkat; hanya berjalan bila
