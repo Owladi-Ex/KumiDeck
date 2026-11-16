@@ -12,6 +12,7 @@ buat-installer.cmd
 rilis.cmd
 CONTRACT.md
 README-lokal.md
+RENCANA.md
 
 # Hasil build rilis (dibuat ulang oleh rilis.cmd / buat-exe.cmd)
 _rilis/
