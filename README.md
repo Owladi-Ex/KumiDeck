@@ -46,6 +46,9 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
   dengan izin sekali per tombol.
 - **Dua aksi per tombol**: ketuk menjalankan aksi utama, tekan lama menjalankan
   aksi kedua — di papan desktop maupun Remote.
+- **Umpan balik halus**: isyarat suara untuk ketukan, tekan lama, dan ganti
+  halaman (volume bisa diatur atau dimatikan per perangkat), animasi masuk
+  papan, serta navigasi tombol dengan panah.
 - **Templat papan bawaan**: Streaming, Ngoding, Media, dan Kerja, siap diisi
   dalam satu klik.
 - **Urungkan/ulangi** (`Ctrl+Z`/`Ctrl+Y`) untuk perubahan papan.

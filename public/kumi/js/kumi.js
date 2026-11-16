@@ -113,8 +113,10 @@
      Kontrol:
        <button data-kumi-toggle-sound>            nyala/mati, tersimpan
        <button data-kumi-cue="success">           mainkan satu isyarat
+       <input data-kumi-volume type="range">      atur volume (0–100), tersimpan
        Kumi.sound.play("click")                   via API
-     Isyarat: tap, click, toggle, open, close, success, error, notify, tick.
+     Isyarat: tap, click, lama, toggle, pindah, open, close, success, error,
+     notify, tick.
 
      Atribut KEADAAN ada di <html>: data-kumi-sound="on|off" (dipakai CSS untuk
      menukar ikon). Atribut PEMICU ada di elemen yang diklik: data-kumi-cue.
@@ -123,11 +125,13 @@
      Browser hanya mengizinkan suara setelah ada interaksi pengguna, jadi
      AudioContext dibuat malas (lazy) dan di-resume pada interaksi pertama. */
   var SOUND_KEY = "kumi-sound";
+  var VOLUME_KEY = "kumi-sound-volume";
 
   var sound = (function () {
     var ctx = null;
     var master = null;
     var enabled = true;
+    var volume = 0.8;
     var lastTick = 0;
 
     function supported() {
@@ -139,6 +143,8 @@
         var v = localStorage.getItem(SOUND_KEY);
         if (v === "off") enabled = false;
         else if (v === "on") enabled = true;
+        var vol = Number(localStorage.getItem(VOLUME_KEY));
+        if (isFinite(vol) && vol >= 0 && vol <= 1) volume = vol;
       } catch (err) {
         /* diabaikan */
       }
@@ -152,6 +158,24 @@
       }
     }
 
+    function saveVolume() {
+      try {
+        localStorage.setItem(VOLUME_KEY, String(volume));
+      } catch (err) {
+        /* diabaikan */
+      }
+    }
+
+    /* Perubahan volume dibuat halus supaya tidak berdesis saat slider digeser. */
+    function applyVolume() {
+      if (!master || !ctx) return;
+      try {
+        master.gain.setTargetAtTime(volume, ctx.currentTime, 0.02);
+      } catch (err) {
+        master.gain.value = volume;
+      }
+    }
+
     /* Siapkan (sekali) dan lanjutkan konteks audio. */
     function ensure() {
       if (!supported()) return null;
@@ -159,7 +183,7 @@
         var AC = window.AudioContext || window.webkitAudioContext;
         ctx = new AC();
         master = ctx.createGain();
-        master.gain.value = 0.85;
+        master.gain.value = volume;
         master.connect(ctx.destination);
       }
       if (ctx.state === "suspended" && ctx.resume) {
@@ -203,8 +227,17 @@
 
     var cues = {
       tap: function () { blip(440, { type: "triangle", gain: 0.04, dur: 0.07, slideTo: 400 }); },
+      /* Tekan lama: dua nada turun pendek, jelas berbeda dari ketukan. */
+      lama: function () {
+        blip(320, { type: "triangle", gain: 0.05, dur: 0.11, slideTo: 240 });
+        window.setTimeout(function () {
+          blip(220, { type: "triangle", gain: 0.045, dur: 0.16, slideTo: 180 });
+        }, 92);
+      },
       click: function () { blip(320, { type: "triangle", gain: 0.05, dur: 0.09, slideTo: 250 }); },
       toggle: function () { blip(560, { type: "sine", gain: 0.05, dur: 0.1, slideTo: 760 }); },
+      /* Pindah halaman: dua nada naik yang lembut. */
+      pindah: function () { arpeggio([392, 587.33], { type: "sine", gain: 0.04, dur: 0.11 }); },
       open: function () { blip(300, { type: "sine", gain: 0.05, dur: 0.17, slideTo: 540 }); },
       close: function () { blip(540, { type: "sine", gain: 0.05, dur: 0.17, slideTo: 300 }); },
       success: function () { arpeggio([523.25, 659.25, 783.99], { type: "sine", gain: 0.05, dur: 0.15 }); },
@@ -238,9 +271,18 @@
         return enabled;
       },
       toggle: function () { return sound.set(!enabled); },
+      /* Volume master 0–1; disimpan di perangkat ini. */
+      volume: function () { return volume; },
+      setVolume: function (v) {
+        volume = Math.max(0, Math.min(1, Number(v) || 0));
+        applyVolume();
+        saveVolume();
+        syncVolumeInputs();
+        return volume;
+      },
       /* Lanjutkan konteks audio pada gesture pertama (kalau perlu). */
       resume: function () { if (enabled) ensure(); },
-      sync: function () { syncSoundButtons(); }
+      sync: function () { syncSoundButtons(); syncVolumeInputs(); }
     };
   })();
 
@@ -253,6 +295,18 @@
         "aria-label",
         sound.isOn() ? "Matikan suara antarmuka" : "Nyalakan suara antarmuka"
       );
+    });
+  }
+
+  /* Slider volume memakai data-kumi-volume; label persen di sebelahnya
+     memakai data-kumi-volume-nilai. */
+  function syncVolumeInputs() {
+    var persen = Math.round(sound.volume() * 100);
+    $$("[data-kumi-volume]").forEach(function (el) {
+      if (el.value !== String(persen)) el.value = String(persen);
+      var induk = el.parentNode;
+      var nilai = induk && induk.querySelector("[data-kumi-volume-nilai]");
+      if (nilai) nilai.textContent = persen + "%";
     });
   }
 
@@ -614,7 +668,7 @@
 
     document.addEventListener("pointerdown", function (event) {
       var host = event.target.closest &&
-        event.target.closest(".kumi-btn, .kumi-chip, .kumi-tile--link, .kumi-list__item--interactive");
+        event.target.closest(".kumi-btn, .kumi-chip, .kumi-tile--link, .kumi-list__item--interactive, .kd-key");
       if (!host) return;
       var rect = host.getBoundingClientRect();
       var ripple = document.createElement("span");
@@ -811,6 +865,19 @@
       { once: true, passive: true }
     );
 
+    /* Slider volume: atur langsung, lalu bunyikan contoh saat dilepas. */
+    document.addEventListener("input", function (event) {
+      var slider = event.target.closest && event.target.closest("[data-kumi-volume]");
+      if (!slider) return;
+      sound.setVolume(Number(slider.value) / 100);
+    });
+    document.addEventListener("change", function (event) {
+      var slider = event.target.closest && event.target.closest("[data-kumi-volume]");
+      if (!slider) return;
+      sound.resume();
+      sound.play("tap");
+    });
+
     document.addEventListener("click", function (event) {
       var target = event.target;
 
@@ -930,6 +997,7 @@
     initCharts(scope);
     syncThemeButtons();
     syncSoundButtons();
+    syncVolumeInputs();
   }
 
   /* Panggil setelah menambah/mengganti isi halaman (mis. render di React/Vue)

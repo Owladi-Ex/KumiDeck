@@ -52,20 +52,20 @@
           <svg class="kumi-icon kumi-icon--sound-on" aria-hidden="true"><use href="#kd-volume-on"></use></svg>
           <svg class="kumi-icon kumi-icon--sound-off" aria-hidden="true"><use href="#kd-volume-off"></use></svg>
         </button>
-        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-tray" aria-pressed="false" aria-label="Tampilkan ikon di baki sistem">
+        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-tray" aria-pressed="false" aria-label="Tampilkan ikon di baki sistem" title="Tampilkan ikon di baki sistem">
           <svg class="kumi-icon" aria-hidden="true"><use href="#kd-bell"></use></svg>
         </button>
         <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-teratas" aria-pressed="false" aria-label="Selalu di atas" title="Selalu di atas">
           <svg class="kumi-icon" aria-hidden="true"><use href="#kd-pin"></use></svg>
         </button>
-        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-kunci" aria-pressed="false" aria-label="Kunci tata letak">
+        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-kunci" aria-pressed="false" aria-label="Kunci tata letak" title="Kunci tata letak">
           <svg class="kumi-icon" aria-hidden="true"><use href="#kd-lock-open"></use></svg>
         </button>
         <button class="kumi-btn kumi-btn--primary" type="button" id="btn-sunting" aria-pressed="false">
           <svg class="kumi-icon" aria-hidden="true"><use href="#i-pencil"></use></svg>
           <span id="btn-sunting-label">Sunting meja</span>
         </button>
-        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" data-kumi-toggle-theme aria-label="Ganti tema">
+        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" data-kumi-toggle-theme aria-label="Ganti tema" title="Ganti tema">
           <svg class="kumi-icon" aria-hidden="true"><use href="#i-moon"></use></svg>
         </button>
       </div>
@@ -545,6 +545,9 @@
       </div>
 
       <form id="form-setelan" class="kumi-stack kd-form">
+        <div class="kd-setelan-bagian">
+          <span class="kumi-field__label">Umum</span>
+        </div>
         <div class="kumi-field">
           <label class="kumi-field__label" for="pilih-bahasa">Bahasa antarmuka</label>
           <select class="kumi-select" id="pilih-bahasa">
@@ -585,6 +588,10 @@
         </span>
 
         <hr class="kumi-divider">
+
+        <div class="kd-setelan-bagian">
+          <span class="kumi-field__label">Perilaku</span>
+        </div>
 
         <div class="kumi-between">
           <div class="kd-sakelar-teks">
@@ -632,6 +639,32 @@
         </div>
 
         <hr class="kumi-divider">
+
+        <div class="kd-setelan-bagian">
+          <span class="kumi-field__label">Suara antarmuka</span>
+          <span class="kd-hint">Bunyi halus saat tombol ditekan, halaman berganti, atau aksi gagal. Disimpan di perangkat ini.</span>
+        </div>
+        <div class="kumi-between">
+          <div class="kd-sakelar-teks">
+            <span class="kumi-text kumi-text--strong">Suara ketukan</span>
+            <span class="kd-hint">Matikan bila papan dipakai di ruangan senyap.</span>
+          </div>
+          <input class="kumi-switch" type="checkbox" id="setelan-bunyi" aria-label="Suara ketukan">
+        </div>
+        <div class="kumi-field">
+          <label class="kumi-field__label" for="setelan-volume">Volume suara</label>
+          <div class="kd-volume-baris">
+            <input class="kd-volume" type="range" id="setelan-volume" min="0" max="100" step="5" value="80" aria-label="Volume suara antarmuka" data-kumi-volume>
+            <span class="kd-volume__nilai" id="setelan-volume-nilai" data-kumi-volume-nilai>80%</span>
+            <button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" id="btn-uji-bunyi">Uji</button>
+          </div>
+        </div>
+
+        <hr class="kumi-divider">
+
+        <div class="kd-setelan-bagian">
+          <span class="kumi-field__label">Tampilan</span>
+        </div>
 
         <div class="kumi-field">
           <label class="kumi-field__label" for="setelan-aksen">Warna aksen</label>
@@ -738,6 +771,7 @@
   <script src="js/desktop.js"></script>
 </body>
 </html>
+
 
 
 

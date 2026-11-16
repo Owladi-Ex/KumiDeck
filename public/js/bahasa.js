@@ -89,7 +89,8 @@ window.KD_EN = {
   "Papan tidak dapat dimuat": "The board could not be loaded",
   "Server tidak menjawab. Pastikan KumiDeck masih berjalan.": "The server is not responding. Make sure KumiDeck is still running.",
   "Server tidak menjawab. Pastikan KumiDeck masih berjalan di komputer.": "The server is not responding. Make sure KumiDeck is still running on the computer.",
-  "Tekan tombol untuk menjalankan aksi. Nyalakan": "Tap a button to run its action. Turn on",
+  "Tekan tombol untuk menjalankan aksi. Gunakan panah untuk berpindah antar tombol. Nyalakan":
+    "Tap a button to run its action. Use the arrow keys to move between buttons. Turn on",
   "untuk mengubah isi tombol.": "to change what the buttons do.",
   "Belum ada aktivitas": "No activity yet",
   "Tekan tombol untuk melihat jejaknya di sini.": "Tap a button to see it here.",
@@ -353,7 +354,31 @@ window.KD_EN = {
   "Ekspor PNG": "Export PNG",
   "Gambar papan diunduh.": "Board image downloaded.",
   "Ekspor PNG gagal.": "PNG export failed.",
-  "Ekspor PNG hanya tersedia di aplikasi desktop.": "PNG export is only available in the desktop app."
+  "Ekspor PNG hanya tersedia di aplikasi desktop.": "PNG export is only available in the desktop app.",
+
+  /* ---- suara antarmuka & umpan balik ---- */
+  "Umum": "General",
+  "Perilaku": "Behavior",
+  "Tampilan": "Appearance",
+  "Umpan balik": "Feedback",
+  "Suara ketukan": "Tap sound",
+  "Bunyi halus saat tombol ditekan, halaman berganti, atau aksi gagal. Disimpan di perangkat ini.":
+    "Soft sounds when a button is pressed, a page changes, or an action fails. Stored on this device.",
+  "Matikan bila papan dipakai di ruangan senyap.": "Turn it off when using the board in a quiet room.",
+  "Volume suara": "Sound volume",
+  "Volume suara antarmuka": "Interface sound volume",
+  "Uji": "Test",
+  "Suara ketukan sedang dimatikan. Nyalakan dulu untuk mendengar contoh.":
+    "Tap sound is off. Turn it on first to hear a sample.",
+  "Bunyi halus saat tombol dan halaman ditekan": "Soft sounds when buttons and pages are pressed",
+  "Disimpan di perangkat ini. Matikan bila papan dipakai di ruangan senyap.":
+    "Stored on this device. Turn it off when using the board in a quiet room.",
+  "Tekan lama tombol untuk menjalankan aksi kedua.": "Press and hold a button to run its second action.",
+  "Aksi tekan lama:": "Hold action:",
+  "Getaran": "Haptics",
+  "Getar saat tombol ditekan": "Vibrate when a button is pressed",
+  "Hanya berfungsi di perangkat yang mendukung getaran.": "Only works on devices that support vibration.",
+  "Tampilkan ikon di baki sistem": "Show the icon in the system tray"
 };
 
 /* Pola untuk pesan server yang memuat angka/nama sehingga tidak bisa dicocokkan

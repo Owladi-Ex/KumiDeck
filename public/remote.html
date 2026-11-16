@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="kumi/css/components.css">
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/remote.css">
+  <link rel="stylesheet" href="css/polish.css">
 </head>
 <body class="kumi-page kd-remote" data-kd-platform="android">
   <!-- ============================== KEPALA ============================== -->
@@ -37,6 +38,16 @@
         aria-label="Ganti tema"
       >
         <svg class="kumi-icon" aria-hidden="true" data-ikon-tema><use href="#i-moon"></use></svg>
+      </button>
+      <button
+        class="kumi-btn kumi-btn--ghost kumi-btn--icon kumi-btn--sm"
+        type="button"
+        data-kumi-toggle-sound
+        aria-label="Suara antarmuka"
+        aria-pressed="true"
+      >
+        <svg class="kumi-icon kumi-icon--sound-on" aria-hidden="true"><use href="#kd-volume-on"></use></svg>
+        <svg class="kumi-icon kumi-icon--sound-off" aria-hidden="true"><use href="#kd-volume-off"></use></svg>
       </button>
       <button
         class="kumi-btn kumi-btn--ghost kumi-btn--icon kumi-btn--sm"
@@ -196,6 +207,31 @@
             <option value="id">Bahasa Indonesia</option>
             <option value="en">English</option>
           </select>
+        </div>
+
+        <div class="kumi-field">
+          <div class="kd-setelan-bagian">
+            <span class="kumi-field__label">Umpan balik</span>
+          </div>
+          <label class="kumi-row kd-remote__sakelar">
+            <input type="checkbox" id="setelan-bunyi">
+            <span>Suara ketukan</span>
+          </label>
+          <div class="kd-volume-baris">
+            <input class="kd-volume" type="range" id="setelan-volume" min="0" max="100" step="5" value="80" aria-label="Volume suara antarmuka" data-kumi-volume>
+            <span class="kd-volume__nilai" id="setelan-volume-nilai" data-kumi-volume-nilai>80%</span>
+            <button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" id="btn-uji-bunyi">Uji</button>
+          </div>
+          <span class="kumi-field__hint">Disimpan di perangkat ini. Matikan bila papan dipakai di ruangan senyap.</span>
+        </div>
+
+        <div class="kumi-field">
+          <span class="kumi-field__label">Getaran</span>
+          <label class="kumi-row kd-remote__sakelar">
+            <input type="checkbox" id="setelan-getar">
+            <span>Getar saat tombol ditekan</span>
+          </label>
+          <span class="kumi-field__hint">Hanya berfungsi di perangkat yang mendukung getaran.</span>
         </div>
 
         <div class="kumi-field">

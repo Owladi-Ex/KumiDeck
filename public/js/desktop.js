@@ -178,6 +178,7 @@
     adaWidgetWaktu: false /* papan memuat widget jam/tanggal */,
     online: false,
     siap: false,
+    pernahTampil: false /* animasi masuk hanya pada tampilan pertama */,
     stream: null,
     pairInfo: null,
     contohTahap: 0,
@@ -442,6 +443,16 @@
       wadah.appendChild(chip);
     });
 
+    /* Jaga tab aktif tetap terlihat saat daftar halaman bisa digulir. */
+    var chipAktif = wadah.querySelector(".kumi-chip.is-active");
+    if (chipAktif && typeof chipAktif.scrollIntoView === "function") {
+      try {
+        chipAktif.scrollIntoView({ inline: "nearest", block: "nearest" });
+      } catch (err) {
+        /* peramban lama: abaikan */
+      }
+    }
+
     var kelola = $("#btn-kelola-halaman");
     kelola.hidden = !S.sunting;
     var cepat = $("#btn-tambah-cepat");
@@ -465,6 +476,8 @@
     var kolom = kolomPapan();
     S.kolomTerpasang = kolom;
     papan.style.setProperty("--kd-cols", String(kolom));
+    papan.dataset.kolom = String(kolom);
+    KD.pasangNavigasiKisi(papan);
     /* Skala tombol per halaman (#2.2). 100% = bawaan. */
     papan.style.setProperty("--kd-skala", String((halaman.skala || 100) / 100));
     terapkanLatarHalaman(papan, halaman);
@@ -478,6 +491,8 @@
     halaman.keys.forEach(function (key, indeks) {
       var tombol = KD.buatTombol(key, { sunting: S.sunting });
       tombol.dataset.indeks = String(indeks);
+      /* Jeda masuk bertahap, dibatasi supaya halaman besar tidak lambat. */
+      tombol.style.setProperty("--kd-i", String(Math.min(indeks, 12)));
       /* D12: tandai tombol yang berbagi pintasan dengan tombol lain. */
       var comboBentrok = null;
       var lainnya = [];
@@ -550,8 +565,7 @@
             jalankan(false);
           },
           lama: function () {
-            KD.toast("Aksi tekan lama: " + KD.jelaskan(key.actionKedua), "info");
-            if (window.Kumi) Kumi.sound.play("toggle");
+            KD.toast(KD.t("Aksi tekan lama:") + " " + KD.jelaskan(key.actionKedua), "info");
             jalankan(true);
           },
         });
@@ -581,7 +595,7 @@
       ? "Tata letak terkunci. Tekan tombol untuk menjalankan aksi; buka kunci untuk menyunting."
       : S.sunting
         ? "Mode sunting aktif. Klik tombol untuk mengubah isinya, atau seret untuk menukar posisi."
-        : "Tekan tombol untuk menjalankan aksi. Nyalakan <strong>Sunting meja</strong> untuk mengubah isi tombol.";
+        : "Tekan tombol untuk menjalankan aksi. Gunakan panah untuk berpindah antar tombol. Nyalakan <strong>Sunting meja</strong> untuk mengubah isi tombol.";
   }
 
   /* --------------------------------------------------- seret & lepas (#2) --- */
@@ -1050,7 +1064,8 @@
     simpanLokal("kumideck-halaman", id);
     renderHalaman();
     renderPapan();
-    if (window.Kumi) Kumi.sound.play("toggle");
+    KD.animasiMasuk($("#papan"));
+    KD.bunyi.pindah();
   }
 
   function tekanTombol(pageId, keyId, tombolEl, kedua) {
@@ -1155,6 +1170,10 @@
     }
     renderSemua();
     terapkanKunci();
+    if (!S.pernahTampil) {
+      S.pernahTampil = true;
+      KD.animasiMasuk($("#papan"));
+    }
     if (!dariSimpananSendiri) riwayatBersih(S.deck);
   }
 
@@ -4245,6 +4264,13 @@
     if (teratas) teratas.checked = !!(S.deck.settings && S.deck.settings.teratas);
     var aksen = $("#setelan-aksen");
     if (aksen) aksen.value = (S.deck.settings && S.deck.settings.aksen) || "#3d5afe";
+    /* Suara antarmuka disimpan per perangkat, bukan di deck. */
+    var bunyi = $("#setelan-bunyi");
+    if (bunyi) bunyi.checked = KD.bunyi.nyala();
+    var volume = $("#setelan-volume");
+    if (volume) volume.value = String(KD.bunyi.volume());
+    var volumeNilai = $("#setelan-volume-nilai");
+    if (volumeNilai) volumeNilai.textContent = KD.bunyi.volume() + "%";
     renderAturanOtomatis();
   }
 
@@ -5195,6 +5221,34 @@
         if (aksenEl) aksenEl.value = "#3d5afe";
         KD.terapkanAksen("#3d5afe");
         if (window.Kumi) Kumi.sound.play("tap");
+      });
+    }
+
+    /* Suara antarmuka: berlaku langsung di perangkat ini (bukan bagian deck). */
+    var bunyiEl = $("#setelan-bunyi");
+    if (bunyiEl) {
+      bunyiEl.addEventListener("change", function () {
+        KD.bunyi.atur(bunyiEl.checked);
+        if (bunyiEl.checked) KD.bunyi.ketuk();
+      });
+    }
+    var volumeEl = $("#setelan-volume");
+    if (volumeEl) {
+      volumeEl.addEventListener("input", function () {
+        var nilai = Math.max(0, Math.min(100, Number(volumeEl.value) || 0));
+        KD.bunyi.aturVolume(nilai);
+        var label = $("#setelan-volume-nilai");
+        if (label) label.textContent = nilai + "%";
+      });
+    }
+    var btnUjiBunyi = $("#btn-uji-bunyi");
+    if (btnUjiBunyi) {
+      btnUjiBunyi.addEventListener("click", function () {
+        if (!KD.bunyi.nyala()) {
+          KD.toast("Suara ketukan sedang dimatikan. Nyalakan dulu untuk mendengar contoh.", "info");
+          return;
+        }
+        KD.bunyi.uji();
       });
     }
 

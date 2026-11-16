@@ -43,6 +43,22 @@ kontrolnya. Versi APK Remote: 2.3.0 (versionCode 230).
   dikerjakan aplikasi mixer (mis. Elgato Wave Link) dengan mengarahkan
   `KumiDeck.exe` ke channel yang diinginkan.
 
+### Dipoles
+
+- **Suara interaksi**: ketukan tombol, tekan lama, dan ganti halaman kini punya
+  isyarat berbeda. Suara bisa dimatikan, volumenya diatur lewat slider, dan
+  tersimpan per perangkat.
+- **Setelan lebih rapi**: panel Setelan dibagi menjadi bagian Umum, Perilaku,
+  Suara antarmuka, dan Tampilan. Remote mendapat bagian Umpan balik (suara +
+  volume + tombol Uji) dan Getaran.
+- **Animasi halus**: papan muncul bertahap saat pertama tampil dan saat pindah
+  halaman, tab aktif menandai dirinya, dan tombol menampilkan bilah tipis
+  selama ditahan. Semua animasi berhenti bila pengguna memilih gerak minimal.
+- **Navigasi papan dengan panah**: tombol papan bisa dipindah dengan panah,
+  `Home`, dan `End`, baik di desktop maupun Remote.
+- **Petunjuk sekali pakai**: Remote memberi tahu sekali bahwa tombol beraksi
+  ganda dijalankan dengan tekan lama.
+
 ### Catatan teknis
 
 - Model papan bertambah: `Setelan.teratas`, `Halaman.warna`, dan jenis aksi

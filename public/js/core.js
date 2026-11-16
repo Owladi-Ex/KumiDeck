@@ -32,6 +32,16 @@
     }
   }
 
+  /* Preferensi sistem untuk mengurangi gerak; animasi baru wajib mematuhinya. */
+  var kurangiGerak = false;
+  try {
+    kurangiGerak = !!(
+      window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
+  } catch (err) {
+    kurangiGerak = false;
+  }
+
   function buatId(prefix) {
     var acak = "";
     try {
@@ -529,6 +539,7 @@
       if (!key) {
         btn.classList.add("kd-key--empty");
         btn.setAttribute("aria-label", "Slot kosong" + (opsi.sunting ? " — klik untuk mengisi" : ""));
+        btn.setAttribute("data-kumi-cue", "tap");
         btn.disabled = !opsi.sunting;
         btn.innerHTML = '<span class="kd-key__plus" aria-hidden="true"></span>';
         return btn;
@@ -566,6 +577,8 @@
         if (KD.sinyal) KD.segarkanPenanda(KD.sinyal);
       }
       btn.setAttribute("aria-label", label + " — " + jelaskanAksi(key.action));
+      /* Tooltip saat kursor berhenti: ringkasan aksi, tanpa menutupi label. */
+      btn.title = label + " — " + KD.jelaskanAksi(key.action);
       return btn;
     },
 
@@ -663,6 +676,102 @@
       window.setTimeout(function () {
         btn.classList.remove("is-pressed");
       }, 220);
+    },
+
+    /* ------------------------------------------------- audio interaksi --- */
+    /* Pembungkus tipis di atas Kumi.sound supaya pemanggil tidak perlu
+       memeriksa window.Kumi satu per satu. Semua isyarat aman dipanggil
+       walau peramban tidak mendukung Web Audio. */
+    bunyi: {
+      ada: function () {
+        return !!(window.Kumi && window.Kumi.sound);
+      },
+      mainkan: function (nama) {
+        if (!window.Kumi || !window.Kumi.sound) return;
+        try {
+          window.Kumi.sound.play(nama || "tap");
+        } catch (err) {
+          /* konteks audio belum siap: abaikan */
+        }
+      },
+      ketuk: function () {
+        KD.bunyi.mainkan("tap");
+      },
+      lama: function () {
+        KD.bunyi.mainkan("lama");
+      },
+      pindah: function () {
+        KD.bunyi.mainkan("pindah");
+      },
+      hasil: function (ok) {
+        KD.bunyi.mainkan(ok ? "success" : "error");
+      },
+      nyala: function () {
+        return !!(window.Kumi && window.Kumi.sound && window.Kumi.sound.isOn());
+      },
+      atur: function (on) {
+        if (!window.Kumi || !window.Kumi.sound) return false;
+        return window.Kumi.sound.set(on);
+      },
+      volume: function () {
+        if (!window.Kumi || !window.Kumi.sound || !window.Kumi.sound.volume) return 80;
+        return Math.round(window.Kumi.sound.volume() * 100);
+      },
+      aturVolume: function (persen) {
+        if (!window.Kumi || !window.Kumi.sound || !window.Kumi.sound.setVolume) return;
+        window.Kumi.sound.setVolume(Math.max(0, Math.min(100, Number(persen) || 0)) / 100);
+      },
+      uji: function () {
+        KD.bunyi.mainkan("success");
+      },
+    },
+
+    kurangiGerak: function () {
+      return kurangiGerak;
+    },
+
+    /* Animasi masuk singkat untuk papan/kisi; dimatikan bila pengguna meminta
+       lebih sedikit gerak. Kelas dilepas lagi supaya render berikutnya bisa
+       memutar ulang animasi yang sama. */
+    animasiMasuk: function (el) {
+      if (!el || kurangiGerak) return;
+      el.classList.remove("kd-masuk");
+      /* Baca ulang tata letak agar animasi CSS benar-benar diulang. */
+      void el.offsetWidth;
+      el.classList.add("kd-masuk");
+      window.setTimeout(function () {
+        el.classList.remove("kd-masuk");
+      }, 760);
+    },
+
+    /* Navigasi papan dengan panah: fokus berpindah antar tombol pada kisi.
+       Kolom dibaca dari data-kolom sehingga render ulang tidak perlu memasang
+       ulang pendengar. */
+    pasangNavigasiKisi: function (wadah) {
+      if (!wadah || wadah.__kdNav) return;
+      wadah.__kdNav = true;
+      wadah.addEventListener("keydown", function (ev) {
+        var tombol = ev.target && ev.target.closest ? ev.target.closest(".kd-key") : null;
+        if (!tombol || !wadah.contains(tombol)) return;
+        var semua = Array.prototype.filter.call(wadah.querySelectorAll(".kd-key"), function (b) {
+          return !b.disabled && !b.classList.contains("kd-key--empty") && b.offsetParent !== null;
+        });
+        var i = semua.indexOf(tombol);
+        if (i < 0) return;
+        var kolom = Math.max(1, Number(wadah.dataset.kolom) || 1);
+        var tujuan = -1;
+        if (ev.key === "ArrowRight") tujuan = i + 1;
+        else if (ev.key === "ArrowLeft") tujuan = i - 1;
+        else if (ev.key === "ArrowDown") tujuan = i + kolom;
+        else if (ev.key === "ArrowUp") tujuan = i - kolom;
+        else if (ev.key === "Home") tujuan = 0;
+        else if (ev.key === "End") tujuan = semua.length - 1;
+        else return;
+        if (tujuan < 0 || tujuan >= semua.length) return;
+        ev.preventDefault();
+        semua[tujuan].focus();
+        KD.bunyi.mainkan("tick");
+      });
     },
 
     /* ------------------------------------------------------ format --- */
@@ -838,11 +947,15 @@
 
   /* ------------------------------------------------------------- init --- */
   /* Tekan lama untuk semua tombol papan (desktop & Remote).
-     opsi: { ketuk, lama, jeda }. Gestur 550 ms; klik setelah tekan lama
-     diabaikan supaya satu gestur tidak menjalankan dua aksi. */
+     opsi: { ketuk, lama, jeda, bunyi, progres }. Gestur 550 ms; klik setelah
+     tekan lama diabaikan supaya satu gestur tidak menjalankan dua aksi.
+     Selama menahan, bilah progres tipis di bawah tombol menunjukkan sisa
+     waktu; isyarat suara tekan lama dibunyikan tepat saat ambang tercapai. */
   function pasangTekan(elemen, opsi) {
     opsi = opsi || {};
     var jeda = opsi.jeda || 550;
+    var pakaiBunyi = opsi.bunyi !== false;
+    var pakaiProgres = opsi.progres !== false;
     var timer = null;
     var lamaTerjadi = false;
     var aktif = false;
@@ -852,15 +965,28 @@
       timer = null;
     };
 
+    var tandaiTahan = function (nyala) {
+      if (!pakaiProgres) return;
+      if (nyala) {
+        elemen.style.setProperty("--kd-tahan-jeda", jeda + "ms");
+        elemen.classList.add("menahan");
+      } else {
+        elemen.classList.remove("menahan");
+      }
+    };
+
     elemen.addEventListener("pointerdown", function (ev) {
       if (ev.pointerType === "mouse" && ev.button !== 0) return;
       lamaTerjadi = false;
       aktif = true;
       batal();
+      tandaiTahan(true);
       timer = window.setTimeout(function () {
         timer = null;
         if (!aktif) return;
         lamaTerjadi = true;
+        tandaiTahan(false);
+        if (pakaiBunyi) KD.bunyi.lama();
         if (opsi.lama) opsi.lama(ev);
       }, jeda);
     });
@@ -868,6 +994,7 @@
       elemen.addEventListener(nama, function () {
         aktif = false;
         batal();
+        tandaiTahan(false);
       });
     });
     /* Tahan di ponsel tidak boleh memunculkan menu konteks. */
@@ -877,6 +1004,8 @@
     elemen.addEventListener("click", function (ev) {
       if (lamaTerjadi) {
         lamaTerjadi = false;
+        /* Jangan biarkan pendengar klik global membunyikan ketukan kedua. */
+        ev.stopPropagation();
         return;
       }
       if (opsi.ketuk) opsi.ketuk(ev);

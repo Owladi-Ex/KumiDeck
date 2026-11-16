@@ -11,6 +11,8 @@
   var KIOS_KEY = "kumideck-remote-kios";
   var JAGA_KEY = "kumideck-remote-jaga-layar";
   var HINT_KEY = "kumideck-remote-hint";
+  var LAMA_KEY = "kumideck-remote-hint-lama";
+  var GETAR_KEY = "kumideck-remote-getar";
 
   var $ = function (sel, akar) {
     return (akar || document).querySelector(sel);
@@ -33,6 +35,8 @@
     wakeLock: null,
     adaWidgetWaktu: false /* papan memuat widget jam/tanggal */,
     urutanAktif: false /* ada urutan panjang berjalan (D10) */,
+    hintLama: false /* petunjuk tekan lama sudah dijadwalkan */,
+    pernahTampil: false /* animasi masuk hanya pada tampilan pertama */,
   };
 
   /* ------------------------------------------------------------ penyimpanan --- */
@@ -70,6 +74,8 @@
   }
 
   function getar(pola) {
+    /* Getaran bisa dimatikan per perangkat; nilai kosong = menyala. */
+    if (bacaLokal(GETAR_KEY) === "0") return;
     try {
       if (navigator && typeof navigator.vibrate === "function") navigator.vibrate(pola);
     } catch (err) {
@@ -158,11 +164,9 @@
     papan.innerHTML = "";
 
     var adaTombol = false;
-    aktif.keys.forEach(function (key) {
+    aktif.keys.forEach(function (key, indeks) {
       var tombol = KD.buatTombol(key, { sunting: false });
-      /* Jangan pasang isyarat suara pada tombol papan: getaran adalah
-         umpan balik utama di ponsel, suara berulang akan mengganggu. */
-      tombol.removeAttribute("data-kumi-cue");
+      tombol.style.setProperty("--kd-i", String(Math.min(indeks, 12)));
       if (key) {
         adaTombol = true;
         if (key.widget) {
@@ -228,6 +232,25 @@
     renderAktivitasTerakhir();
     renderHentiUrutan();
     isiInfoPerangkat();
+    tawarkanTekanLama();
+  }
+
+  /* Petunjuk sekali per perangkat: tombol beraksi ganda butuh tekan lama. */
+  function tawarkanTekanLama() {
+    if (S.hintLama || bacaLokal(LAMA_KEY)) return;
+    var ada = !!(S.deck &&
+      S.deck.pages &&
+      S.deck.pages.some(function (h) {
+        return (h.keys || []).some(function (k) {
+          return k && k.actionKedua;
+        });
+      }));
+    if (!ada) return;
+    S.hintLama = true;
+    tulisLokal(LAMA_KEY, "1");
+    window.setTimeout(function () {
+      KD.toast("Tekan lama tombol untuk menjalankan aksi kedua.", "info");
+    }, 1400);
   }
 
   /* Tombol "Hentikan urutan" tampil selama urutan panjang berjalan (D10). */
@@ -264,7 +287,10 @@
   function terapkanKolom() {
     var papan = $("#papan");
     if (!papan) return;
-    papan.style.setProperty("--kd-cols", String(hitungKolom()));
+    var kolom = hitungKolom();
+    papan.style.setProperty("--kd-cols", String(kolom));
+    papan.dataset.kolom = String(kolom);
+    KD.pasangNavigasiKisi(papan);
   }
 
   function jadwalkanUbahUkuran() {
@@ -308,6 +334,10 @@
     renderSemua();
     terapkanKios();
     segarkanHalamanAwal();
+    if (!S.pernahTampil) {
+      S.pernahTampil = true;
+      KD.animasiMasuk($("#papan"));
+    }
   }
 
   function pesanGalat(galat) {
@@ -512,6 +542,17 @@
     renderHalaman();
     renderPapan();
     segarkanHalamanAwal();
+    KD.animasiMasuk($("#papan"));
+    KD.bunyi.pindah();
+    /* Tab aktif dijaga di tengah daftar yang bisa digulir. */
+    var aktifChip = $("#daftar-halaman .kumi-chip.is-active");
+    if (aktifChip && typeof aktifChip.scrollIntoView === "function") {
+      try {
+        aktifChip.scrollIntoView({ inline: "center", block: "nearest" });
+      } catch (err) {
+        /* peramban lama: abaikan */
+      }
+    }
   }
 
   /* --------------------------------------------------------------- lapis --- */
@@ -861,6 +902,15 @@
     var jaga = $("#setelan-jaga-layar");
     if (kios) kios.checked = bacaLokal(KIOS_KEY) === "1";
     if (jaga) jaga.checked = bacaLokal(JAGA_KEY) === "1";
+    /* Suara antarmuka tersimpan di localStorage perangkat (Kumi.sound). */
+    var bunyi = $("#setelan-bunyi");
+    if (bunyi) bunyi.checked = KD.bunyi.nyala();
+    var volume = $("#setelan-volume");
+    if (volume) volume.value = String(KD.bunyi.volume());
+    var volumeNilai = $("#setelan-volume-nilai");
+    if (volumeNilai) volumeNilai.textContent = KD.bunyi.volume() + "%";
+    var getarEl = $("#setelan-getar");
+    if (getarEl) getarEl.checked = bacaLokal(GETAR_KEY) !== "0";
     segarkanHalamanAwal();
   }
 
@@ -1096,6 +1146,42 @@
         if (jaga.checked && !("wakeLock" in navigator)) {
           KD.toast("Peramban ini belum mendukung Wake Lock.", "danger");
         }
+      });
+    }
+
+    /* Suara antarmuka: langsung berlaku dan tersimpan di perangkat ini. */
+    var bunyi = $("#setelan-bunyi");
+    if (bunyi) {
+      bunyi.addEventListener("change", function () {
+        KD.bunyi.atur(bunyi.checked);
+        if (bunyi.checked) KD.bunyi.ketuk();
+      });
+    }
+    var volume = $("#setelan-volume");
+    if (volume) {
+      volume.addEventListener("input", function () {
+        var nilai = Math.max(0, Math.min(100, Number(volume.value) || 0));
+        KD.bunyi.aturVolume(nilai);
+        var label = $("#setelan-volume-nilai");
+        if (label) label.textContent = nilai + "%";
+      });
+    }
+    var btnUjiBunyi = $("#btn-uji-bunyi");
+    if (btnUjiBunyi) {
+      btnUjiBunyi.addEventListener("click", function () {
+        if (!KD.bunyi.nyala()) {
+          KD.toast("Suara ketukan sedang dimatikan. Nyalakan dulu untuk mendengar contoh.", "info");
+          return;
+        }
+        KD.bunyi.uji();
+      });
+    }
+
+    var getarEl = $("#setelan-getar");
+    if (getarEl) {
+      getarEl.addEventListener("change", function () {
+        tulisLokal(GETAR_KEY, getarEl.checked ? "1" : "0");
+        if (getarEl.checked) getar([0, 18, 40, 18]);
       });
     }
 
