@@ -93,6 +93,10 @@ public sealed partial class KumiServer
 
     public event Action? MintaTampilJendela;
     public event Action? MintaKeluar;
+    /* Setelan "selalu di atas" berubah: App meneruskannya ke jendela. */
+    public event Action<bool>? MintaSelaluDiAtas;
+    private bool _selaluDiAtas;
+    public bool SelaluDiAtas => Store.Deck.Settings.Teratas;
 
     public KumiServer()
     {
@@ -349,7 +353,17 @@ public sealed partial class KumiServer
         };
     }
 
-    public void SiarState() => _hub.Siar("sync", MuatanState());
+    public void SiarState()
+    {
+        /* Pin jendela ikut setelan papan; hanya dikirim saat nilainya berubah. */
+        var teratas = Store.Deck.Settings.Teratas;
+        if (teratas != _selaluDiAtas)
+        {
+            _selaluDiAtas = teratas;
+            MintaSelaluDiAtas?.Invoke(teratas);
+        }
+        _hub.Siar("sync", MuatanState());
+    }
 
     public void SiarPerangkat()
     {

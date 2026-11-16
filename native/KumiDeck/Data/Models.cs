@@ -29,6 +29,7 @@ public sealed class Halaman
     [JsonPropertyName("id")] public string Id { get; set; } = "";
     [JsonPropertyName("name")] public string Name { get; set; } = "Halaman";
     [JsonPropertyName("skala")] public int Skala { get; set; } = 100;
+    [JsonPropertyName("warna")] public string Warna { get; set; } = "";
     [JsonPropertyName("keys")] public List<Tombol?> Keys { get; set; } = new();
 }
 
@@ -131,6 +132,7 @@ public sealed class Setelan
     [JsonPropertyName("sound")] public bool Sound { get; set; } = true;
     [JsonPropertyName("home")] public string Home { get; set; } = "";
     [JsonPropertyName("terkunci")] public bool Terkunci { get; set; }
+    [JsonPropertyName("teratas")] public bool Teratas { get; set; }
     [JsonPropertyName("autoProfil")] public bool AutoProfil { get; set; }
     [JsonPropertyName("mulaiOtomatis")] public bool MulaiOtomatis { get; set; }
     [JsonPropertyName("aksen")] public string Aksen { get; set; } = "";

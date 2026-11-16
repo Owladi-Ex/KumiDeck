@@ -102,6 +102,7 @@
     { id: "media", label: "Media" },
     { id: "halaman", label: "Halaman" },
     { id: "http", label: "HTTP" },
+    { id: "tunggu", label: "Tunggu" },
   ];
 
   var PETUNJUK_JENIS = {
@@ -113,7 +114,7 @@
     http: "Permintaan dikirim dari komputer host (bukan dari ponsel). Cocok untuk pemantik skrip atau layanan rumah pintar di jaringan lokal.",
     media: "Kontrol pemutar media yang sedang aktif di komputer ini.",
     halaman: "Berpindah ke halaman lain di papan. Halaman tujuan harus masih ada.",
-    urutan: "Beberapa aksi dijalankan berurutan, dengan jeda antar langkah. Berguna untuk menyiapkan beberapa aplikasi sekaligus.",
+    urutan: "Beberapa aksi dijalankan berurutan, dengan jeda sampai 60 detik antar langkah. Tombol “Hentikan urutan” tersedia selama urutan berjalan.",
     jendela: "Tindakan berlaku pada jendela yang sedang aktif di komputer. Jalankan dari ponsel agar jendela target tidak berubah.",
     volume: "Kontrol volume sistem lewat API audio Windows; nilainya bisa dilaporkan di papan.",
     daya: "Tindakan daya butuh konfirmasi di layar desktop. Restart dan matikan punya jeda 5 detik (bisa dibatalkan).",
@@ -162,6 +163,9 @@
     halamanId: null,
     sunting: false,
     suntingSel: null /* { halamanId, indeks } */,
+    tempel: null /* tombol yang disalin (papan klip lokal) */,
+    pangkas: null /* gambar yang sedang dipangkas (D9) */,
+    urutanAktif: false /* ada urutan panjang berjalan (D10) */,
     editor: null /* { halamanId, indeks, draft, slot, sumber, cari } */,
     apps: null /* daftar aplikasi terpasang */,
     appsMemuat: false,
@@ -211,6 +215,14 @@
       return p.id === S.deck.settings.home;
     });
     return h || S.deck.pages[0] || null;
+  }
+
+  /* Warna latar halaman (D8). Kosong = bawaan (transparan). */
+  function terapkanLatarHalaman(el, halaman) {
+    var warna = (halaman && halaman.warna) || "";
+    el.classList.toggle("kd-papan--latar", !!warna);
+    if (warna) el.style.setProperty("--kd-latar-halaman", warna);
+    else el.style.removeProperty("--kd-latar-halaman");
   }
 
   /* Jumlah kolom papan menyesuaikan lebar jendela supaya tombol tetap besar
@@ -312,6 +324,34 @@
     teks.textContent = S.online
       ? KD.t("Tersambung")
       : KD.t("Terputus — mencoba menyambung");
+    terapkanTeratas();
+  }
+
+  /* Pin "selalu di atas" (D6): disimpan di setelan supaya bertahan setelah
+     aplikasi ditutup. Jendela native mengikuti lewat siaran state server. */
+  function teratasAktif() {
+    return !!(S.deck && S.deck.settings && S.deck.settings.teratas);
+  }
+
+  function terapkanTeratas() {
+    var aktif = teratasAktif();
+    var btn = $("#btn-teratas");
+    if (!btn) return;
+    btn.setAttribute("aria-pressed", aktif ? "true" : "false");
+    btn.setAttribute("aria-label", aktif ? "Lepas pin selalu di atas" : "Selalu di atas");
+    btn.setAttribute("title", aktif ? "Selalu di atas: aktif" : "Selalu di atas: mati");
+    btn.classList.toggle("is-active", aktif);
+  }
+
+  function ubahTeratas() {
+    if (!S.deck) return;
+    var deck = JSON.parse(JSON.stringify(S.deck));
+    if (!deck.settings) deck.settings = {};
+    deck.settings.teratas = !teratasAktif();
+    simpanDeckBaru(
+      deck,
+      deck.settings.teratas ? "Papan selalu di atas." : "Pin selalu di atas dilepas."
+    );
   }
 
   function renderKaki() {
@@ -340,6 +380,65 @@
       chip.addEventListener("click", function () {
         pindahHalaman(h.id);
       });
+      /* Seret tombol ke tab: berhenti ±600 ms membuka halaman itu, sedangkan
+         lepas langsung di tab mengisi slot kosong pertama. */
+      if (S.sunting && !terkunci()) {
+        chip.addEventListener("dragover", function (ev) {
+          if (seret.indeks === null || seret.halamanId === h.id) return;
+          ev.preventDefault();
+          try {
+            ev.dataTransfer.dropEffect = "move";
+          } catch (err) {
+            /* diabaikan */
+          }
+          chip.classList.add("seret-tujuan");
+          if (!seretTimer) {
+            seretTimer = window.setTimeout(function () {
+              seretTimer = 0;
+              if (seret.indeks !== null) pindahHalaman(h.id);
+            }, 600);
+          }
+        });
+        chip.addEventListener("dragleave", function () {
+          chip.classList.remove("seret-tujuan");
+          if (seretTimer) {
+            window.clearTimeout(seretTimer);
+            seretTimer = 0;
+          }
+        });
+        chip.addEventListener("drop", function (ev) {
+          ev.preventDefault();
+          chip.classList.remove("seret-tujuan");
+          if (seretTimer) {
+            window.clearTimeout(seretTimer);
+            seretTimer = 0;
+          }
+          if (seret.indeks === null || seret.halamanId === h.id) return;
+          var tujuan = halamanDari(h.id);
+          if (!tujuan) return;
+          var kosong = -1;
+          for (var i = 0; i < tujuan.keys.length; i += 1) {
+            if (!tujuan.keys[i]) {
+              kosong = i;
+              break;
+            }
+          }
+          if (kosong < 0) {
+            KD.toast(
+              "Halaman tujuan penuh. Lepas ke salah satu tombol untuk menukar.",
+              "danger"
+            );
+            if (window.Kumi) Kumi.sound.play("error");
+            akhiriSeret();
+            return;
+          }
+          if (pindahkanTombol(seret.halamanId, seret.indeks, h.id, kosong)) {
+            pindahHalaman(h.id);
+            if (window.Kumi) Kumi.sound.play("success");
+          }
+          akhiriSeret();
+        });
+      }
       wadah.appendChild(chip);
     });
 
@@ -368,17 +467,48 @@
     papan.style.setProperty("--kd-cols", String(kolom));
     /* Skala tombol per halaman (#2.2). 100% = bawaan. */
     papan.style.setProperty("--kd-skala", String((halaman.skala || 100) / 100));
+    terapkanLatarHalaman(papan, halaman);
     papan.setAttribute("aria-busy", "false");
     papan.hidden = false;
     memuat.hidden = true;
     $("#papan-galat").hidden = true;
 
+    var bentrok = petaBentrok(S.deck);
+
     halaman.keys.forEach(function (key, indeks) {
       var tombol = KD.buatTombol(key, { sunting: S.sunting });
       tombol.dataset.indeks = String(indeks);
+      /* D12: tandai tombol yang berbagi pintasan dengan tombol lain. */
+      var comboBentrok = null;
+      var lainnya = [];
+      Object.keys(bentrok).forEach(function (comboUji) {
+        var daftar = bentrok[comboUji];
+        if (daftar.length < 2) return;
+        var ini = daftar.some(function (x) {
+          return x.halamanId === halaman.id && x.indeks === indeks;
+        });
+        if (!ini || comboBentrok) return;
+        comboBentrok = comboUji;
+        lainnya = daftar.filter(function (x) {
+          return x.halamanId !== halaman.id || x.indeks !== indeks;
+        });
+      });
+      if (comboBentrok) {
+        tombol.classList.add("kd-key--bentrok");
+        tombol.title =
+          KD.t("Pintasan bentrok") +
+          ": " +
+          comboBentrok +
+          " " +
+          KD.t("juga dipakai") +
+          " " +
+          (lainnya.length === 1
+            ? KD.t("tombol") +
+              " “" + lainnya[0].label + "” " + KD.t("di halaman") + " “" + lainnya[0].namaHalaman + "”."
+            : lainnya.length + " " + KD.t("tombol lain") + ".");
+      }
       if (S.sunting && !terkunci()) {
-        tombol.setAttribute("draggable", "true");
-        pasangSeret(tombol, halaman.id, indeks);
+        pasangSeret(tombol, halaman.id, indeks, key);
       }
       if (S.sunting) {
         tombol.classList.add("kd-key--sunting");
@@ -455,34 +585,109 @@
   }
 
   /* --------------------------------------------------- seret & lepas (#2) --- */
+  /* Sejak 2.3.0 tombol bisa dipindah antar halaman: lepas ke slot kosong,
+     tukar dengan tombol lain, atau lepas di tab halaman untuk mengisi slot
+     kosong pertama. Berhenti ±600 ms di atas tab membuka halaman itu. Semua
+     perubahan disimpan lewat simpanDeckBaru supaya Ctrl+Z ikut mengembalikan
+     posisi semula. */
   var seret = { indeks: null, elemen: null, halamanId: null };
+  var seretTimer = 0;
 
-  function pasangSeret(tombol, halamanId, indeks) {
-    tombol.addEventListener("dragstart", function (ev) {
-      seret.indeks = indeks;
-      seret.elemen = tombol;
-      seret.halamanId = halamanId;
-      tombol.classList.add("seret-aktif");
+  function halamanDalam(deck, id) {
+    if (!deck) return null;
+    return (
+      deck.pages.find(function (h) {
+        return h.id === id;
+      }) || null
+    );
+  }
+
+  function halamanDari(id) {
+    return halamanDalam(S.deck, id);
+  }
+
+  function bersihkanSeret() {
+    if (seretTimer) {
+      window.clearTimeout(seretTimer);
+      seretTimer = 0;
+    }
+    Array.prototype.forEach.call(
+      document.querySelectorAll(".kd-key.seret-sasaran, .kumi-chip.seret-tujuan"),
+      function (el) {
+        el.classList.remove("seret-sasaran");
+        el.classList.remove("seret-tujuan");
+      }
+    );
+  }
+
+  function akhiriSeret() {
+    bersihkanSeret();
+    seret = { indeks: null, elemen: null, halamanId: null };
+  }
+
+  /* Pindahkan tombol ke slot tujuan; bila slot terisi, keduanya bertukar.
+     Satu langkah simpan = satu titik urungkan. */
+  function pindahkanTombol(asalId, dari, tujuanId, ke) {
+    if (dari === null || ke === null || dari < 0 || ke < 0) return false;
+    if (asalId === tujuanId && dari === ke) return false;
+    if (!S.deck) return false;
+
+    var sebelum = JSON.stringify(S.deck);
+    var deck = JSON.parse(JSON.stringify(S.deck));
+    var asal = halamanDalam(deck, asalId);
+    var tujuan = halamanDalam(deck, tujuanId);
+    if (!asal || !tujuan || !asal.keys[dari]) return false;
+    if (dari >= asal.keys.length || ke >= tujuan.keys.length) return false;
+
+    var dipindah = asal.keys[dari];
+    asal.keys[dari] = tujuan.keys[ke] || null;
+    tujuan.keys[ke] = dipindah;
+
+    S.deck = deck;
+    S.suntingSel = { halamanId: tujuanId, indeks: ke };
+    renderSemua();
+    simpanDeckBaru(deck, "").then(function (ok) {
+      if (ok) return;
+      /* Gagal simpan: pulihkan susunan sebelum seret. */
       try {
-        ev.dataTransfer.effectAllowed = "move";
-        ev.dataTransfer.setData("text/plain", String(indeks));
+        S.deck = JSON.parse(sebelum);
       } catch (err) {
         /* diabaikan */
       }
+      renderSemua();
     });
-    tombol.addEventListener("dragend", function () {
-      tombol.classList.remove("seret-aktif");
-      Array.prototype.forEach.call(
-        document.querySelectorAll(".kd-key.seret-sasaran"),
-        function (el) {
-          el.classList.remove("seret-sasaran");
+    return true;
+  }
+
+  function pasangSeret(tombol, halamanId, indeks, key) {
+    if (key) {
+      tombol.setAttribute("draggable", "true");
+      tombol.addEventListener("dragstart", function (ev) {
+        seret = { indeks: indeks, elemen: tombol, halamanId: halamanId };
+        tombol.classList.add("seret-aktif");
+        try {
+          ev.dataTransfer.effectAllowed = "move";
+          ev.dataTransfer.setData("text/plain", halamanId + ":" + indeks);
+        } catch (err) {
+          /* diabaikan */
         }
-      );
-      seret = { indeks: null, elemen: null, halamanId: null };
-    });
+      });
+      tombol.addEventListener("dragend", function () {
+        tombol.classList.remove("seret-aktif");
+        akhiriSeret();
+      });
+    }
+
+    /* Setiap kotak (termasuk slot kosong) boleh menjadi sasaran lepas. */
     tombol.addEventListener("dragover", function (ev) {
-      if (seret.indeks === null || seret.halamanId !== halamanId || seret.indeks === indeks) return;
+      if (seret.indeks === null) return;
+      if (seret.halamanId === halamanId && seret.indeks === indeks) return;
       ev.preventDefault();
+      try {
+        ev.dataTransfer.dropEffect = "move";
+      } catch (err) {
+        /* diabaikan */
+      }
       tombol.classList.add("seret-sasaran");
     });
     tombol.addEventListener("dragleave", function () {
@@ -491,36 +696,171 @@
     tombol.addEventListener("drop", function (ev) {
       ev.preventDefault();
       tombol.classList.remove("seret-sasaran");
-      if (seret.indeks === null || seret.halamanId !== halamanId || seret.indeks === indeks) return;
-      tukarPosisi(halamanId, seret.indeks, indeks);
+      if (seret.indeks === null) return;
+      if (seret.halamanId === halamanId && seret.indeks === indeks) return;
+      pindahkanTombol(seret.halamanId, seret.indeks, halamanId, indeks);
+      /* Elemen sumber bisa sudah dibuang oleh render ulang; bersihkan state. */
+      window.setTimeout(akhiriSeret, 0);
+    });
+
+    /* Klik kanan = pilih tombol tanpa membuka editor, lalu tampilkan menu
+       salin/tempel. Hanya di mode sunting dan saat tata letak terbuka. */
+    tombol.addEventListener("contextmenu", function (ev) {
+      if (!S.sunting || terkunci()) return;
+      ev.preventDefault();
+      bukaMenuTombol(ev, halamanId, indeks, key);
     });
   }
 
-  function tukarPosisi(halamanId, dari, ke) {
-    var halaman = S.deck.pages.find(function (h) {
-      return h.id === halamanId;
-    });
+  /* ---------------------------------------------- salin & tempel (#2.3) ---- */
+  /* Papan klip lokal (bukan sistem): satu tombol utuh, bertahan selama
+     aplikasi terbuka. Tempel hanya mengisi slot kosong; "tempel gaya" hanya
+     mengambil ikon, varian, dan warna tanpa mengubah aksi tombol tujuan. */
+  var menuTombol = null;
+
+  function tombolTerpilih() {
+    if (!S.deck || !S.suntingSel) return null;
+    var halaman = halamanDari(S.suntingSel.halamanId);
+    if (!halaman) return null;
+    var key = halaman.keys[S.suntingSel.indeks];
+    if (!key) return null;
+    return { halamanId: S.suntingSel.halamanId, indeks: S.suntingSel.indeks, key: key };
+  }
+
+  function salinTombol() {
+    var pilih = tombolTerpilih();
+    if (!pilih) {
+      KD.toast("Pilih satu tombol dulu untuk disalin.", "danger");
+      if (window.Kumi) Kumi.sound.play("error");
+      return;
+    }
+    S.tempel = JSON.parse(JSON.stringify(pilih.key));
+    KD.toast("Tombol disalin.", "ok");
+    if (window.Kumi) Kumi.sound.play("success");
+  }
+
+  function tempelTombol(gayaSaja) {
+    if (!S.tempel) {
+      KD.toast("Belum ada tombol yang disalin.", "danger");
+      if (window.Kumi) Kumi.sound.play("error");
+      return;
+    }
+    if (!S.deck || !S.sunting || terkunci()) return;
+    var halaman = halamanAktif();
     if (!halaman) return;
-    /* Perubahan lokal dulu agar terasa instan, lalu disimpan di server. */
-    var dipindah = halaman.keys[dari];
-    halaman.keys[dari] = halaman.keys[ke];
-    halaman.keys[ke] = dipindah;
+
+    var indeks = -1;
+    if (S.suntingSel && S.suntingSel.halamanId === halaman.id) {
+      indeks = S.suntingSel.indeks;
+    }
+
+    if (gayaSaja) {
+      if (indeks < 0 || !halaman.keys[indeks]) {
+        KD.toast("Klik kanan tombol tujuan dulu, lalu pilih Tempel gaya.", "danger");
+        if (window.Kumi) Kumi.sound.play("error");
+        return;
+      }
+    } else if (indeks < 0 || halaman.keys[indeks]) {
+      /* Tidak ada slot kosong terpilih: isi slot kosong pertama halaman ini. */
+      indeks = -1;
+      for (var i = 0; i < halaman.keys.length; i += 1) {
+        if (!halaman.keys[i]) {
+          indeks = i;
+          break;
+        }
+      }
+      if (indeks < 0) {
+        KD.toast("Halaman ini penuh. Hapus atau pindahkan satu tombol dulu.", "danger");
+        if (window.Kumi) Kumi.sound.play("error");
+        return;
+      }
+    }
+
+    var sebelum = JSON.stringify(S.deck);
+    var deck = JSON.parse(JSON.stringify(S.deck));
+    var target = halamanDalam(deck, halaman.id);
+    if (!target) return;
+    if (gayaSaja) {
+      var isi = target.keys[indeks];
+      if (!isi) return;
+      if (S.tempel.icon) isi.icon = S.tempel.icon;
+      isi.variant = S.tempel.variant || "default";
+      isi.warna = S.tempel.warna ? JSON.parse(JSON.stringify(S.tempel.warna)) : null;
+    } else {
+      var salinan = JSON.parse(JSON.stringify(S.tempel));
+      salinan.id = "";
+      target.keys[indeks] = salinan;
+    }
+
+    S.deck = deck;
+    S.suntingSel = { halamanId: halaman.id, indeks: indeks };
+    renderSemua();
+    simpanDeckBaru(deck, gayaSaja ? "Gaya ditempel." : "Tombol ditempel.").then(function (ok) {
+      if (ok) return;
+      try {
+        S.deck = JSON.parse(sebelum);
+      } catch (err) {
+        /* diabaikan */
+      }
+      renderSemua();
+    });
+  }
+
+  function tutupMenuTombol() {
+    if (menuTombol && menuTombol.parentNode) menuTombol.parentNode.removeChild(menuTombol);
+    menuTombol = null;
+  }
+
+  /* Menu klik kanan pada tombol: Salin, Tempel, Tempel gaya. */
+  function bukaMenuTombol(ev, halamanId, indeks, key) {
+    tutupMenuTombol();
+    S.suntingSel = { halamanId: halamanId, indeks: indeks };
     renderPapan();
-    KD.pindahTombol(halamanId, dari, ke)
-      .then(function (hasil) {
-        if (hasil && hasil.deck) S.deck = hasil.deck;
-        renderPapan();
-        if (window.Kumi) Kumi.sound.play("success");
-      })
-      .catch(function (galat) {
-        /* Kembalikan susunan semula bila server menolak. */
-        var kembali = halaman.keys[dari];
-        halaman.keys[dari] = halaman.keys[ke];
-        halaman.keys[ke] = kembali;
-        renderPapan();
-        if (galat.status === 400) KD.toast("Posisi tidak bisa ditukar.", "danger");
-        else tandaiTerputus(galat);
+
+    var menu = document.createElement("div");
+    menu.className = "kd-menu-tombol";
+    menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-label", "Tindakan tombol");
+
+    function item(label, aksi, mati) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "kd-menu-tombol__item";
+      b.setAttribute("role", "menuitem");
+      b.textContent = KD.t(label);
+      b.disabled = !!mati;
+      b.addEventListener("click", function () {
+        tutupMenuTombol();
+        aksi();
       });
+      menu.appendChild(b);
+    }
+
+    item(
+      "Salin",
+      function () {
+        salinTombol();
+      },
+      !key
+    );
+    item("Tempel", function () {
+      tempelTombol(false);
+    }, !S.tempel);
+    item(
+      "Tempel gaya",
+      function () {
+        tempelTombol(true);
+      },
+      !S.tempel || !key
+    );
+
+    document.body.appendChild(menu);
+    var kotak = menu.getBoundingClientRect();
+    menu.style.left = Math.max(8, Math.min(ev.clientX, window.innerWidth - kotak.width - 8)) + "px";
+    menu.style.top = Math.max(8, Math.min(ev.clientY, window.innerHeight - kotak.height - 8)) + "px";
+    menuTombol = menu;
+    var pertama = menu.querySelector("button:not([disabled])");
+    if (pertama) pertama.focus();
   }
 
   /* ------------------------------------------------------- kunci (#1) ----- */
@@ -644,10 +984,18 @@
     }
   }
 
+  /* Tombol "Hentikan urutan" hanya tampil saat ada urutan berjalan (D10). */
+  function terapkanHentiUrutan() {
+    var btn = $("#btn-henti-urutan");
+    if (!btn) return;
+    btn.hidden = !S.urutanAktif;
+  }
+
   function renderAktivitas() {
     var daftar = $("#daftar-aktivitas");
     var kosong = $("#aktivitas-kosong");
     var catatan = $("#aktivitas-catatan");
+    terapkanHentiUrutan();
     daftar.innerHTML = "";
     /* Hanya satu aktivitas terbaru yang ditampilkan; yang lama digantikan. */
     var terbaru = S.aktivitas.length ? S.aktivitas[0] : null;
@@ -871,6 +1219,11 @@
         S.sinyal = data;
         KD.sinyal = data;
         KD.segarkanPenanda(data);
+      },
+      /* D10: server memberi tahu saat urutan panjang mulai dan selesai. */
+      onUrutan: function (data) {
+        S.urutanAktif = !!(data && data.aktif);
+        terapkanHentiUrutan();
       },
       /* #16 profil otomatis: pindah halaman mengikuti aplikasi di depan. */
       onProfil: function (data) {
@@ -1203,6 +1556,100 @@
     el.hidden = !pesan;
   }
 
+  /* --------------------------------------------- pemeriksa bentrok (D12) --- */
+  /* Pindai seluruh papan: kombinasi pintasan yang dipakai lebih dari satu
+     tombol. Tidak memblokir penyimpanan; hanya memberi tahu. */
+  function petaBentrok(deck) {
+    var peta = {};
+    if (!deck || !Array.isArray(deck.pages)) return peta;
+
+    /* Pintasan bisa berada di aksi utama, aksi kedua, cabang kondisional,
+       atau langkah urutan; semuanya ikut diperiksa. */
+    function catat(aksi, h, i, label) {
+      if (!aksi) return;
+      if (aksi.type === "hotkey") {
+        var combo = String(aksi.combo || "").trim().toLowerCase();
+        if (!combo) return;
+        if (!peta[combo]) peta[combo] = [];
+        var sudah = peta[combo].some(function (x) {
+          return x.halamanId === h.id && x.indeks === i;
+        });
+        if (!sudah) {
+          peta[combo].push({
+            halamanId: h.id,
+            namaHalaman: h.name || "halaman",
+            indeks: i,
+            label: label || "Tombol",
+          });
+        }
+        return;
+      }
+      if (aksi.type === "kondisional") {
+        catat(aksi.aktif, h, i, label);
+        catat(aksi.tidakAktif, h, i, label);
+        return;
+      }
+      if (aksi.type === "urutan") {
+        (aksi.steps || []).forEach(function (s) {
+          catat(s && s.action, h, i, label);
+        });
+      }
+    }
+
+    deck.pages.forEach(function (h) {
+      (h.keys || []).forEach(function (k, i) {
+        if (!k) return;
+        catat(k.action, h, i, k.label);
+        catat(k.actionKedua, h, i, k.label);
+      });
+    });
+    return peta;
+  }
+
+  function bentrokLain(combo) {
+    if (!S.deck) return [];
+    var kunci = String(combo || "").trim().toLowerCase();
+    if (!kunci) return [];
+    var daftar = petaBentrok(S.deck)[kunci] || [];
+    return daftar.filter(function (x) {
+      if (!S.editor) return true;
+      return !(x.halamanId === S.editor.halamanId && x.indeks === S.editor.indeks);
+    });
+  }
+
+  /* Peringatan di editor: tombol ini berbagi pintasan dengan tombol lain. */
+  function periksaBentrokEditor() {
+    var el = $("#peringatan-bentrok");
+    if (!el) return;
+    var draft = S.editor ? S.editor.draft : null;
+    if (!draft || !draft.action || draft.action.type !== "hotkey") {
+      el.textContent = "";
+      el.hidden = true;
+      return;
+    }
+    var lain = bentrokLain(draft.action.combo);
+    if (!lain.length) {
+      el.textContent = "";
+      el.hidden = true;
+      return;
+    }
+    var pertama = lain[0];
+    var sisa = lain.length > 1 ? " (+" + (lain.length - 1) + ")" : "";
+    el.textContent =
+      KD.t("Pintasan ini juga dipakai tombol") +
+      " “" +
+      pertama.label +
+      "” " +
+      KD.t("di halaman") +
+      " “" +
+      pertama.namaHalaman +
+      "”" +
+      sisa +
+      ". " +
+      KD.t("Keduanya tetap bisa disimpan, tetapi aksi yang sama akan dijalankan.");
+    el.hidden = false;
+  }
+
   function bukaEditor(halamanId, indeks) {
     var halaman = S.deck.pages.find(function (p) {
       return p.id === halamanId;
@@ -1374,7 +1821,8 @@
         '<button class="kumi-btn kumi-btn--soft" type="button" id="btn-rekam-hotkey">' +
         KD.ikon("i-bolt") +
         " Rekam tombol</button></div>" +
-        '<span class="kumi-field__hint">Tekan “Rekam tombol” lalu tekan kombinasinya, atau tulis sendiri (mis. ctrl+alt+del, win+l, alt+f4).</span></div>';
+        '<span class="kumi-field__hint">Tekan “Rekam tombol” lalu tekan kombinasinya, atau tulis sendiri (mis. ctrl+alt+del, win+l, alt+f4).</span>' +
+        '<span class="kd-peringatan" id="peringatan-bentrok" role="status" hidden></span></div>';
     } else if (jenis === "teks") {
       html =
         '<div class="kumi-field"><label class="kumi-field__label" for="param-teks">Teks yang diketik</label>' +
@@ -1569,7 +2017,8 @@
         '<div class="kumi-stack" id="editor-langkah" style="gap:8px"></div>' +
         '<button class="kumi-btn kumi-btn--soft kumi-btn--sm" type="button" id="btn-tambah-langkah" style="margin-top:8px">' +
         KD.ikon("i-plus") +
-        " Tambah langkah</button></div>";
+        " Tambah langkah</button>" +
+        '<span class="kumi-field__hint">Jeda sebelum tiap langkah maksimal 60.000 ms (1 menit). Langkah “Tunggu” memakai kolom jeda; tombol “Hentikan urutan” muncul di panel Aktivitas selama urutan berjalan.</span></div>';
     } else {
       html =
         '<div class="kd-hint">Tombol ini belum punya aksi. Pilih jenis aksi di atas agar bisa dipakai.</div>';
@@ -1705,6 +2154,7 @@
       if (inputHotkey) {
         inputHotkey.addEventListener("input", function () {
           aksiDraft().combo = inputHotkey.value.trim();
+          periksaBentrokEditor();
         });
       }
       var tombolRekam = $("#btn-rekam-hotkey");
@@ -1713,6 +2163,7 @@
           mulaiRekam(inputHotkey, tombolRekam);
         });
       }
+      periksaBentrokEditor();
     }
 
     if (jenis === "http") {
@@ -1921,6 +2372,7 @@
       var combo = bagian.join("+");
       input.value = combo;
       if (S.editor) aksiDraft().combo = combo;
+      periksaBentrokEditor();
       hentikanRekam();
       if (window.Kumi) Kumi.sound.play("success");
     }
@@ -2058,18 +2510,20 @@
       nilai.addEventListener("input", function () {
         l.action = aksiLangkah(l.action ? l.action.type : "buka", nilai.value);
       });
+      /* Langkah "Tunggu" tidak butuh nilai; durasinya dari kolom jeda. */
+      if (l.action && l.action.type === "tunggu") nilai.hidden = true;
 
       var jeda = document.createElement("input");
       jeda.className = "kumi-input";
       jeda.type = "number";
       jeda.min = "0";
-      jeda.max = "5000";
-      jeda.step = "50";
+      jeda.max = "60000";
+      jeda.step = "100";
       jeda.value = String(l.delay || 0);
-      jeda.title = "Jeda setelah langkah sebelumnya (milidetik)";
+      jeda.title = "Jeda sebelum langkah ini berjalan (milidetik, maksimal 60.000)";
       jeda.setAttribute("aria-label", "Jeda langkah " + (i + 1) + " dalam milidetik");
       jeda.addEventListener("input", function () {
-        l.delay = Math.max(0, Math.min(5000, Number(jeda.value) || 0));
+        l.delay = Math.max(0, Math.min(60000, Number(jeda.value) || 0));
       });
 
       var hapus = document.createElement("button");
@@ -2103,6 +2557,8 @@
         return { type: "halaman", pageId: nilai || (S.deck.pages[0] && S.deck.pages[0].id) };
       case "http":
         return { type: "http", method: "GET", url: nilai, body: "", headers: [] };
+      case "tunggu":
+        return { type: "tunggu" };
       default:
         return { type: "buka", target: nilai };
     }
@@ -2943,54 +3399,144 @@
   }
 
   var BATAS_IKON_UNGGAH = 512 * 1024;
+  var PANGKAS_TAMPIL = 360;
+  var PANGKAS_KELUARAN = 256;
 
-  function unggahIkon(berkas) {
-    if (!berkas) return;
+  /* Kirim data URL ikon (hasil pangkasan) ke server. */
+  function kirimIkonData(dataUrl) {
     var status = $("#editor-ikon-hint");
-    var tipe = (berkas.type || "").toLowerCase();
-    /* Sebagian peramban tidak mengisi MIME untuk .svg; periksa ekstensi juga. */
+    if (status) status.textContent = "Mengunggah ikon…";
+    return KD.api("/api/icons", { method: "POST", body: { dataUrl: String(dataUrl || "") } })
+      .then(function (hasil) {
+        if (!hasil || !hasil.id) throw new Error("Ikon tidak tersimpan.");
+        S.ikonKustom = hasil.ikon || [];
+        if (!S.ikonKustom.some(function (i) { return i.id === hasil.id; })) {
+          S.ikonKustom.unshift({ id: hasil.id, url: "/ikon/" + hasil.id });
+        }
+        if (S.editor) S.editor.draft.icon = hasil.id;
+        renderPilihanIkon();
+        tandaiIkonTerpilih();
+        if (status) {
+          status.textContent = "Ikon tersimpan: " + hasil.id.replace("kst_", "") + ". Terpilih otomatis.";
+        }
+        if (window.Kumi) Kumi.sound.play("success");
+        KD.toast("Ikon diunggah dan dipilih.", "ok");
+      })
+      .catch(function (galat) {
+        if (status) status.textContent = "Unggah gagal.";
+        if (window.Kumi) Kumi.sound.play("error");
+        KD.toast(galat.message || "Ikon gagal diunggah.", "danger");
+      });
+  }
+
+  /* Buka pemangkas persegi: geser gambar + atur perbesaran (D9). */
+  function mulaiPangkas(berkas) {
+    if (!berkas) return;
+    var tipe = String(berkas.type || "").toLowerCase();
     var ekstensi = String(berkas.name || "").toLowerCase().split(".").pop();
-    var tipeSah =
-      ["image/svg+xml", "image/png", "image/webp"].indexOf(tipe) !== -1 ||
-      ["svg", "png", "webp"].indexOf(ekstensi) !== -1;
-    if (!tipeSah) {
-      KD.toast("Pilih berkas SVG, PNG, atau WebP.", "danger");
+    var gambarSah =
+      tipe.indexOf("image/") === 0 ||
+      ["svg", "png", "webp", "jpg", "jpeg", "gif", "bmp"].indexOf(ekstensi) !== -1;
+    if (!gambarSah) {
+      KD.toast("Pilih berkas gambar.", "danger");
       return;
     }
-    if (berkas.size > BATAS_IKON_UNGGAH) {
-      KD.toast("Ikon maksimal 512 KB. Perkecil dulu berkasnya.", "danger");
+    if (berkas.size > 10 * 1024 * 1024) {
+      KD.toast("Berkas gambar maksimal 10 MB.", "danger");
       return;
     }
-    if (status) status.textContent = "Mengunggah " + (berkas.name || "ikon") + "…";
+
     var pembaca = new FileReader();
     pembaca.onload = function () {
-      KD.api("/api/icons", { method: "POST", body: { dataUrl: String(pembaca.result || "") } })
-        .then(function (hasil) {
-          if (!hasil || !hasil.id) throw new Error("Ikon tidak tersimpan.");
-          S.ikonKustom = hasil.ikon || [];
-          if (!S.ikonKustom.some(function (i) { return i.id === hasil.id; })) {
-            S.ikonKustom.unshift({ id: hasil.id, url: "/ikon/" + hasil.id });
-          }
-          if (S.editor) S.editor.draft.icon = hasil.id;
-          renderPilihanIkon();
-          tandaiIkonTerpilih();
-          if (status) {
-            status.textContent = "Ikon tersimpan: " + hasil.id.replace("kst_", "") + ". Terpilih otomatis.";
-          }
-          if (window.Kumi) Kumi.sound.play("success");
-          KD.toast("Ikon diunggah dan dipilih.", "ok");
-        })
-        .catch(function (galat) {
-          if (status) status.textContent = "Unggah gagal.";
-          if (window.Kumi) Kumi.sound.play("error");
-          KD.toast(galat.message || "Ikon gagal diunggah.", "danger");
-        });
+      var gambar = new Image();
+      gambar.onload = function () {
+        S.pangkas = {
+          gambar: gambar,
+          nama: berkas.name || "ikon",
+          skala: 1,
+          dasar: Math.max(PANGKAS_TAMPIL / gambar.width, PANGKAS_TAMPIL / gambar.height),
+          x: 0,
+          y: 0,
+          seret: false,
+          mulaiX: 0,
+          mulaiY: 0,
+          awalX: 0,
+          awalY: 0,
+        };
+        var zoom = $("#pangkas-zoom");
+        if (zoom) zoom.value = "100";
+        bukaModal("modal-ikon");
+        gambarPangkas();
+      };
+      gambar.onerror = function () {
+        KD.toast("Gambar tidak dapat dibaca.", "danger");
+      };
+      gambar.src = String(pembaca.result || "");
     };
     pembaca.onerror = function () {
-      if (status) status.textContent = "Berkas tidak dapat dibaca.";
       KD.toast("Berkas tidak dapat dibaca.", "danger");
     };
     pembaca.readAsDataURL(berkas);
+  }
+
+  /* Batasi geseran agar gambar selalu menutup seluruh kotak. */
+  function batasiPangkas() {
+    var p = S.pangkas;
+    if (!p) return;
+    var total = p.dasar * p.skala;
+    var maksX = Math.max(0, (p.gambar.width * total - PANGKAS_TAMPIL) / 2);
+    var maksY = Math.max(0, (p.gambar.height * total - PANGKAS_TAMPIL) / 2);
+    p.x = Math.max(-maksX, Math.min(maksX, p.x));
+    p.y = Math.max(-maksY, Math.min(maksY, p.y));
+  }
+
+  function gambarPangkas() {
+    var p = S.pangkas;
+    var kanvas = $("#pangkas-kanvas");
+    if (!p || !kanvas) return;
+    var ctx = kanvas.getContext("2d");
+    if (!ctx) return;
+    var total = p.dasar * p.skala;
+    var lebar = p.gambar.width * total;
+    var tinggi = p.gambar.height * total;
+    var x = (kanvas.width - lebar) / 2 + p.x;
+    var y = (kanvas.height - tinggi) / 2 + p.y;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, kanvas.width, kanvas.height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(p.gambar, x, y, lebar, tinggi);
+  }
+
+  /* Hasil pangkas 256x256 PNG; ukurannya jauh di bawah batas 512 KB. */
+  function simpanPangkas() {
+    var p = S.pangkas;
+    if (!p) return;
+    var keluaran = document.createElement("canvas");
+    keluaran.width = PANGKAS_KELUARAN;
+    keluaran.height = PANGKAS_KELUARAN;
+    var ctx = keluaran.getContext("2d");
+    if (!ctx) return;
+    var rasio = PANGKAS_KELUARAN / PANGKAS_TAMPIL;
+    var total = p.dasar * p.skala * rasio;
+    var lebar = p.gambar.width * total;
+    var tinggi = p.gambar.height * total;
+    var x = (PANGKAS_KELUARAN - lebar) / 2 + p.x * rasio;
+    var y = (PANGKAS_KELUARAN - tinggi) / 2 + p.y * rasio;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(p.gambar, x, y, lebar, tinggi);
+
+    var dataUrl = keluaran.toDataURL("image/png");
+    var ukuran = Math.ceil((dataUrl.length - dataUrl.indexOf(",") - 1) * 0.75);
+    if (ukuran > BATAS_IKON_UNGGAH) {
+      KD.toast("Hasil pangkas masih di atas 512 KB. Perkecil dulu gambarnya.", "danger");
+      return;
+    }
+
+    tutupModal("modal-ikon");
+    S.pangkas = null;
+    kirimIkonData(dataUrl);
   }
 
   /* --------------------------------------------- ikon aplikasi asli (#2) --- */
@@ -3290,9 +3836,35 @@
         simpanDeckBaru(JSON.parse(JSON.stringify(S.deck)), "Skala halaman diperbarui.");
       });
 
+      /* Warna latar halaman (D8); kosong = latar bawaan. */
+      var warna = document.createElement("input");
+      warna.type = "color";
+      warna.className = "kd-warna";
+      warna.value = h.warna || "#3d5afe";
+      warna.setAttribute("aria-label", KD.t("Warna latar halaman") + " " + h.name);
+      warna.addEventListener("change", function () {
+        h.warna = String(warna.value || "").toLowerCase();
+        simpanDeckBaru(JSON.parse(JSON.stringify(S.deck)), "Latar halaman diperbarui.");
+      });
+
+      var hapusWarna = document.createElement("button");
+      hapusWarna.type = "button";
+      hapusWarna.className = "kumi-btn kumi-btn--ghost kumi-btn--sm";
+      hapusWarna.textContent = "Hapus warna";
+      hapusWarna.disabled = !h.warna;
+      if (hapusWarna.disabled) hapusWarna.title = "Halaman ini memakai latar bawaan.";
+      hapusWarna.addEventListener("click", function () {
+        h.warna = "";
+        simpanDeckBaru(JSON.parse(JSON.stringify(S.deck)), "Latar halaman dihapus.").then(function () {
+          renderKelolaHalaman();
+        });
+      });
+
       baris.appendChild(input);
       if (lencana.className) baris.appendChild(lencana);
       baris.appendChild(skala);
+      baris.appendChild(warna);
+      baris.appendChild(hapusWarna);
       baris.appendChild(duplikat);
       baris.appendChild(jadikanAwal);
       baris.appendChild(hapus);
@@ -3669,6 +4241,8 @@
     if (auto) auto.checked = !!(S.deck.settings && S.deck.settings.autoProfil);
     var mulai = $("#setelan-mulai");
     if (mulai) mulai.checked = !!(S.deck.settings && S.deck.settings.mulaiOtomatis);
+    var teratas = $("#setelan-teratas");
+    if (teratas) teratas.checked = !!(S.deck.settings && S.deck.settings.teratas);
     var aksen = $("#setelan-aksen");
     if (aksen) aksen.value = (S.deck.settings && S.deck.settings.aksen) || "#3d5afe";
     renderAturanOtomatis();
@@ -3781,6 +4355,7 @@
     if ($("#setelan-terkunci")) deck.settings.terkunci = $("#setelan-terkunci").checked;
     if ($("#setelan-autoprofil")) deck.settings.autoProfil = $("#setelan-autoprofil").checked;
     if ($("#setelan-mulai")) deck.settings.mulaiOtomatis = $("#setelan-mulai").checked;
+    if ($("#setelan-teratas")) deck.settings.teratas = $("#setelan-teratas").checked;
     var aksenEl = $("#setelan-aksen");
     if (aksenEl) {
       var aksen = String(aksenEl.value || "").trim().toLowerCase();
@@ -4177,9 +4752,59 @@
     /* Tombol tutup semua modal. */
     $$("[data-tutup]").forEach(function (tombol) {
       tombol.addEventListener("click", function () {
-        tutupModal(tombol.closest(".kumi-overlay"));
+        var modal = tombol.closest(".kumi-overlay");
+        if (modal && modal.id === "modal-ikon") S.pangkas = null;
+        tutupModal(modal);
       });
     });
+
+    /* Pemangkas ikon (D9): geser dengan penunjuk, zoom dengan penggeser. */
+    var kanvasPangkas = $("#pangkas-kanvas");
+    if (kanvasPangkas) {
+      kanvasPangkas.addEventListener("pointerdown", function (ev) {
+        if (!S.pangkas) return;
+        S.pangkas.seret = true;
+        S.pangkas.mulaiX = ev.clientX;
+        S.pangkas.mulaiY = ev.clientY;
+        S.pangkas.awalX = S.pangkas.x;
+        S.pangkas.awalY = S.pangkas.y;
+        try {
+          kanvasPangkas.setPointerCapture(ev.pointerId);
+        } catch (err) {
+          /* diabaikan */
+        }
+        ev.preventDefault();
+      });
+      kanvasPangkas.addEventListener("pointermove", function (ev) {
+        if (!S.pangkas || !S.pangkas.seret) return;
+        var kotak = kanvasPangkas.getBoundingClientRect();
+        var faktor = kotak.width ? kanvasPangkas.width / kotak.width : 1;
+        S.pangkas.x = S.pangkas.awalX + (ev.clientX - S.pangkas.mulaiX) * faktor;
+        S.pangkas.y = S.pangkas.awalY + (ev.clientY - S.pangkas.mulaiY) * faktor;
+        batasiPangkas();
+        gambarPangkas();
+      });
+      var akhiriSeretPangkas = function () {
+        if (S.pangkas) S.pangkas.seret = false;
+      };
+      kanvasPangkas.addEventListener("pointerup", akhiriSeretPangkas);
+      kanvasPangkas.addEventListener("pointercancel", akhiriSeretPangkas);
+    }
+    var zoomPangkas = $("#pangkas-zoom");
+    if (zoomPangkas) {
+      zoomPangkas.addEventListener("input", function () {
+        if (!S.pangkas) return;
+        var baru = Math.max(1, (Number(zoomPangkas.value) || 100) / 100);
+        var rasio = baru / S.pangkas.skala;
+        S.pangkas.x *= rasio;
+        S.pangkas.y *= rasio;
+        S.pangkas.skala = baru;
+        batasiPangkas();
+        gambarPangkas();
+      });
+    }
+    var btnPangkasSimpan = $("#btn-pangkas-simpan");
+    if (btnPangkasSimpan) btnPangkasSimpan.addEventListener("click", simpanPangkas);
 
     /* Mode sunting. */
     $("#btn-sunting").addEventListener("click", function () {
@@ -4210,6 +4835,28 @@
     /* #1 Kunci tata letak. */
     var btnKunci = $("#btn-kunci");
     if (btnKunci) btnKunci.addEventListener("click", function () { ubahKunci(); });
+
+    /* Pin selalu di atas (D6). */
+    var btnTeratas = $("#btn-teratas");
+    if (btnTeratas) btnTeratas.addEventListener("click", ubahTeratas);
+
+    /* Hentikan urutan panjang (D10). */
+    var btnHentiUrutan = $("#btn-henti-urutan");
+    if (btnHentiUrutan) {
+      btnHentiUrutan.addEventListener("click", function () {
+        KD.hentikanUrutan()
+          .then(function (hasil) {
+            var pesan =
+              hasil && hasil.aktif === false
+                ? KD.t("Tidak ada urutan yang sedang berjalan.")
+                : KD.t("Urutan dihentikan.");
+            KD.toast(pesan, "ok");
+          })
+          .catch(function (galat) {
+            KD.toast((galat && galat.message) || KD.t("Urutan tidak dapat dihentikan."), "danger");
+          });
+      });
+    }
 
     /* Pencarian tombol (Ctrl+K). */
     var btnCari = $("#btn-cari");
@@ -4320,7 +4967,7 @@
       btnUnggah.addEventListener("click", function () { berkasIkon.click(); });
       berkasIkon.addEventListener("change", function () {
         var berkas = berkasIkon.files && berkasIkon.files[0];
-        if (berkas) unggahIkon(berkas);
+        if (berkas) mulaiPangkas(berkas);
         berkasIkon.value = "";
       });
     }
@@ -4604,6 +5251,39 @@
         ulangi();
       }
     });
+
+    /* Ctrl+C / Ctrl+V / Ctrl+Shift+V: salin, tempel, tempel gaya saat mode
+       sunting. Di kolom isian biarkan peramban menangani salin-tempel teks. */
+    document.addEventListener("keydown", function (ev) {
+      if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
+      var el = ev.target;
+      var mengetik =
+        el &&
+        (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
+      if (mengetik || !S.sunting || terkunci()) return;
+
+      var huruf = String(ev.key).toLowerCase();
+      if (huruf === "c" && !ev.shiftKey) {
+        if (!tombolTerpilih()) return;
+        ev.preventDefault();
+        salinTombol();
+      } else if (huruf === "v") {
+        if (!S.tempel) return;
+        ev.preventDefault();
+        tempelTombol(ev.shiftKey);
+      }
+    });
+
+    /* Menu klik kanan ditutup saat klik di luar, Esc, gulir, atau jendela
+       kehilangan fokus. */
+    document.addEventListener("click", function (ev) {
+      if (menuTombol && !menuTombol.contains(ev.target)) tutupMenuTombol();
+    });
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape") tutupMenuTombol();
+    });
+    window.addEventListener("blur", tutupMenuTombol);
+    document.addEventListener("scroll", tutupMenuTombol, true);
 
     var btnUrungkan = $("#btn-urungkan");
     if (btnUrungkan) btnUrungkan.addEventListener("click", urungkan);

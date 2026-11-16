@@ -34,8 +34,10 @@ public partial class App : System.Windows.Application
         _jendela = new MainWindow(_server);
         _server.MintaTampilJendela += () => _jendela?.Tampilkan();
         _server.MintaKeluar += Keluar;
+        _server.MintaSelaluDiAtas += nilai => _jendela?.TerapkanSelaluDiAtas(nilai);
         _server.TangkapPapan = _jendela.TangkapPapanAsync;
         _jendela.Show();
+        _jendela.TerapkanSelaluDiAtas(_server.SelaluDiAtas);
 
         if (Environment.GetEnvironmentVariable("KD_OPEN") == "1")
         {

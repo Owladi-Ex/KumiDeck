@@ -218,6 +218,10 @@ public static class DeckNormalizer
                 var id = Teks(Prop(aksi, "soundId"), 40);
                 return id.Length == 0 ? Aksi.Kosong() : new Aksi { Type = "suara", SoundId = id };
             }
+            case "tunggu":
+                /* Langkah jeda murni (D10); durasinya dari kolom delay. */
+                return new Aksi { Type = "tunggu" };
+
             case "halaman":
             {
                 var id = Teks(Prop(aksi, "pageId"), 64);
@@ -230,7 +234,7 @@ public static class DeckNormalizer
                 {
                     foreach (var l in langkahArr.EnumerateArray().Take(12))
                     {
-                        var delay = Math.Clamp(AngkaBulat(Prop(l, "delay"), 0), 0, 5000);
+                        var delay = Math.Clamp(AngkaBulat(Prop(l, "delay"), 0), 0, 60000);
                         var isi = NormalAksi(Prop(l, "action"), kedalaman + 1);
                         if (isi.Type == "kosong") continue;
                         langkah.Add(new Langkah { Delay = delay, Action = isi });
@@ -321,6 +325,7 @@ public static class DeckNormalizer
             Id = Teks(Prop(halaman, "id"), 40, IdBaru("p_")),
             Name = Teks(Prop(halaman, "name"), 24, "Halaman"),
             Skala = Math.Clamp(AngkaBulat(Prop(halaman, "skala"), 100) / 10 * 10, 100, 140),
+            Warna = NormalAksen(Prop(halaman, "warna")),
         };
 
         var sumber = Prop(halaman, "keys") is { ValueKind: JsonValueKind.Array } arr
@@ -566,6 +571,7 @@ public static class DeckNormalizer
                 Sound = Bool(Prop(Prop(sumber, "settings"), "sound"), true),
                 Home = homeId,
                 Terkunci = Bool(Prop(Prop(sumber, "settings"), "terkunci"), false),
+                Teratas = Bool(Prop(Prop(sumber, "settings"), "teratas"), false),
                 AutoProfil = Bool(Prop(Prop(sumber, "settings"), "autoProfil"), false),
                 MulaiOtomatis = Bool(Prop(Prop(sumber, "settings"), "mulaiOtomatis"), false),
                 Aksen = NormalAksen(Prop(Prop(sumber, "settings"), "aksen")),

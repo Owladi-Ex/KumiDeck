@@ -49,6 +49,14 @@
   gap: var(--kumi-space-2);
 }
 
+/* Latar per halaman (2.3.0): warna pilihan pengguna di belakang tombol.
+   Dipakai desktop dan Remote lewat variabel --kd-latar-halaman. */
+.kd-grid.kd-papan--latar {
+  background: var(--kd-latar-halaman, transparent);
+  padding: var(--kumi-space-1);
+  border-radius: var(--kumi-r-sm);
+}
+
 /* ============================================================ 2. Tombol === */
 .kd-key {
   position: relative;

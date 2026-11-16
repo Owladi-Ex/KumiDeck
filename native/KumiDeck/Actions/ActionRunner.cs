@@ -19,6 +19,46 @@ public static class ActionRunner
 {
     private const int KedalamanMaks = 6;
 
+    /* Urutan panjang (jeda sampai 60 detik) bisa dihentikan dari desktop atau
+       Remote. Satu token dipakai bersama: menekan "Hentikan urutan" membatalkan
+       semua urutan yang sedang menunggu, dan urutan berikutnya mendapat token
+       segar supaya bisa berjalan normal. */
+    private static readonly object KunciBatal = new();
+    private static CancellationTokenSource _batal = new();
+    private static int _urutanAktif;
+
+    private static CancellationToken TokenUrutan()
+    {
+        lock (KunciBatal)
+        {
+            if (_batal.IsCancellationRequested) _batal = new CancellationTokenSource();
+            return _batal.Token;
+        }
+    }
+
+    public static bool HentikanUrutan()
+    {
+        lock (KunciBatal)
+        {
+            /* Tidak ada urutan berjalan: jangan tampilkan "dihentikan" palsu. */
+            if (Volatile.Read(ref _urutanAktif) == 0) return false;
+            if (!_batal.IsCancellationRequested) _batal.Cancel();
+            return true;
+        }
+    }
+
+    /* Dipakai UI untuk menampilkan tombol berhenti hanya saat perlu. */
+    public static bool BerisiUrutan(Aksi? aksi)
+    {
+        if (aksi is null) return false;
+        if (aksi.Type == "urutan") return true;
+        if (aksi.Type == "kondisional")
+        {
+            return BerisiUrutan(aksi.Aktif) || BerisiUrutan(aksi.TidakAktif);
+        }
+        return false;
+    }
+
     public static string Ringkas(Aksi? aksi)
     {
         if (aksi is null) return "aksi kosong";
@@ -38,6 +78,8 @@ public static class ActionRunner
                 return "Media " + (aksi.Cmd ?? "");
             case "urutan":
                 return "Urutan " + (aksi.Steps?.Count ?? 0) + " langkah";
+            case "tunggu":
+                return "Menunggu";
             case "halaman":
                 return "Pindah halaman";
             case "jendela":
@@ -206,6 +248,10 @@ public static class ActionRunner
                 return new HasilAksi(hasil.Ok, hasil.Ok ? "Media: " + aksi.Cmd : hasil.Pesan);
             }
 
+            case "tunggu":
+                /* Langkah jeda saja; durasinya diambil dari kolom jeda langkah. */
+                return new HasilAksi(true, "Menunggu.");
+
             case "halaman":
             {
                 if (string.IsNullOrWhiteSpace(aksi.PageId) || !konteks.HalamanAda.Contains(aksi.PageId!))
@@ -218,20 +264,45 @@ public static class ActionRunner
             case "urutan":
             {
                 var catatan = new List<string>();
-                foreach (var langkah in aksi.Steps ?? new List<Langkah>())
+                var token = TokenUrutan();
+                Interlocked.Increment(ref _urutanAktif);
+                try
                 {
-                    if (langkah.Delay > 0) await Task.Delay(Math.Clamp(langkah.Delay, 0, 5000));
-
-                    var hasil = await JalankanAsync(langkah.Action, konteks, kedalaman + 1);
-                    catatan.Add((hasil.Ok ? "ok: " : "gagal: ") + Ringkas(langkah.Action));
-
-                    if (!string.IsNullOrEmpty(hasil.Navigate))
+                    foreach (var langkah in aksi.Steps ?? new List<Langkah>())
                     {
-                        return new HasilAksi(true, string.Join(", ", catatan), hasil.Navigate, hasil.Volume);
+                        /* Jeda maksimal 60.000 ms (1 menit) per langkah. Selama
+                           menunggu, tombol "Hentikan urutan" tetap bisa dibatalkan. */
+                        if (langkah.Delay > 0)
+                        {
+                            try
+                            {
+                                await Task.Delay(Math.Clamp(langkah.Delay, 0, 60000), token);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                return new HasilAksi(false, "Urutan dihentikan (" + catatan.Count + " langkah selesai).");
+                            }
+                        }
+                        if (token.IsCancellationRequested)
+                        {
+                            return new HasilAksi(false, "Urutan dihentikan (" + catatan.Count + " langkah selesai).");
+                        }
+
+                        var hasil = await JalankanAsync(langkah.Action, konteks, kedalaman + 1);
+                        catatan.Add((hasil.Ok ? "ok: " : "gagal: ") + Ringkas(langkah.Action));
+
+                        if (!string.IsNullOrEmpty(hasil.Navigate))
+                        {
+                            return new HasilAksi(true, string.Join(", ", catatan), hasil.Navigate, hasil.Volume);
+                        }
                     }
+                    if (catatan.Count == 0) return new HasilAksi(false, "Urutan tidak berisi langkah.");
+                    return new HasilAksi(true, "Urutan selesai (" + catatan.Count + " langkah).");
                 }
-                if (catatan.Count == 0) return new HasilAksi(false, "Urutan tidak berisi langkah.");
-                return new HasilAksi(true, "Urutan selesai (" + catatan.Count + " langkah).");
+                finally
+                {
+                    Interlocked.Decrement(ref _urutanAktif);
+                }
             }
 
             default:

@@ -163,6 +163,12 @@
         KD.sinyal = data;
         if (pengendali.onSinyal) pengendali.onSinyal(data);
       });
+      /* Urutan panjang (D10): nyalakan tombol "Hentikan urutan". */
+      sumber.addEventListener("urutan", function (ev) {
+        var data = JSON.parse(ev.data);
+        KD.urutan = data;
+        if (pengendali.onUrutan) pengendali.onUrutan(data);
+      });
       /* Profil otomatis (#16). */
       sumber.addEventListener("profil", function (ev) {
         var data = JSON.parse(ev.data);
@@ -202,6 +208,11 @@
       });
     },
 
+    /* Hentikan urutan yang sedang menunggu (D10). */
+    hentikanUrutan: function () {
+      return KD.api("/api/aksi/hentikan", { method: "POST", body: {} });
+    },
+
     /* Setujui skrip yang menunggu izin di komputer ini. */
     izinkanSkrip: function (pageId, keyId, kedua) {
       return KD.api("/api/press/izinkan", {
@@ -222,11 +233,6 @@
 
     simpanDeck: function (deck) {
       return KD.api("/api/deck", { method: "POST", body: { deck: deck } });
-    },
-
-    /* Tukar posisi dua tombol (#2). */
-    pindahTombol: function (pageId, dari, ke) {
-      return KD.api("/api/deck/pindah", { method: "POST", body: { pageId: pageId, dari: dari, ke: ke } });
     },
 
     kirimHello: function () {

@@ -72,6 +72,97 @@
   outline-offset: 2px;
 }
 
+.kumi-chip.seret-tujuan {
+  outline: 2px dashed var(--kumi-accent);
+  outline-offset: 2px;
+  background: color-mix(in srgb, var(--kumi-accent) 18%, transparent);
+}
+
+/* Menu klik kanan tombol papan (#2.3): salin, tempel, tempel gaya. */
+.kd-menu-tombol {
+  position: fixed;
+  z-index: 70;
+  min-width: 190px;
+  padding: var(--kumi-space-1);
+  border: 1px solid var(--kumi-line);
+  border-radius: var(--kumi-r-sm);
+  background: var(--kumi-surface);
+  box-shadow: var(--kumi-shadow-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kd-menu-tombol__item {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--kumi-fg);
+  font: inherit;
+  font-size: var(--kumi-text-sm);
+  text-align: left;
+  padding: var(--kumi-space-1) var(--kumi-space-2);
+  border-radius: var(--kumi-r-xs);
+  cursor: pointer;
+}
+
+.kd-menu-tombol__item:hover:not(:disabled),
+.kd-menu-tombol__item:focus-visible {
+  background: var(--kumi-surface-2);
+}
+
+.kd-menu-tombol__item:disabled {
+  color: var(--kumi-fg-muted);
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Pemeriksa bentrok pintasan (D12): peringatan di editor dan tanda di tombol. */
+.kd-peringatan {
+  margin-top: var(--kumi-space-1);
+  padding: var(--kumi-space-1) var(--kumi-space-2);
+  border-left: 3px solid var(--kumi-warn);
+  border-radius: var(--kumi-r-xs);
+  background: color-mix(in srgb, var(--kumi-warn) 12%, transparent);
+  color: var(--kumi-fg);
+  font-size: var(--kumi-text-xs);
+}
+
+.kd-key--bentrok {
+  outline: 2px dotted var(--kumi-warn);
+  outline-offset: -2px;
+}
+
+/* Pemangkas ikon (#2.3): kanvas persegi, geser + zoom. */
+.kd-pangkas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--kumi-space-2);
+}
+
+.kd-pangkas__bingkai {
+  align-self: center;
+  width: min(360px, 100%);
+  aspect-ratio: 1;
+  border: 1px solid var(--kumi-line);
+  border-radius: var(--kumi-r-sm);
+  overflow: hidden;
+  background:
+    repeating-conic-gradient(var(--kumi-surface-2) 0 25%, transparent 0 50%) 0 0 / 20px 20px;
+}
+
+.kd-pangkas__bingkai canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.kd-pangkas__bingkai canvas:active {
+  cursor: grabbing;
+}
+
 /* Bilah kecil di sisi kartu Perangkat untuk ekspor/impor. */
 .kd-berbagi {
   display: flex;

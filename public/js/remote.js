@@ -32,6 +32,7 @@
     raf: 0,
     wakeLock: null,
     adaWidgetWaktu: false /* papan memuat widget jam/tanggal */,
+    urutanAktif: false /* ada urutan panjang berjalan (D10) */,
   };
 
   /* ------------------------------------------------------------ penyimpanan --- */
@@ -193,6 +194,11 @@
 
     /* Skala tombol per halaman, sama seperti di desktop. */
     papan.style.setProperty("--kd-skala", String((aktif.skala || 100) / 100));
+    /* Latar halaman (D8), sama seperti di desktop. */
+    var warna = aktif.warna || "";
+    papan.classList.toggle("kd-papan--latar", !!warna);
+    if (warna) papan.style.setProperty("--kd-latar-halaman", warna);
+    else papan.style.removeProperty("--kd-latar-halaman");
 
     papan.hidden = false;
     papan.setAttribute("aria-busy", "false");
@@ -220,7 +226,15 @@
     renderHalaman();
     renderPapan();
     renderAktivitasTerakhir();
+    renderHentiUrutan();
     isiInfoPerangkat();
+  }
+
+  /* Tombol "Hentikan urutan" tampil selama urutan panjang berjalan (D10). */
+  function renderHentiUrutan() {
+    var btn = $("#btn-henti-urutan");
+    if (!btn) return;
+    btn.hidden = !S.urutanAktif;
   }
 
   /* ------------------------------------------------------------- kolom --- */
@@ -370,6 +384,11 @@
       onSinyal: function (data) {
         KD.sinyal = data;
         KD.segarkanPenanda(data);
+      },
+      /* D10: urutan panjang mulai/selesai; tampilkan tombol berhenti. */
+      onUrutan: function (data) {
+        S.urutanAktif = !!(data && data.aktif);
+        renderHentiUrutan();
       },
       onProfil: function (data) {
         if (!data || !data.pageId) return;
@@ -1092,6 +1111,25 @@
 
     var btnTutupBanner = $("#btn-tutup-banner");
     if (btnTutupBanner) btnTutupBanner.addEventListener("click", tutupBanner);
+
+    /* D10: hentikan urutan panjang dari ponsel. */
+    var btnHenti = $("#btn-henti-urutan");
+    if (btnHenti) {
+      btnHenti.addEventListener("click", function () {
+        KD.hentikanUrutan()
+          .then(function (hasil) {
+            getar([0, 20, 40, 20]);
+            var pesan =
+              hasil && hasil.aktif === false
+                ? KD.t("Tidak ada urutan yang sedang berjalan.")
+                : KD.t("Urutan dihentikan.");
+            KD.toast(pesan, "ok");
+          })
+          .catch(function (galat) {
+            KD.toast((galat && galat.message) || KD.t("Urutan tidak dapat dihentikan."), "danger");
+          });
+      });
+    }
 
     window.addEventListener("resize", jadwalkanUbahUkuran);
     window.addEventListener("orientationchange", function () {

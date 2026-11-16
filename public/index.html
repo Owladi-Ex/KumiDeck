@@ -55,6 +55,9 @@
         <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-tray" aria-pressed="false" aria-label="Tampilkan ikon di baki sistem">
           <svg class="kumi-icon" aria-hidden="true"><use href="#kd-bell"></use></svg>
         </button>
+        <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-teratas" aria-pressed="false" aria-label="Selalu di atas" title="Selalu di atas">
+          <svg class="kumi-icon" aria-hidden="true"><use href="#kd-pin"></use></svg>
+        </button>
         <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kd-toggle" type="button" id="btn-kunci" aria-pressed="false" aria-label="Kunci tata letak">
           <svg class="kumi-icon" aria-hidden="true"><use href="#kd-lock-open"></use></svg>
         </button>
@@ -157,7 +160,13 @@
               <svg class="kumi-icon" aria-hidden="true"><use href="#i-clock"></use></svg>
               Aktivitas
             </h2>
-            <span class="kumi-badge" id="jumlah-aktivitas">0</span>
+            <div class="kumi-row">
+              <button class="kumi-btn kumi-btn--soft kumi-btn--sm" type="button" id="btn-henti-urutan" hidden aria-label="Hentikan urutan yang sedang berjalan">
+                <svg class="kumi-icon" aria-hidden="true"><use href="#i-close"></use></svg>
+                Hentikan urutan
+              </button>
+              <span class="kumi-badge" id="jumlah-aktivitas">0</span>
+            </div>
           </div>
           <ul class="kumi-list kd-aktivitas" id="daftar-aktivitas"></ul>
           <p class="kd-hint" id="aktivitas-catatan" hidden>Hanya aktivitas terbaru yang ditampilkan.</p>
@@ -354,6 +363,42 @@
 
       <div class="kumi-modal__foot">
         <button class="kumi-btn kumi-btn--ghost" type="button" data-tutup>Selesai</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================== MODAL: PANGKAS IKON ====================== -->
+  <div class="kumi-overlay" id="modal-ikon" aria-hidden="true">
+    <div class="kumi-modal" role="dialog" aria-modal="true" aria-labelledby="ikon-judul">
+      <div class="kumi-modal__head">
+        <div>
+          <span class="kumi-label">Ikon</span>
+          <h2 class="kumi-h3" id="ikon-judul">Pangkas ikon</h2>
+        </div>
+        <button class="kumi-btn kumi-btn--icon kumi-btn--ghost" type="button" data-tutup aria-label="Tutup">
+          <svg class="kumi-icon" aria-hidden="true"><use href="#i-close"></use></svg>
+        </button>
+      </div>
+
+      <div class="kd-pangkas">
+        <div class="kd-pangkas__bingkai">
+          <canvas id="pangkas-kanvas" width="360" height="360" aria-label="Pratinjau pangkas ikon"></canvas>
+        </div>
+        <div class="kumi-field">
+          <label class="kumi-field__label" for="pangkas-zoom">Perbesaran</label>
+          <input class="kumi-input" id="pangkas-zoom" type="range" min="100" max="300" step="5" value="100" aria-label="Perbesaran ikon">
+        </div>
+        <p class="kd-hint">
+          Geser gambar di dalam kotak, atur perbesaran, lalu simpan. Hasilnya persegi dan otomatis di bawah 512 KB.
+        </p>
+      </div>
+
+      <div class="kumi-modal__foot">
+        <button class="kumi-btn kumi-btn--ghost" type="button" data-tutup>Batal</button>
+        <button class="kumi-btn kumi-btn--primary" type="button" id="btn-pangkas-simpan">
+          <svg class="kumi-icon" aria-hidden="true"><use href="#i-check"></use></svg>
+          Simpan ikon
+        </button>
       </div>
     </div>
   </div>
@@ -576,6 +621,14 @@
             <span class="kd-hint">Jalankan KumiDeck saat Windows menyala (tanpa jendela konsol).</span>
           </div>
           <input class="kumi-switch" type="checkbox" id="setelan-mulai" aria-label="Mulai otomatis">
+        </div>
+
+        <div class="kumi-between">
+          <div class="kd-sakelar-teks">
+            <span class="kumi-text kumi-text--strong">Selalu di atas</span>
+            <span class="kd-hint">Papan tetap terlihat di atas jendela lain, termasuk saat Anda mengklik aplikasi lain.</span>
+          </div>
+          <input class="kumi-switch" type="checkbox" id="setelan-teratas" aria-label="Selalu di atas">
         </div>
 
         <hr class="kumi-divider">

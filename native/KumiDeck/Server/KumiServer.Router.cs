@@ -17,6 +17,10 @@ public sealed partial class KumiServer
 {
     private const int BatasAksiBersamaan = 4;
 
+    /* Jumlah urutan yang sedang berjalan; dipakai untuk menyalakan tombol
+       "Hentikan urutan" di desktop dan Remote. */
+    private int _urutanBerjalan;
+
     private static void KirimJson(HttpJawaban res, int status, object data)
     {
         res.Status = status;
@@ -419,6 +423,24 @@ public sealed partial class KumiServer
             {
                 if (ButuhToken(req, res, this)) return;
                 KirimJson(res, 200, await SoundBoard.HentikanAsync());
+                return;
+            }
+
+            /* --- urutan ------------------------------------------------- */
+            /* Hentikan urutan yang sedang menunggu (D10). Jeda panjang tidak
+               lagi mengunci tombol sampai selesai. */
+            if (jalur == "/api/aksi/hentikan")
+            {
+                if (ButuhToken(req, res, this)) return;
+                var dihentikan = ActionRunner.HentikanUrutan();
+                KirimJson(res, 200, new
+                {
+                    ok = true,
+                    aktif = dihentikan,
+                    message = dihentikan
+                        ? "Urutan dihentikan."
+                        : "Tidak ada urutan yang sedang berjalan.",
+                });
                 return;
             }
 
@@ -1164,6 +1186,12 @@ public sealed partial class KumiServer
 
         var mulai = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         HasilAksi hasil;
+        var berurutan = ActionRunner.BerisiUrutan(aksi);
+        if (berurutan)
+        {
+            var jumlah = Interlocked.Increment(ref _urutanBerjalan);
+            _hub.Siar("urutan", new { aktif = true, jumlah, pageId, keyId, label = key.Label });
+        }
         TambahAksi();
         try
         {
@@ -1180,6 +1208,11 @@ public sealed partial class KumiServer
         finally
         {
             KurangiAksi();
+            if (berurutan && Interlocked.Decrement(ref _urutanBerjalan) <= 0)
+            {
+                Interlocked.Exchange(ref _urutanBerjalan, 0);
+                _hub.Siar("urutan", new { aktif = false, jumlah = 0 });
+            }
         }
 
         var entri = new Aktivitas

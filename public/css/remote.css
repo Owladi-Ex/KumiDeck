@@ -35,6 +35,16 @@
   flex: none;
 }
 
+/* Tombol hentikan urutan (D10): melayang di atas kaki, hanya saat perlu. */
+.kd-remote__henti {
+  position: fixed;
+  left: 50%;
+  bottom: calc(104px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 45;
+  box-shadow: var(--kumi-shadow-2);
+}
+
 /* ================================================== 3. Banner petunjuk === */
 .kd-remote__banner {
   flex: none;

@@ -782,10 +782,24 @@ public partial class MainWindow : Window
         PastikanTampil();
         Activate();
 
-        /* Dorong ke depan tanpa membuat jendela selalu di atas. */
-        Topmost = true;
-        Topmost = false;
+        /* Dorong ke depan tanpa mengubah pilihan "selalu di atas". */
+        if (!Topmost)
+        {
+            Topmost = true;
+            Topmost = false;
+        }
         Focus();
+    }
+
+    /* Pin "selalu di atas" dari setelan papan (D6). Bawaannya mati. */
+    public void TerapkanSelaluDiAtas(bool aktif)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.Invoke(() => TerapkanSelaluDiAtas(aktif));
+            return;
+        }
+        Topmost = aktif;
     }
 
     public void TutupPaksa()
