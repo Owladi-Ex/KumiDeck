@@ -30,10 +30,13 @@ kontrolnya. Versi APK Remote: 2.3.0 (versionCode 230).
   bila kombinasi sudah dipakai tombol lain — termasuk di halaman lain, aksi
   kedua, aksi kondisional, atau langkah urutan. Tombol yang bentrok ditandai
   garis putus-putus. Penyimpanan tetap boleh dilakukan.
-- **Ukuran tombol**: editor tombol punya pilihan ukuran 1×1, 2×1, 1×2, dan 2×2.
-  Tombol besar memakai beberapa slot sekaligus — cocok untuk widget jam, judul
-  lagu, dan label panjang. Berlaku sama di desktop dan Remote. Seret, tempel,
-  dan duplikat mengembalikan ukuran ke 1×1 agar tidak menabrak slot tetangga.
+- **Ukuran tombol**: lebar 1–6 dan tinggi 1–4 dipilih terpisah di editor
+  tombol, jadi widget bisa memakai hingga 6×4 slot. Tombol besar memakai
+  beberapa slot sekaligus — cocok untuk widget jam, judul lagu, dan label
+  panjang. Berlaku sama di desktop dan Remote. Bila slot di bawahnya terisi,
+  tombol itu **dipindahkan** ke slot kosong lain (bukan dihapus); kalau ruang
+  tidak cukup, perubahan ditolak dengan pesan. Seret, tempel, dan duplikat
+  mengembalikan ukuran ke 1×1 agar tidak menabrak slot tetangga.
 
 ### Diperbaiki
 
@@ -79,16 +82,35 @@ kontrolnya. Versi APK Remote: 2.3.0 (versionCode 230).
 - **Kaki halaman dihapus**: alamat papan di kiri bawah dan keterangan "aksi
   dijalankan…" di kanan bawah (serta penghitung halaman Remote) dibuang agar
   tampilan lebih bersih.
+- **Tambah cepat & Soundboard lebih ringkas**: Tambah cepat memakai satu kotak
+  cari; form tambah suara dilipat di balik tombol *Tambah suara* sehingga
+  daftar tidak terdorong ke bawah.
+- **Slider berprogress**: semua penggeser (volume antarmuka dan volume suara)
+  kini menunjukkan bagian yang terisi, bukan hanya bulatan di track kosong.
+- **Warna aksen kedua**: tab Tampilan punya dua warna berbentuk bulatan —
+  aksen utama untuk tombol aksi dan aksen kedua untuk blob latar. Keduanya bisa
+  dikembalikan ke bawaan lewat tombol ikon di sebelahnya.
+- **Setelan tinggi stabil**: modal Setelan dikunci setingginya, jadi berpindah
+  tab tidak lagi membuat jendela membesar-mengecil; hanya isi tab yang bergulir.
+- **Tab Data dipadatkan**: keterangan panjang dihapus, tombol utilitas (Cek
+  pembaruan, Unduh log, Ekspor PNG, Muat contoh) dikumpulkan dalam satu baris,
+  dan tombol muat ulang menjadi ikon saja.
+- **Remote layar penuh**: tombol layar penuh di kepala menyembunyikan kepala,
+  banner, dan kaki sehingga kisi tombol memenuhi layar; tombol keluar melayang
+  tetap tersedia. Cincin fokus tidak lagi tertinggal di tombol setelah diketuk.
 
 ### Catatan teknis
 
-- Model papan bertambah: `Setelan.teratas`, `Halaman.warna`, dan jenis aksi
-  `tunggu`; semuanya dinormalkan di `DeckNormalizer` (jeda langkah dibatasi
-  0–60.000 ms). `Halaman.warna` memakai format `#rrggbb` seperti warna aksen.
+- Model papan bertambah: `Setelan.teratas`, `Setelan.aksen2`, `Halaman.warna`,
+  dan jenis aksi `tunggu`; semuanya dinormalkan di `DeckNormalizer` (jeda
+  langkah dibatasi 0–60.000 ms). `Halaman.warna` dan kedua aksen memakai format
+  `#rrggbb`.
 - `Tombol.span` (`{c, r}`) menyimpan ukuran tombol; `DeckNormalizer` membatasi
   rentang agar tetap di dalam kisi dan mengosongkan sel yang tertutup. Render
   desktop dan Remote memakai `KD.susunKisi()` + `KD.pasangRentang()` dengan
-  penempatan `grid-column`/`grid-row` eksplisit.
+  penempatan `grid-column`/`grid-row` eksplisit. Saat tombol diperbesar,
+  `terapkanUkuranTombol()` memindahkan tombol yang tertimpa ke slot kosong;
+  bila tidak ada ruang, perubahan ditolak.
 - Endpoint baru `POST /api/aksi/hentikan`; event SSE `urutan` memberi tahu
   desktop dan Remote saat ada urutan berjalan. Pembatalan memakai satu
   `CancellationTokenSource` bersama di `ActionRunner`, dan urutan berikutnya

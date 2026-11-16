@@ -34,6 +34,16 @@
       <button
         class="kumi-btn kumi-btn--ghost kumi-btn--icon kumi-btn--sm"
         type="button"
+        id="btn-layar-penuh"
+        aria-label="Layar penuh"
+        title="Layar penuh"
+        aria-pressed="false"
+      >
+        <svg class="kumi-icon" aria-hidden="true"><use href="#i-maximize"></use></svg>
+      </button>
+      <button
+        class="kumi-btn kumi-btn--ghost kumi-btn--icon kumi-btn--sm"
+        type="button"
         data-kumi-toggle-theme
         aria-label="Ganti tema"
       >
@@ -110,6 +120,18 @@
       hidden
     ></div>
   </main>
+
+  <!-- Tombol keluar saat mode layar penuh: kepala dan kaki disembunyikan. -->
+  <button
+    class="kumi-btn kumi-btn--ghost kumi-btn--icon kumi-btn--sm kd-remote__keluar"
+    type="button"
+    id="btn-keluar-layar-penuh"
+    aria-label="Keluar dari layar penuh"
+    title="Keluar dari layar penuh"
+    hidden
+  >
+    <svg class="kumi-icon" aria-hidden="true"><use href="#i-minimize"></use></svg>
+  </button>
 
   <!-- =============================== KAKI =============================== -->
   <footer class="kd-remote__foot">

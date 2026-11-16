@@ -32,7 +32,7 @@
 .kd-key[data-tanda].is-aktif::after {
   opacity: 1;
   background: var(--kumi-lime);
-  box-shadow: 0 0 0 3px rgba(217, 242, 91, 0.28);
+  box-shadow: 0 0 0 3px rgba(var(--kumi-lime-rgb), 0.28);
 }
 
 .kd-key[data-tanda].is-aktif {

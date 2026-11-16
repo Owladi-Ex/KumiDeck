@@ -230,11 +230,16 @@
 
         <div class="kumi-field">
           <span class="kumi-field__label" id="editor-ukuran-label">Ukuran tombol</span>
-          <div class="kumi-chip-group" id="editor-ukuran" role="group" aria-labelledby="editor-ukuran-label">
-            <button class="kumi-chip is-active" type="button" data-ukuran="1x1">1 × 1</button>
-            <button class="kumi-chip" type="button" data-ukuran="2x1">2 × 1</button>
-            <button class="kumi-chip" type="button" data-ukuran="1x2">1 × 2</button>
-            <button class="kumi-chip" type="button" data-ukuran="2x2">2 × 2</button>
+          <div class="kd-ukuran" id="editor-ukuran" role="group" aria-labelledby="editor-ukuran-label">
+            <div class="kd-ukuran__baris">
+              <span class="kd-ukuran__judul">Lebar</span>
+              <div class="kumi-chip-group kd-ukuran__pilih" id="editor-ukuran-lebar" role="group" aria-label="Lebar tombol"></div>
+            </div>
+            <div class="kd-ukuran__baris">
+              <span class="kd-ukuran__judul">Tinggi</span>
+              <div class="kumi-chip-group kd-ukuran__pilih" id="editor-ukuran-tinggi" role="group" aria-label="Tinggi tombol"></div>
+            </div>
+            <span class="kd-ukuran__nilai" id="editor-ukuran-nilai">1 × 1 slot</span>
           </div>
           <span class="kumi-field__hint">Tombol besar memakai beberapa slot sekaligus — cocok untuk widget dan label panjang.</span>
         </div>
@@ -464,7 +469,7 @@
 
   <!-- =========================== MODAL: SOUNDBOARD ======================== -->
   <div class="kumi-overlay" id="modal-suara" aria-hidden="true">
-    <div class="kumi-modal kd-modal--lebar" role="dialog" aria-modal="true" aria-labelledby="suara-judul">
+    <div class="kumi-modal kd-modal--lebar kd-modal--suara" role="dialog" aria-modal="true" aria-labelledby="suara-judul">
       <div class="kumi-modal__head">
         <div>
           <span class="kumi-label">Audio</span>
@@ -475,62 +480,62 @@
         </button>
       </div>
 
-      <div class="kd-suara-alat">
-        <button class="kumi-btn kumi-btn--soft kumi-btn--sm" type="button" id="btn-suara-henti">
-          <svg class="kumi-icon" aria-hidden="true"><use href="#i-close"></use></svg>
-          Hentikan
-        </button>
-        <span class="kd-suara-alat__label">Lewat perangkat default Windows.</span>
-      </div>
-
-      <ul class="kd-suara-daftar" id="suara-daftar"></ul>
-      <div class="kd-empty kd-empty--ringkas" id="suara-kosong">
-        <span class="kumi-empty__icon" aria-hidden="true"><svg class="kumi-icon"><use href="#i-play"></use></svg></span>
-        <strong>Belum ada suara</strong>
-        <span class="kumi-text kumi-text--sm">Tambahkan berkas atau tautan di bawah, lalu tekan untuk memutar.</span>
-      </div>
-
-      <hr class="kumi-divider">
-
-      <form id="form-suara" class="kumi-stack kd-form">
-        <div class="kd-pasangan-bidang">
-          <div class="kumi-field" style="flex:1 1 220px">
-            <label class="kumi-field__label" for="suara-nama">Nama</label>
-            <input class="kumi-input" id="suara-nama" type="text" maxlength="32" placeholder="Mis. Sorak sorai" autocomplete="off">
-          </div>
-          <div class="kumi-field" style="flex:1 1 260px">
-            <label class="kumi-field__label" for="suara-sumber">Berkas atau tautan suara</label>
-            <input class="kumi-input" id="suara-sumber" type="text" placeholder="C:\suara\sorak.mp3 atau https://…" autocomplete="off">
-            <span class="kumi-field__hint">MP3, WAV, M4A, OGG, FLAC, atau tautan http(s).</span>
-          </div>
-        </div>
-        <div class="kd-pasangan-bidang">
-          <div class="kumi-field" style="flex:1 1 160px">
-            <label class="kumi-field__label" for="suara-berkas">Pilih dari komputer</label>
-            <button class="kumi-btn kumi-btn--soft kumi-btn--block" type="button" id="btn-suara-berkas">
-              <svg class="kumi-icon" aria-hidden="true"><use href="#i-upload"></use></svg>
-              Pilih berkas
-            </button>
-            <input type="file" id="berkas-suara" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac" hidden>
-          </div>
-          <div class="kumi-field" style="flex:1 1 200px">
-            <label class="kumi-field__label" for="suara-volume">Volume</label>
-            <input class="kumi-input" id="suara-volume" type="range" min="0" max="100" step="5" value="100" aria-label="Volume suara">
-            <span class="kumi-field__hint" id="suara-volume-nilai">100%</span>
-          </div>
-          <div class="kumi-field" style="flex:1 1 200px">
-            <span class="kumi-field__label">Output</span>
-            <span class="kumi-field__hint">Perangkat default Windows</span>
-          </div>
-        </div>
-        <div class="kumi-row kd-foot-aksi">
-          <span class="kd-hint" id="suara-status"></span>
-          <button class="kumi-btn kumi-btn--primary" type="submit" id="btn-suara-simpan">
-            <svg class="kumi-icon" aria-hidden="true"><use href="#i-plus"></use></svg>
-            Tambah suara
+      <div class="kumi-stack kd-suara">
+        <div class="kd-suara__alat">
+          <span class="kd-hint">Tekan untuk memutar lewat perangkat default Windows.</span>
+          <button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" id="btn-suara-henti">
+            <svg class="kumi-icon" aria-hidden="true"><use href="#i-close"></use></svg>
+            Hentikan
           </button>
         </div>
-      </form>
+
+        <ul class="kd-suara-daftar" id="suara-daftar"></ul>
+        <div class="kd-empty kd-empty--ringkas" id="suara-kosong">
+          <span class="kumi-empty__icon" aria-hidden="true"><svg class="kumi-icon"><use href="#i-play"></use></svg></span>
+          <strong>Belum ada suara</strong>
+          <span class="kumi-text kumi-text--sm">Tambahkan berkas atau tautan, lalu tekan untuk memutar.</span>
+        </div>
+
+        <button class="kumi-btn kumi-btn--soft kumi-btn--block" type="button" id="btn-suara-buka" aria-expanded="false" aria-controls="form-suara">
+          <svg class="kumi-icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+          <span id="btn-suara-buka-label">Tambah suara</span>
+        </button>
+
+        <form id="form-suara" class="kumi-stack kd-form kd-suara__form" hidden>
+          <div class="kd-pasangan-bidang">
+            <div class="kumi-field" style="flex:1 1 180px">
+              <label class="kumi-field__label" for="suara-nama">Nama</label>
+              <input class="kumi-input" id="suara-nama" type="text" maxlength="32" placeholder="Mis. Sorak sorai" autocomplete="off">
+            </div>
+            <div class="kumi-field" style="flex:1 1 240px">
+              <label class="kumi-field__label" for="suara-sumber">Berkas atau tautan</label>
+              <input class="kumi-input" id="suara-sumber" type="text" placeholder="C:\suara\sorak.mp3 atau https://…" autocomplete="off">
+            </div>
+          </div>
+          <div class="kd-pasangan-bidang">
+            <div class="kumi-field" style="flex:1 1 150px">
+              <span class="kumi-field__label">Berkas</span>
+              <button class="kumi-btn kumi-btn--soft kumi-btn--block" type="button" id="btn-suara-berkas">
+                <svg class="kumi-icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+                Pilih berkas
+              </button>
+              <input type="file" id="berkas-suara" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac" hidden>
+            </div>
+            <div class="kumi-field" style="flex:1 1 200px">
+              <label class="kumi-field__label" for="suara-volume">Volume <span class="kd-hint" id="suara-volume-nilai">100%</span></label>
+              <input class="kumi-input" id="suara-volume" type="range" min="0" max="100" step="5" value="100" aria-label="Volume suara">
+            </div>
+          </div>
+          <div class="kumi-row kd-foot-aksi">
+            <span class="kd-hint" id="suara-status"></span>
+            <button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" id="btn-suara-batal">Batal</button>
+            <button class="kumi-btn kumi-btn--primary kumi-btn--sm" type="submit" id="btn-suara-simpan">
+              <svg class="kumi-icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+              <span id="btn-suara-simpan-label">Tambah suara</span>
+            </button>
+          </div>
+        </form>
+      </div>
 
       <div class="kumi-modal__foot">
         <span class="kd-hint">Tombol soundboard juga bisa dipasang di papan lewat editor tombol.</span>
@@ -685,13 +690,24 @@
         </section>
 
         <section class="kd-setelan__panel" id="panel-setelan-tampilan" role="tabpanel" aria-labelledby="tab-setelan-tampilan" hidden>
-        <div class="kumi-field">
-          <label class="kumi-field__label" for="setelan-aksen">Warna aksen</label>
-          <div class="kd-aksen-baris">
-            <input class="kd-warna" type="color" id="setelan-aksen" value="#3d5afe" aria-label="Warna aksen">
-            <button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" id="btn-aksen-awal">Kembalikan bawaan</button>
-            <span class="kd-hint">Berlaku di layar ini dan perangkat Remote.</span>
-          </div>
+        <span class="kumi-field__hint">Warna aksen dipakai di layar ini dan perangkat Remote. Aksen pertama mewarnai tombol aksi; aksen kedua menghidupkan latar.</span>
+        <div class="kd-aksen-baris">
+          <label class="kd-aksen__judul" for="setelan-aksen">Aksen utama</label>
+          <span class="kd-aksen__alat">
+            <input class="kd-warna" type="color" id="setelan-aksen" value="#3d5afe" aria-label="Warna aksen utama">
+            <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kumi-btn--sm" type="button" id="btn-aksen-awal" aria-label="Kembalikan aksen utama" title="Kembalikan bawaan">
+              <svg class="kumi-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            </button>
+          </span>
+        </div>
+        <div class="kd-aksen-baris">
+          <label class="kd-aksen__judul" for="setelan-aksen-2">Aksen kedua</label>
+          <span class="kd-aksen__alat">
+            <input class="kd-warna" type="color" id="setelan-aksen-2" value="#d9f25b" aria-label="Warna aksen kedua">
+            <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kumi-btn--sm" type="button" id="btn-aksen-2-awal" aria-label="Kembalikan aksen kedua" title="Kembalikan bawaan">
+              <svg class="kumi-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            </button>
+          </span>
         </div>
         </section>
 
@@ -699,53 +715,52 @@
         <div class="kumi-field">
           <div class="kd-bilah">
             <span class="kumi-field__label">Cadangan otomatis</span>
-            <button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" id="btn-cadangan-muat">Muat ulang daftar</button>
+            <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kumi-btn--sm" type="button" id="btn-cadangan-muat" aria-label="Muat ulang daftar cadangan" title="Muat ulang daftar">
+              <svg class="kumi-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            </button>
           </div>
           <div class="kumi-stack kd-cadangan" id="daftar-cadangan"></div>
-          <span class="kumi-field__hint">Sepuluh versi terakhir disimpan otomatis. Pulihkan untuk mengurungkan perubahan.</span>
         </div>
 
         <div class="kumi-field">
           <div class="kd-bilah">
             <span class="kumi-field__label">Perangkat terpasang</span>
-            <button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" id="btn-perangkat-muat">Muat ulang</button>
+            <button class="kumi-btn kumi-btn--ghost kumi-btn--icon kumi-btn--sm" type="button" id="btn-perangkat-muat" aria-label="Muat ulang daftar perangkat" title="Muat ulang perangkat">
+              <svg class="kumi-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            </button>
           </div>
           <div class="kumi-stack" id="daftar-perangkat-setelan" style="gap:8px"></div>
-          <span class="kumi-field__hint">
-            Lupakan perangkat untuk mematikan tokennya. Ponsel itu harus memasukkan kode pasangan baru.
-          </span>
         </div>
 
         <div class="kumi-field">
           <div class="kd-bilah">
-            <span class="kumi-field__label">Versi aplikasi</span>
+            <span class="kumi-field__label">Aplikasi</span>
+            <span class="kd-hint" id="info-versi">Versi belum dibaca.</span>
+          </div>
+          <div class="kumi-row kd-alat-data">
             <button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" id="btn-cek-pembaruan">
               <svg class="kumi-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
               Cek pembaruan
             </button>
+            <button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" id="btn-unduh-log">
+              <svg class="kumi-icon" aria-hidden="true"><use href="#i-download"></use></svg>
+              Unduh log
+            </button>
+            <button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" id="btn-ekspor-png">
+              <svg class="kumi-icon" aria-hidden="true"><use href="#i-image"></use></svg>
+              Ekspor PNG
+            </button>
+            <button class="kumi-btn kumi-btn--ghost kumi-btn--sm kd-tombol-hapus" type="button" id="btn-contoh-ulang">
+              <svg class="kumi-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+              Muat contoh
+            </button>
           </div>
-          <span class="kd-hint" id="info-versi">Versi belum dibaca.</span>
-        </div>
-
-        <div class="kumi-row kd-alat-data">
-          <button class="kumi-btn kumi-btn--ghost" type="button" id="btn-unduh-log">
-            <svg class="kumi-icon" aria-hidden="true"><use href="#i-download"></use></svg>
-            Unduh log
-          </button>
-          <button class="kumi-btn kumi-btn--ghost" type="button" id="btn-ekspor-png">
-            <svg class="kumi-icon" aria-hidden="true"><use href="#i-image"></use></svg>
-            Ekspor PNG
-          </button>
         </div>
         </section>
         </div>
       </form>
 
-      <div class="kumi-modal__foot kd-bilah">
-        <button class="kumi-btn kumi-btn--ghost kd-tombol-hapus" type="button" id="btn-contoh-ulang">
-          <svg class="kumi-icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
-          Muat contoh
-        </button>
+      <div class="kumi-modal__foot">
         <div class="kumi-row kd-foot-aksi">
           <button class="kumi-btn kumi-btn--ghost" type="button" data-tutup>Batal</button>
           <button class="kumi-btn kumi-btn--primary" type="submit" form="form-setelan" id="setelan-simpan">Simpan setelan</button>

@@ -15,7 +15,7 @@ body.kumi-page::before {
   pointer-events: none;
   background:
     radial-gradient(1200px 600px at 12% -10%, rgba(var(--kumi-accent-rgb), 0.10), transparent 60%),
-    radial-gradient(900px 500px at 88% 0%, rgba(217, 242, 91, 0.10), transparent 55%);
+    radial-gradient(900px 500px at 88% 0%, rgba(var(--kumi-lime-rgb), 0.10), transparent 55%);
 }
 
 body.kumi-page .kd-shell {
@@ -674,6 +674,337 @@ body.kumi-page .kd-shell {
   .kd-modal--editor #form-editor > .kd-bidang--lebar,
   .kd-modal--editor #form-editor > #editor-param {
     grid-column: 1 / -1;
+  }
+}
+
+/* ================== 20. Editor: pemilih ukuran lebar & tinggi ============ */
+/* Dua baris chip (lebar 1–6, tinggi 1–4) jauh lebih ringkas daripada deretan
+   kombinasi, dan tetap memakai .kumi-chip supaya gaya dasarnya konsisten. */
+.kd-ukuran {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--kumi-line);
+  border-radius: var(--kumi-r-sm);
+  background: var(--kumi-surface-2);
+}
+
+.kd-ukuran__baris {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.kd-ukuran__judul {
+  flex: 0 0 46px;
+  font-size: var(--kumi-text-xs);
+  font-weight: 600;
+  color: var(--kumi-fg-muted);
+}
+
+.kd-ukuran__pilih {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+/* Chip angka dibuat pipih dan sama lebar supaya 6 kolom muat satu baris.
+   Latar memakai --kumi-tile (bukan --kumi-surface-2) agar tetap terlihat di
+   atas kotak pemilih, dan pilihan aktif ditandai isian aksen. */
+.kd-ukuran__pilih .kumi-chip {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 2px;
+  justify-content: center;
+  font-size: var(--kumi-text-sm);
+  font-variant-numeric: tabular-nums;
+  background: var(--kumi-tile);
+  color: var(--kumi-fg);
+  border-color: transparent;
+}
+
+.kd-ukuran__pilih .kumi-chip:hover {
+  transform: none;
+  background: color-mix(in srgb, var(--kumi-accent) 16%, var(--kumi-tile));
+}
+
+.kd-ukuran__pilih .kumi-chip.is-active {
+  background: var(--kumi-accent);
+  color: #fff;
+  border-color: transparent;
+}
+
+.kd-ukuran__nilai {
+  font-size: var(--kumi-text-xs);
+  color: var(--kumi-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.kd-ukuran__nilai[hidden] {
+  display: none;
+}
+
+/* ================== 21. Warna aksen: bulatan warna yang rapi ============= */
+.kd-aksen-baris {
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--kumi-line);
+  border-radius: var(--kumi-r-sm);
+  background: var(--kumi-surface-2);
+}
+
+.kd-aksen__judul {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--kumi-text-sm);
+  font-weight: 600;
+  color: var(--kumi-fg);
+}
+
+.kd-aksen__alat {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+/* input[type=color] bawaan berupa kotak bersudut; dibulatkan penuh dan
+   swatch-nya dihapus bingkainya supaya menjadi bulatan warna bersih. */
+.kd-warna {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--kumi-line-strong);
+  border-radius: 999px;
+  background: transparent;
+  overflow: hidden;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition:
+    border-color var(--kumi-dur-fast) var(--kumi-ease),
+    transform var(--kumi-dur-fast) var(--kumi-ease);
+}
+
+.kd-warna:hover {
+  border-color: var(--kumi-accent);
+  transform: scale(1.06);
+}
+
+.kd-warna:focus-visible {
+  outline: 2px solid var(--kumi-accent);
+  outline-offset: 2px;
+}
+
+.kd-warna::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.kd-warna::-webkit-color-swatch {
+  border: 0;
+  border-radius: 999px;
+}
+
+.kd-warna::-moz-color-swatch {
+  border: 0;
+  border-radius: 999px;
+}
+
+@media (hover: none) {
+  .kd-warna:hover {
+    transform: none;
+  }
+}
+
+/* ============ 22. Setelan: tinggi modal tetap, hanya isi yang bergulir ==== */
+/* Tinggi dikunci supaya berpindah tab tidak membuat modal membesar-mengecil.
+   Sisi tab dan kakinya tetap, panel kanan yang menggulir sendiri. */
+.kd-modal--setelan {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: min(620px, 88vh);
+}
+
+.kd-modal--setelan .kumi-modal__head,
+.kd-modal--setelan .kumi-modal__foot {
+  flex: 0 0 auto;
+}
+
+.kd-modal--setelan #form-setelan {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: stretch;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.kd-modal--setelan .kd-setelan__nav {
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.kd-modal--setelan .kd-setelan__isi {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-inline-end: 2px;
+}
+
+/* Tab Data dipadatkan: daftar cadangan/perangkat tidak perlu terlalu tinggi. */
+.kd-modal--setelan .kd-cadangan {
+  max-height: 180px;
+}
+
+@media (max-width: 640px) {
+  .kd-modal--setelan #form-setelan {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+}
+
+/* ============ 23. Soundboard: form tambah yang bisa dilipat ============== */
+.kd-modal--suara {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: min(620px, 88vh);
+}
+
+.kd-modal--suara .kumi-modal__head,
+.kd-modal--suara .kumi-modal__foot {
+  flex: 0 0 auto;
+}
+
+.kd-modal--suara .kd-suara {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.kd-suara__alat {
+  display: flex;
+  align-items: center;
+  gap: var(--kumi-space-1);
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.kd-suara__alat .kd-hint {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.kd-suara__form {
+  padding-top: var(--kumi-space-1);
+  border-top: 1px solid color-mix(in srgb, var(--kumi-line) 60%, transparent);
+}
+
+.kd-suara__form[hidden] {
+  display: none;
+}
+
+/* Volume dengan keterangan nilai di kanan label. */
+.kd-modal--suara #suara-volume-nilai {
+  float: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============ 24. Slider: track berisi (progress) di semua peramban ====== */
+/* --kd-val diisi oleh core.js (0–100). Track memakai gradien dua warna:
+   bagian kiri aksen (nilai), bagian kanan garis netral. */
+.kumi-input[type="range"]::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    to right,
+    var(--kumi-accent) 0%,
+    var(--kumi-accent) var(--kd-val, 0%),
+    var(--kumi-line-strong) var(--kd-val, 0%),
+    var(--kumi-line-strong) 100%
+  );
+}
+
+.kumi-input[type="range"]::-moz-range-track {
+  background: var(--kumi-line-strong);
+}
+
+.kumi-input[type="range"]::-moz-range-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--kumi-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kd-warna,
+  .kd-ukuran__pilih .kumi-chip {
+    transition: none;
+  }
+}
+
+/* Slider volume ringkas (setelan desktop & Remote) memakai tampilan yang sama
+   dengan slider .kumi-input: track berisi + bulatan penarik. */
+.kd-volume {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.kd-volume::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--kumi-accent) 0%,
+    var(--kumi-accent) var(--kd-val, 0%),
+    var(--kumi-line-strong) var(--kd-val, 0%),
+    var(--kumi-line-strong) 100%
+  );
+}
+
+.kd-volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border: 2px solid var(--kumi-surface);
+  border-radius: 50%;
+  background: var(--kumi-accent);
+  box-shadow: var(--kumi-shadow-1);
+}
+
+.kd-volume::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--kumi-line-strong);
+}
+
+.kd-volume::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--kumi-accent);
+}
+
+.kd-volume::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--kumi-surface);
+  border-radius: 50%;
+  background: var(--kumi-accent);
+}
+
+/* Fallback untuk peramban tanpa ::-moz-range-progress: isi memakai gradien. */
+@supports (-moz-appearance: none) {
+  .kd-volume::-moz-range-track {
+    background: linear-gradient(
+      to right,
+      var(--kumi-accent) 0%,
+      var(--kumi-accent) var(--kd-val, 0%),
+      var(--kumi-line-strong) var(--kd-val, 0%),
+      var(--kumi-line-strong) 100%
+    );
   }
 }
 

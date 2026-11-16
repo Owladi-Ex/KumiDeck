@@ -47,6 +47,7 @@
   --kumi-accent: #3d5afe;
   --kumi-accent-rgb: 61, 90, 254;
   --kumi-lime: #d9f25b;
+  --kumi-lime-rgb: 217, 242, 91;
   --kumi-tint: #e4e9ff;
   --kumi-canvas: #eeede8; /* latar halaman */
   --kumi-tile: #ffffff; /* permukaan kartu */
@@ -79,7 +80,7 @@
 
   /* Latar hidup (wallpaper) — lihat bagian ".kumi-bg" */
   --kumi-bg-blob-1: rgba(var(--kumi-accent-rgb), 0.75);
-  --kumi-bg-blob-2: rgba(217, 242, 91, 0.85);
+  --kumi-bg-blob-2: rgba(var(--kumi-lime-rgb), 0.85);
   --kumi-bg-blob-3: rgba(228, 233, 255, 0.95);
   --kumi-bg-blob-opacity: 0.55;
   --kumi-bg-blob-blend: normal;
@@ -450,7 +451,7 @@
 }
 
 .kumi-cursor-glow.is-active {
-  background: radial-gradient(circle, rgba(217, 242, 91, 0.42), transparent 62%);
+  background: radial-gradient(circle, rgba(var(--kumi-lime-rgb), 0.42), transparent 62%);
 }
 
 @media (hover: none) {

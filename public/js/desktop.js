@@ -237,6 +237,29 @@
     return dasar;
   }
 
+  /* Jumlah kolom sebagaimana tersimpan di papan. Daftar tombol selalu datar
+     dengan kolom profil, jadi perhitungan indeks yang akan DISIMPAN harus
+     memakai angka ini — bukan kolom tampilan yang menyesuaikan jendela. */
+  function kolomSimpan() {
+    var dasar = S.deck && S.deck.profile ? Number(S.deck.profile.columns) : 5;
+    if (!(dasar >= 1)) dasar = 5;
+    return Math.round(dasar);
+  }
+
+  /* Peta sel yang bebas menurut susunan tersimpan DAN susunan yang sedang
+     tampil, supaya tombol yang dipindahkan tidak tersembunyi di layar sempit. */
+  function petaSelBebas(halaman) {
+    if (!halaman) return null;
+    var simpan = KD.susunKisi(halaman.keys, kolomSimpan());
+    var layar = KD.susunKisi(halaman.keys, kolomPapan());
+    return {
+      bebas: function (i) {
+        return !halaman.keys[i] && !simpan.tertutup[i] && !layar.tertutup[i];
+      },
+      tertutupSimpan: simpan.tertutup,
+    };
+  }
+
   /* Ukuran satu sel kisi (#2.4): dipakai tombol merentang untuk menghitung
      tinggi petaknya. Lebar sel = (lebar papan - celah) / kolom. */
   function ukurSelKisi(papan, kolom) {
@@ -273,6 +296,7 @@
     el.classList.add("is-open");
     el.removeAttribute("aria-hidden");
     document.body.style.overflow = "hidden";
+    KD.segarkanGeser(el);
     window.setTimeout(function () {
       var fokus = el.querySelector(
         "input:not([type=hidden]), select, textarea, button:not([disabled])"
@@ -290,7 +314,7 @@
     document.body.style.overflow = "";
     if (lapis.id === "modal-setelan" && S.deck && S.deck.settings) {
       /* Pratinjau warna aksen dibatalkan bila modal ditutup tanpa simpan. */
-      KD.terapkanAksen(S.deck.settings.aksen);
+      KD.terapkanAksen(S.deck.settings.aksen, S.deck.settings.aksen2);
     }
     if (lapis.__kdFokus && lapis.__kdFokus.focus) {
       try {
@@ -303,7 +327,10 @@
 
   /* ------------------------------------------------------------- render ---- */
   function renderSemua() {
-    if (S.deck && S.deck.settings) KD.terapkanAksen(S.deck.settings.aksen);
+    if (S.deck && S.deck.settings) KD.terapkanAksen(S.deck.settings.aksen, S.deck.settings.aksen2);
+    /* Batas ukuran tombol mengikuti jumlah kolom/baris profil terbaru. */
+    if (S.deck) buatPilihanUkuran();
+    if (S.editor) tandaiUkuranTerpilih();
     renderKepala();
     renderHalaman();
     renderPapan();
@@ -690,9 +717,9 @@
      Dipakai saat menempel, menduplikasi, dan menambah cepat. */
   function slotKosongPertama(halaman) {
     if (!halaman) return -1;
-    var kisi = KD.susunKisi(halaman.keys, kolomPapan());
+    var peta = petaSelBebas(halaman);
     for (var i = 0; i < halaman.keys.length; i += 1) {
-      if (!halaman.keys[i] && !kisi.tertutup[i]) return i;
+      if (peta.bebas(i)) return i;
     }
     return -1;
   }
@@ -1536,15 +1563,49 @@
     });
   }
 
-  /* Ukuran tombol (#2.4): tandai chip yang sesuai rentang draft. */
+  /* Ukuran tombol (#2.4): pilihan lebar/tinggi dipisah supaya semua kombinasi
+     (hingga 6 × 4) bisa dipilih tanpa deretan chip yang panjang. */
+  function buatPilihanUkuran() {
+    var kolomDasar = S.deck ? S.deck.profile.columns : 5;
+    var barisDasar = S.deck ? S.deck.profile.rows : 3;
+    var maksLebar = Math.max(1, Math.min(6, Number(kolomDasar) || 5));
+    var maksTinggi = Math.max(1, Math.min(4, Number(barisDasar) || 3));
+
+    var isi = function (wadah, maks, kunci) {
+      if (!wadah) return;
+      wadah.innerHTML = "";
+      for (var n = 1; n <= maks; n += 1) {
+        var chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "kumi-chip";
+        chip.dataset[kunci] = String(n);
+        chip.textContent = String(n);
+        chip.setAttribute("aria-pressed", "false");
+        wadah.appendChild(chip);
+      }
+    };
+    isi($("#editor-ukuran-lebar"), maksLebar, "lebar");
+    isi($("#editor-ukuran-tinggi"), maksTinggi, "tinggi");
+  }
+
+  /* Ukuran tombol (#2.4): tandai chip lebar/tinggi sesuai rentang draft. */
   function tandaiUkuranTerpilih() {
     var sp = KD.spanTombol(S.editor ? S.editor.draft : {});
-    var nilai = sp.c + "x" + sp.r;
-    $$("#editor-ukuran [data-ukuran]").forEach(function (chip) {
-      var aktif = chip.getAttribute("data-ukuran") === nilai;
+    $$("#editor-ukuran-lebar [data-lebar]").forEach(function (chip) {
+      var aktif = Number(chip.dataset.lebar) === sp.c;
       chip.classList.toggle("is-active", aktif);
       chip.setAttribute("aria-pressed", aktif ? "true" : "false");
     });
+    $$("#editor-ukuran-tinggi [data-tinggi]").forEach(function (chip) {
+      var aktif = Number(chip.dataset.tinggi) === sp.r;
+      chip.classList.toggle("is-active", aktif);
+      chip.setAttribute("aria-pressed", aktif ? "true" : "false");
+    });
+    var nilai = $("#editor-ukuran-nilai");
+    if (nilai) {
+      nilai.textContent = KD.t(sp.c + " × " + sp.r + " slot");
+      nilai.hidden = sp.c <= 1 && sp.r <= 1;
+    }
   }
 
   function tandaiVarianTerpilih() {
@@ -2978,15 +3039,14 @@
       icon: S.editor.draft.icon || "i-grid",
       variant: S.editor.draft.variant || "default",
       warna: S.editor.draft.warna || null,
-      /* Ukuran tombol (#2.4) dibaca dari chip; 1×1 disimpan sebagai null
-         supaya JSON tetap ringkas. */
+      /* Ukuran tombol (#2.4) dibaca dari chip lebar/tinggi; 1×1 disimpan
+         sebagai null supaya JSON tetap ringkas. */
       span: (function () {
-        var chip = $("#editor-ukuran .kumi-chip.is-active");
-        var nilai = chip ? String(chip.getAttribute("data-ukuran") || "1x1") : "1x1";
-        var bagi = nilai.split("x");
-        var c = Math.max(1, Math.round(Number(bagi[0]) || 1));
-        var r = Math.max(1, Math.round(Number(bagi[1]) || 1));
-        return c <= 1 && r <= 1 ? null : { c: Math.min(c, 4), r: Math.min(r, 3) };
+        var lebar = Number((($("#editor-ukuran-lebar .kumi-chip.is-active") || {}).dataset || {}).lebar) || 1;
+        var tinggi = Number((($("#editor-ukuran-tinggi .kumi-chip.is-active") || {}).dataset || {}).tinggi) || 1;
+        var c = Math.max(1, Math.min(6, Math.round(lebar)));
+        var r = Math.max(1, Math.min(4, Math.round(tinggi)));
+        return c <= 1 && r <= 1 ? null : { c: c, r: r };
       })(),
       widget: widget,
       action: aksiUtama,
@@ -3001,6 +3061,70 @@
     };
   }
 
+  /* Perluas tombol (#2.4) tanpa menghapus tetangga: tombol yang tertutup
+     dipindahkan ke slot kosong terdekat. Kalau ruang tidak cukup, perluasan
+     ditolak dan pengguna diberi tahu. Kembalikan null bila ditolak. */
+  function terapkanUkuranTombol(halaman, indeks, keyBaru) {
+    var sp = KD.spanTombol(keyBaru);
+    /* Indeks tombol mengikuti kolom TERSIMPAN, bukan kolom tampilan. */
+    var kolom = kolomSimpan();
+    var jumlah = halaman.keys.length;
+    var kunciBaru = JSON.parse(JSON.stringify(halaman.keys));
+    kunciBaru[indeks] = JSON.parse(JSON.stringify(keyBaru));
+
+    /* 1×1: tidak perlu memindahkan apa pun. */
+    if (sp.c <= 1 && sp.r <= 1) return { keys: kunciBaru, dipindah: 0 };
+
+    var baris = Math.max(1, Math.ceil(jumlah / kolom));
+    var baris0 = Math.floor(indeks / kolom);
+    var kolom0 = indeks % kolom;
+    var c = Math.min(sp.c, kolom - kolom0);
+    var r = Math.min(sp.r, baris - baris0);
+    if (c <= 1 && r <= 1) return { keys: kunciBaru, dipindah: 0 };
+
+    kunciBaru[indeks].span = { c: c, r: r };
+
+    /* Kumpulkan tombol yang tertutup petak baru. */
+    var tertimpa = [];
+    for (var dr = 0; dr < r; dr += 1) {
+      for (var dc = 0; dc < c; dc += 1) {
+        var j = (baris0 + dr) * kolom + (kolom0 + dc);
+        if (j === indeks || j >= jumlah) continue;
+        if (kunciBaru[j]) {
+          tertimpa.push(j);
+          kunciBaru[j] = null;
+        }
+      }
+    }
+
+    if (tertimpa.length) {
+      /* Cari slot kosong sejati (tidak tertutup tombol besar lain), baik
+         menurut susunan tersimpan maupun susunan yang tampil. */
+      var peta = petaSelBebas({ keys: kunciBaru });
+      var kosong = [];
+      for (var i = 0; i < jumlah; i += 1) {
+        if (peta.bebas(i)) kosong.push(i);
+      }
+      if (kosong.length < tertimpa.length) {
+        KD.toast(
+          "Ruang tidak cukup untuk memperbesar tombol. Kosongkan satu slot atau pilih ukuran lain.",
+          "danger"
+        );
+        if (window.Kumi) Kumi.sound.play("error");
+        return null;
+      }
+      tertimpa.forEach(function (asal, urut) {
+        /* Tombol yang bergeser kembali ke 1x1 supaya petaknya tidak menabrak
+           isi slot tujuan yang baru. */
+        var pindahan = JSON.parse(JSON.stringify(halaman.keys[asal]));
+        if (pindahan) pindahan.span = null;
+        kunciBaru[kosong[urut]] = pindahan;
+      });
+    }
+
+    return { keys: kunciBaru, indeks: indeks, dipindah: tertimpa.length };
+  }
+
   function simpanEditor() {
     if (!S.editor) return;
     var halaman = S.deck.pages.find(function (p) {
@@ -3011,13 +3135,21 @@
     var keyBaru = tombolDariEditor();
     if (!keyBaru) return;
 
-    halaman.keys[S.editor.indeks] = keyBaru;
+    var hasil = terapkanUkuranTombol(halaman, S.editor.indeks, keyBaru);
+    if (!hasil) return;
+    halaman.keys = hasil.keys;
+    var pesanSimpan = "Tombol disimpan.";
+    if (hasil.dipindah) {
+      pesanSimpan =
+        "Tombol disimpan. " + hasil.dipindah + " tombol bergeser ke slot kosong.";
+    }
+
     var deck = JSON.parse(JSON.stringify(S.deck));
     var posisi = S.editor;
     tutupModal("modal-editor");
     S.editor = null;
 
-    simpanDeckBaru(deck, "Tombol disimpan.").then(function (ok) {
+    simpanDeckBaru(deck, pesanSimpan).then(function (ok) {
       if (!ok) return;
       S.suntingSel = { halamanId: posisi.halamanId, indeks: posisi.indeks };
       renderPapan();
@@ -3714,6 +3846,24 @@
       });
   }
 
+  /* Form tambah suara dilipat supaya daftar suara langsung terlihat dan
+     halaman Soundboard tidak perlu digulir hanya untuk menambah satu suara. */
+  function aturFormSuara(buka) {
+    var form = $("#form-suara");
+    var btn = $("#btn-suara-buka");
+    if (!form) return;
+    form.hidden = !buka;
+    if (btn) {
+      btn.setAttribute("aria-expanded", buka ? "true" : "false");
+      var label = $("#btn-suara-buka-label");
+      if (label) label.textContent = KD.t(buka ? "Tutup form" : "Tambah suara");
+    }
+    if (buka) {
+      var nama = $("#suara-nama");
+      if (nama) nama.focus();
+    }
+  }
+
   function isiFormSuara(item) {
     S.suaraSunting = item ? item.id : "";
     $("#suara-nama").value = item ? item.name : "";
@@ -3722,9 +3872,13 @@
     $("#suara-volume-nilai").textContent = (item ? item.volume : 100) + "%";
     var tombol = $("#btn-suara-simpan");
     if (tombol) {
-      tombol.innerHTML = KD.ikon(item ? "i-check" : "i-plus") + (item ? " Simpan perubahan" : " Tambah suara");
+      tombol.innerHTML =
+        KD.ikon(item ? "i-check" : "i-plus") +
+        " " +
+        KD.t(item ? "Simpan perubahan" : "Tambah suara");
     }
-    $("#suara-status").textContent = item ? "Menyunting “" + item.name + "”." : "";
+    $("#suara-status").textContent = item ? KD.t("Menyunting “" + item.name + "”.") : "";
+    if (item) aturFormSuara(true);
   }
 
   function simpanSuara(ev) {
@@ -3749,6 +3903,7 @@
         if (S.deck && hasil && hasil.soundboard) S.deck.soundboard = hasil.soundboard;
         renderSoundboard();
         isiFormSuara(null);
+        aturFormSuara(false);
         $("#suara-status").textContent = "Suara disimpan.";
         if (window.Kumi) Kumi.sound.play("success");
         KD.toast("Suara disimpan.", "ok");
@@ -3805,6 +3960,7 @@
   function bukaSoundboard() {
     renderSoundboard();
     isiFormSuara(null);
+    aturFormSuara(false);
     bukaModal("modal-suara");
   }
 
@@ -4320,7 +4476,9 @@
     var teratas = $("#setelan-teratas");
     if (teratas) teratas.checked = !!(S.deck.settings && S.deck.settings.teratas);
     var aksen = $("#setelan-aksen");
-    if (aksen) aksen.value = (S.deck.settings && S.deck.settings.aksen) || "#3d5afe";
+    if (aksen) aksen.value = (S.deck.settings && S.deck.settings.aksen) || KD.AKSEN_BAWAAN;
+    var aksen2 = $("#setelan-aksen-2");
+    if (aksen2) aksen2.value = (S.deck.settings && S.deck.settings.aksen2) || KD.AKSEN2_BAWAAN;
     /* Suara antarmuka disimpan per perangkat, bukan di deck. */
     var bunyi = $("#setelan-bunyi");
     if (bunyi) bunyi.checked = KD.bunyi.nyala();
@@ -4443,6 +4601,11 @@
     if (aksenEl) {
       var aksen = String(aksenEl.value || "").trim().toLowerCase();
       deck.settings.aksen = /^#[0-9a-f]{6}$/.test(aksen) ? aksen : "";
+    }
+    var aksen2El = $("#setelan-aksen-2");
+    if (aksen2El) {
+      var aksen2 = String(aksen2El.value || "").trim().toLowerCase();
+      deck.settings.aksen2 = /^#[0-9a-f]{6}$/.test(aksen2) ? aksen2 : "";
     }
     if (!Array.isArray(deck.otomatis)) deck.otomatis = [];
     /* Buang aturan yang tidak lengkap. */
@@ -4967,6 +5130,22 @@
     if (btnHenti) btnHenti.addEventListener("click", hentikanSuara);
     var formSuara = $("#form-suara");
     if (formSuara) formSuara.addEventListener("submit", simpanSuara);
+    var btnSuaraBuka = $("#btn-suara-buka");
+    if (btnSuaraBuka) {
+      btnSuaraBuka.addEventListener("click", function () {
+        var form = $("#form-suara");
+        var akanBuka = !!(form && form.hidden);
+        if (akanBuka) isiFormSuara(null);
+        aturFormSuara(akanBuka);
+      });
+    }
+    var btnSuaraBatal = $("#btn-suara-batal");
+    if (btnSuaraBatal) {
+      btnSuaraBatal.addEventListener("click", function () {
+        isiFormSuara(null);
+        aturFormSuara(false);
+      });
+    }
     var btnSuaraBerkas = $("#btn-suara-berkas");
     var berkasSuara = $("#berkas-suara");
     if (btnSuaraBerkas && berkasSuara) {
@@ -5147,18 +5326,17 @@
     if ($("#editor-duplikat")) {
       $("#editor-duplikat").addEventListener("click", duplikatTombol);
     }
-    /* Ukuran tombol (#2.4): pilihan disimpan di draft, papan berubah setelah
-       tombol disimpan. */
+    /* Ukuran tombol (#2.4): lebar dan tinggi dipilih terpisah; nilainya
+       disimpan di draft, papan berubah setelah tombol disimpan. */
     if ($("#editor-ukuran")) {
       $("#editor-ukuran").addEventListener("click", function (ev) {
-        var chip = ev.target.closest("[data-ukuran]");
+        var chip = ev.target.closest("[data-lebar],[data-tinggi]");
         if (!chip || !S.editor) return;
-        var nilai = String(chip.getAttribute("data-ukuran") || "1x1");
-        var bagi = nilai.split("x");
-        var c = Math.max(1, Math.round(Number(bagi[0]) || 1));
-        var r = Math.max(1, Math.round(Number(bagi[1]) || 1));
-        if (c <= 1 && r <= 1) delete S.editor.draft.span;
-        else S.editor.draft.span = { c: c, r: r };
+        var sp = KD.spanTombol(S.editor.draft);
+        if (chip.dataset.lebar) sp.c = Math.max(1, Number(chip.dataset.lebar) || 1);
+        if (chip.dataset.tinggi) sp.r = Math.max(1, Number(chip.dataset.tinggi) || 1);
+        if (sp.c <= 1 && sp.r <= 1) delete S.editor.draft.span;
+        else S.editor.draft.span = { c: sp.c, r: sp.r };
         tandaiUkuranTerpilih();
       });
     }
@@ -5363,16 +5541,25 @@
 
     /* Warna aksen: pratinjau langsung, simpan lewat form setelan. */
     var aksenEl = $("#setelan-aksen");
-    if (aksenEl) {
-      aksenEl.addEventListener("input", function () {
-        KD.terapkanAksen(aksenEl.value);
-      });
-    }
+    var aksen2El = $("#setelan-aksen-2");
+    var pratinjauAksen = function () {
+      KD.terapkanAksen(aksenEl ? aksenEl.value : "", aksen2El ? aksen2El.value : "");
+    };
+    if (aksenEl) aksenEl.addEventListener("input", pratinjauAksen);
+    if (aksen2El) aksen2El.addEventListener("input", pratinjauAksen);
     var btnAksenAwal = $("#btn-aksen-awal");
     if (btnAksenAwal) {
       btnAksenAwal.addEventListener("click", function () {
-        if (aksenEl) aksenEl.value = "#3d5afe";
-        KD.terapkanAksen("#3d5afe");
+        if (aksenEl) aksenEl.value = KD.AKSEN_BAWAAN;
+        pratinjauAksen();
+        if (window.Kumi) Kumi.sound.play("tap");
+      });
+    }
+    var btnAksen2Awal = $("#btn-aksen-2-awal");
+    if (btnAksen2Awal) {
+      btnAksen2Awal.addEventListener("click", function () {
+        if (aksen2El) aksen2El.value = KD.AKSEN2_BAWAAN;
+        pratinjauAksen();
         if (window.Kumi) Kumi.sound.play("tap");
       });
     }
@@ -5516,11 +5703,18 @@
     buatPilihanIkon();
     buatPilihanVarian();
     buatPilihanJenis();
+    buatPilihanUkuran();
     ikatPeristiwa();
     KD.siapkanIkonTema();
     KD.amatiBahasa();
     KD.terapkanBahasa();
     muatIkonKustom();
+
+    /* Label ukuran memuat angka dinamis, jadi perlu digambar ulang saat
+       bahasa berganti (kamus hanya menjangkau teks tetap). */
+    window.addEventListener("kd:bahasa", function () {
+      if (S.editor) tandaiUkuranTerpilih();
+    });
 
     /* Jam dan tanggal diperbarui dari jam perangkat; hanya berjalan bila
        papan memuat widget waktu (hemat tenaga). */

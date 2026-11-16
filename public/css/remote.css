@@ -292,3 +292,52 @@
 .kd-remote__banner--info .kd-remote__banner-judul {
   color: var(--kumi-fg);
 }
+
+/* ===================== 11. Layar penuh: hanya tombol yang tampil ========= */
+/* Tombol keluar melayang tipis di pojok kanan atas, di bawah notch. */
+.kd-remote__keluar {
+  position: fixed;
+  top: calc(8px + env(safe-area-inset-top));
+  right: calc(8px + env(safe-area-inset-right));
+  z-index: 60;
+  opacity: 0.72;
+  transition: opacity var(--kumi-dur-fast) var(--kumi-ease);
+}
+
+.kd-remote__keluar:hover,
+.kd-remote__keluar:focus-visible {
+  opacity: 1;
+}
+
+/* Saat layar penuh, kepala, banner, kaki, dan tombol henti disembunyikan
+   supaya seluruh layar dipakai kisi tombol. */
+body.kd-layar-penuh .kd-remote__head,
+body.kd-layar-penuh .kd-remote__banner,
+body.kd-layar-penuh .kd-remote__foot,
+body.kd-layar-penuh .kd-remote__henti {
+  display: none !important;
+}
+
+body.kd-layar-penuh .kd-remote__main {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+body.kd-layar-penuh .kd-remote__main .kd-grid {
+  padding: var(--kumi-space-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kd-remote__keluar {
+    transition: none;
+  }
+}
+
+/* ========== 12. Ketukan sentuh tidak meninggalkan cincin fokus =========== */
+/* app.css menyetel :focus (bukan hanya :focus-visible), sehingga setelah tap
+   tombol tampak berbingkai sampai latar diketuk. Di Remote, cincin hanya
+   muncul untuk navigasi papan tik. */
+.kd-remote__main .kd-key:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: var(--kumi-shadow-1);
+}

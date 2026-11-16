@@ -13,6 +13,7 @@
   var HINT_KEY = "kumideck-remote-hint";
   var LAMA_KEY = "kumideck-remote-hint-lama";
   var GETAR_KEY = "kumideck-remote-getar";
+  var PENUH_KEY = "kumideck-remote-layar-penuh";
 
   var $ = function (sel, akar) {
     return (akar || document).querySelector(sel);
@@ -221,7 +222,7 @@
   }
 
   function renderSemua() {
-    if (S.deck && S.deck.settings) KD.terapkanAksen(S.deck.settings.aksen);
+    if (S.deck && S.deck.settings) KD.terapkanAksen(S.deck.settings.aksen, S.deck.settings.aksen2);
     renderJudul();
     renderStatus();
     renderHalaman();
@@ -451,6 +452,9 @@
     KD.kilat(tombol);
     getar(kedua ? [0, 18, 40, 18] : 10);
     tombol.classList.add("kena-aksi");
+    /* Di layar sentuh, fokus tombol tidak boleh tertinggal: cincin fokus akan
+       terlihat seperti sisa bingkai sampai latar diketuk. */
+    if (tombol.blur) tombol.blur();
     window.setTimeout(function () {
       tombol.classList.remove("kena-aksi");
     }, 520);
@@ -869,6 +873,50 @@
     perbaruiWakeLock();
   }
 
+  /* ------------------------------------------- layar penuh untuk tombol --- */
+  /* Mode ini hanya menyembunyikan kepala, banner, dan kaki supaya kisi tombol
+     memakai seluruh layar. Fullscreen bawaan peramban dicoba bila tersedia,
+     tetapi mode CSS tetap berlaku walau permintaan itu ditolak. */
+  function layarPenuhAktif() {
+    return document.body.classList.contains("kd-layar-penuh");
+  }
+
+  function terapkanLayarPenuh(aktif, simpan) {
+    document.body.classList.toggle("kd-layar-penuh", !!aktif);
+    var btn = $("#btn-layar-penuh");
+    if (btn) {
+      btn.setAttribute("aria-pressed", aktif ? "true" : "false");
+      btn.setAttribute("aria-label", KD.t(aktif ? "Keluar dari layar penuh" : "Layar penuh"));
+      btn.setAttribute("title", KD.t(aktif ? "Keluar dari layar penuh" : "Layar penuh"));
+    }
+    var keluar = $("#btn-keluar-layar-penuh");
+    if (keluar) keluar.hidden = !aktif;
+    if (simpan !== false) tulisLokal(PENUH_KEY, aktif ? "1" : "0");
+  }
+
+  function mintaFullscreenBawaan() {
+    var el = document.documentElement;
+    var minta = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!minta || document.fullscreenElement) return;
+    try {
+      var hasil = minta.call(el);
+      if (hasil && typeof hasil.catch === "function") hasil.catch(function () {});
+    } catch (err) {
+      /* CSS mode tetap dipakai */
+    }
+  }
+
+  function keluarLayarPenuh() {
+    if (document.fullscreenElement && document.exitFullscreen) {
+      try {
+        document.exitFullscreen().catch(function () {});
+      } catch (err) {
+        /* diabaikan */
+      }
+    }
+    terapkanLayarPenuh(false);
+  }
+
   function perbaruiWakeLock() {
     var mau = bacaLokal(JAGA_KEY) === "1";
     if (!("wakeLock" in navigator)) {
@@ -1120,6 +1168,26 @@
       });
     }
 
+    /* Layar penuh: kepala, banner, dan kaki disembunyikan agar kisi tombol
+       memenuhi layar. Ikon keluar melayang tetap tersedia. */
+    var btnPenuh = $("#btn-layar-penuh");
+    if (btnPenuh) {
+      btnPenuh.addEventListener("click", function () {
+        if (layarPenuhAktif()) {
+          keluarLayarPenuh();
+          return;
+        }
+        terapkanLayarPenuh(true);
+        mintaFullscreenBawaan();
+        getar(12);
+      });
+    }
+    var btnKeluarPenuh = $("#btn-keluar-layar-penuh");
+    if (btnKeluarPenuh) btnKeluarPenuh.addEventListener("click", keluarLayarPenuh);
+    document.addEventListener("fullscreenchange", function () {
+      if (!document.fullscreenElement && layarPenuhAktif()) terapkanLayarPenuh(false);
+    });
+
     var btnPutus = $("#btn-putuskan");
     if (btnPutus) btnPutus.addEventListener("click", putuskanPasangan);
 
@@ -1238,6 +1306,9 @@
     siapkanPwa();
     renderStatus();
     renderJudul();
+    /* Layar penuh dipulihkan per perangkat; fullscreen bawaan hanya bisa
+       diminta setelah ketukan, jadi cukup mode CSS-nya yang dipulihkan. */
+    if (bacaLokal(PENUH_KEY) === "1") terapkanLayarPenuh(true, false);
 
     /* Jam dan tanggal diperbarui tiap detik, hanya bila widget waktu tampil. */
     window.setInterval(function () {

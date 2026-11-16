@@ -361,9 +361,11 @@ public static class DeckNormalizer
             halamanBaru.Keys.Add(tombol);
         }
 
-        /* Ukuran tombol (#2.4): jagalah rentang tetap di dalam kisi, dan
-           kosongkan sel yang tertutup agar tidak ada dua tombol di satu sel.
-           Rentang yang keluar kisi dikembalikan ke 1×1. */
+        /* Ukuran tombol (#2.4): jagalah rentang tetap di dalam kisi. Rentang
+           yang akan menimpa tombol lain atau keluar kisi dikembalikan ke 1×1 —
+           tombol tidak pernah dihapus diam-diam hanya karena tetangganya
+           diperbesar (UI memindahkan tetangga ke slot kosong lebih dulu). */
+        var terpakai = new bool[halamanBaru.Keys.Count];
         for (var i = 0; i < halamanBaru.Keys.Count; i++)
         {
             var t = halamanBaru.Keys[i];
@@ -380,15 +382,36 @@ public static class DeckNormalizer
             }
             t.Span.C = c;
             t.Span.R = r;
-            if (c <= 1 && r <= 1) t.Span = null;
-            if (t.Span is null) continue;
-
-            for (var dr = 0; dr < r; dr++)
+            if (c <= 1 && r <= 1)
             {
-                for (var dc = 0; dc < c; dc++)
+                t.Span = null;
+                continue;
+            }
+
+            var bentrok = false;
+            for (var dr = 0; dr < r && !bentrok; dr++)
+            {
+                for (var dc = 0; dc < c && !bentrok; dc++)
                 {
                     var j = (baris0 + dr) * kolom + (kolom0 + dc);
-                    if (j != i && j < halamanBaru.Keys.Count) halamanBaru.Keys[j] = null;
+                    if (j == i || j >= halamanBaru.Keys.Count) continue;
+                    /* Sel yang masih berisi tombol, atau sudah dipakai rentang
+                       lain, membuat rentang ini batal. */
+                    if (halamanBaru.Keys[j] is not null || terpakai[j]) bentrok = true;
+                }
+            }
+            if (bentrok)
+            {
+                t.Span = null;
+                continue;
+            }
+
+            for (var dr2 = 0; dr2 < r; dr2++)
+            {
+                for (var dc2 = 0; dc2 < c; dc2++)
+                {
+                    var k = (baris0 + dr2) * kolom + (kolom0 + dc2);
+                    if (k != i && k < halamanBaru.Keys.Count) terpakai[k] = true;
                 }
             }
         }
@@ -620,6 +643,7 @@ public static class DeckNormalizer
                 AutoProfil = Bool(Prop(Prop(sumber, "settings"), "autoProfil"), false),
                 MulaiOtomatis = Bool(Prop(Prop(sumber, "settings"), "mulaiOtomatis"), false),
                 Aksen = NormalAksen(Prop(Prop(sumber, "settings"), "aksen")),
+                Aksen2 = NormalAksen(Prop(Prop(sumber, "settings"), "aksen2")),
             },
         };
 
@@ -751,6 +775,7 @@ public static class DeckNormalizer
                 AutoProfil = false,
                 MulaiOtomatis = false,
                 Aksen = "",
+                Aksen2 = "",
             },
         };
     }

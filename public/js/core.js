@@ -81,12 +81,31 @@
     return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ? "android" : "desktop";
   }
 
+  /* Hitung persentase isi slider (memperhitungkan min/max/step) dan simpan di
+     properti --kd-val untuk gradien track. */
+  function aturGeser(el) {
+    if (!el) return;
+    var min = Number(el.min);
+    var max = Number(el.max);
+    var nilai = Number(el.value);
+    if (!isFinite(min)) min = 0;
+    if (!isFinite(max) || max <= min) max = min + 100;
+    if (!isFinite(nilai)) nilai = min;
+    var persen = ((nilai - min) / (max - min)) * 100;
+    persen = Math.max(0, Math.min(100, persen));
+    el.style.setProperty("--kd-val", persen + "%");
+  }
+
   var KD = {
     token: "",
     deviceId: readStore(DEVICE_KEY) || "",
     platform: "desktop",
     state: null,
     iconSiap: null,
+
+    /* Warna aksen bawaan; dipakai juga oleh tombol "kembalikan". */
+    AKSEN_BAWAAN: "#3d5afe",
+    AKSEN2_BAWAAN: "#d9f25b",
 
     /* ---------------------------------------------------------- api --- */
     /* api("/api/state") → Promise<objek>. Galat membawa properti .status dan
@@ -123,20 +142,37 @@
       return data;
     },
 
-    /* Warna aksen tema. Kosong = bawaan dari CSS. */
-    terapkanAksen: function (warna) {
-      var hex = String(warna || "").trim();
+    /* Warna aksen tema. Kosong = bawaan dari CSS. Warna kedua (opsional)
+       memakai token lime yang menghidupkan blob latar. */
+    terapkanAksen: function (warna, warna2) {
       var akar = document.documentElement;
-      if (!/^#[0-9a-f]{6}$/i.test(hex)) {
-        akar.style.removeProperty("--kumi-accent");
-        akar.style.removeProperty("--kumi-accent-rgb");
-        return;
-      }
-      var r = parseInt(hex.slice(1, 3), 16);
-      var g = parseInt(hex.slice(3, 5), 16);
-      var b = parseInt(hex.slice(5, 7), 16);
-      akar.style.setProperty("--kumi-accent", hex);
-      akar.style.setProperty("--kumi-accent-rgb", r + ", " + g + ", " + b);
+
+      var pasang = function (hex, nama, namaRgb) {
+        var v = String(hex || "").trim();
+        if (!/^#[0-9a-f]{6}$/i.test(v)) {
+          akar.style.removeProperty(nama);
+          if (namaRgb) akar.style.removeProperty(namaRgb);
+          return;
+        }
+        var r = parseInt(v.slice(1, 3), 16);
+        var g = parseInt(v.slice(3, 5), 16);
+        var b = parseInt(v.slice(5, 7), 16);
+        akar.style.setProperty(nama, v);
+        if (namaRgb) akar.style.setProperty(namaRgb, r + ", " + g + ", " + b);
+      };
+
+      pasang(warna, "--kumi-accent", "--kumi-accent-rgb");
+      if (arguments.length > 1) pasang(warna2, "--kumi-lime", "--kumi-lime-rgb");
+    },
+
+    /* Slider: isi track mengikuti nilai terkini supaya ada progress yang jelas.
+       --kd-val dipakai gradien di css; nilai juga disegarkan saat modal dibuka
+       karena nilai yang dipasang lewat JS tidak memicu event input. */
+    segarkanGeser: function (akar) {
+      var daftar = (akar || document).querySelectorAll('input[type="range"]');
+      Array.prototype.forEach.call(daftar, function (el) {
+        aturGeser(el);
+      });
     },
 
     /* ---------------------------------------------------------- SSE --- */
@@ -1093,6 +1129,19 @@
   KD.bacaStore = readStore;
   KD.tulisStore = writeStore;
   KD.parseQuery = parseQuery;
+
+  /* Slider: perbarui progress saat nilai berubah dan saat halaman siap. */
+  document.addEventListener("input", function (ev) {
+    var el = ev.target;
+    if (el && el.type === "range") aturGeser(el);
+  });
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      KD.segarkanGeser();
+    });
+  } else {
+    KD.segarkanGeser();
+  }
 
   window.KD = KD;
 })();
