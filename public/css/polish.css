@@ -494,44 +494,144 @@ body.kumi-page .kd-shell {
   }
 }
 
-/* ====================== 17. Sakelar kepala tanpa bingkai tebal =========== */
-/* Ikon di samping "Sunting meja" cukup warna + latar tipis sebagai penanda
-   aktif; bingkai 2px membuatnya terlihat seperti kotak yang menonjol. */
-.kd-kepala__aksi .kd-toggle,
-.kd-kepala__aksi .kd-toggle:hover,
-.kd-kepala__aksi .kd-toggle:active,
-.kd-kepala__aksi .kd-toggle[aria-pressed="true"] {
+/* ================== 17. Garis tipis di seluruh antarmuka ================= */
+/* Kumi memakai bingkai 2px untuk tombol ghost dan sakelar. Hampir semua
+   kontrol jadi terlihat berbingkai. Di sini bingkai itu dihapus dan diganti
+   latar tipis: bersih, rata, tanpa garis yang menonjol. */
+.kumi-btn {
+  border-width: 1px;
+}
+
+.kumi-btn--ghost,
+.kumi-btn--ghost:hover,
+.kumi-btn--ghost:active,
+.kumi-btn--ghost:focus {
   border-color: transparent;
 }
 
-.kd-kepala__aksi .kd-toggle[aria-pressed="true"] {
+/* Di dalam panel/modal tombol ghost tetap terbaca sebagai tombol lewat latar
+   lembut, bukan lewat garis. */
+.kd-panel .kumi-btn--ghost,
+.kumi-modal .kumi-btn--ghost,
+.kd-remote__setelan .kumi-btn--ghost {
+  background: var(--kumi-surface-2);
+}
+
+.kd-panel .kumi-btn--ghost:hover,
+.kumi-modal .kumi-btn--ghost:hover,
+.kd-remote__setelan .kumi-btn--ghost:hover {
+  background: var(--kumi-surface-2);
+  background: color-mix(in srgb, var(--kumi-accent) 16%, var(--kumi-surface-2));
+}
+
+/* Sakelar ikon: penanda aktif = warna aksen + latar tipis, tanpa bingkai. */
+.kd-toggle,
+.kd-toggle:hover,
+.kd-toggle:active,
+.kd-toggle[aria-pressed="true"] {
+  border-color: transparent;
+}
+
+.kd-toggle[aria-pressed="true"] {
   color: var(--kumi-accent);
   background: rgba(var(--kumi-accent-rgb), 0.14);
 }
 
-.kd-kepala__aksi .kd-toggle:hover {
+.kd-toggle:hover {
   color: var(--kumi-fg);
   background: rgba(128, 128, 128, 0.14);
 }
 
-.kd-kepala__aksi .kd-toggle[aria-pressed="true"]:hover {
+.kd-toggle[aria-pressed="true"]:hover {
   color: var(--kumi-accent);
   background: rgba(var(--kumi-accent-rgb), 0.2);
 }
 
-/* Tombol berlabel lain: garis 1px, bukan 2px. */
-.kd-kepala__aksi > .kumi-btn {
-  border-width: 1px;
+/* Tombol utama kepala: latar aksen sudah cukup, tanpa bayangan tebal. */
+.kd-kepala__aksi .kumi-btn--primary {
+  box-shadow: none;
 }
 
-/* Kepala Remote juga: ikon bergaris tipis, bukan bingkai tebal. */
+/* Tombol aksi (Soundboard, Templat, Cari, Setelan) kini ikon saja; beri jarak
+   tipis sebelum kelompok sakelar supaya dua kelompok tidak menyatu. */
+.kd-kepala__ikon {
+  margin-inline-start: 4px;
+}
+
+/* Kepala Remote juga: ikon tanpa bingkai. */
 .kd-remote__aksi .kumi-btn {
   border-width: 1px;
 }
 
-/* Label kepala sedikit lebih rapat supaya semuanya muat satu baris. */
-.kd-kepala__aksi > .kumi-btn:not(.kumi-btn--icon) {
-  padding-inline: 18px;
+/* Tombol utama deck (halaman grid): cukup hairline tipis yang menyatu dengan
+   latar supaya tepinya masih terbaca tanpa terasa berbingkai. Slot kosong
+   tetap bergaris putus-putus sebagai ajakan mengisi, dan tanda status/aksi
+   ditolak tetap punya garisnya sendiri. */
+.kd-key:not(.kd-key--empty) {
+  border-color: color-mix(in srgb, var(--kumi-line) 55%, transparent);
+}
+
+/* Hairline tetap ikut menegas saat kursor menyentuh tombol. */
+.kd-key:not(.kd-key--empty):hover {
+  border-color: color-mix(in srgb, var(--kumi-line) 95%, transparent);
+}
+
+/* Keadaan aksen tombol deck dipertahankan di atas hairline. */
+.kd-key--sunting:hover,
+.kd-key.is-pressed {
+  border-color: var(--kumi-accent);
+}
+
+/* Banner petunjuk Remote: murni permukaan, tanpa garis. */
+.kd-remote__banner {
+  border-color: transparent;
+}
+
+.kd-key.is-ditolak {
+  border-color: var(--kumi-danger);
+}
+
+/* Chip halaman/saringan: kapsul berisi latar, tanpa garis. */
+.kumi-chip {
+  border-color: transparent;
+  background: var(--kumi-surface-2);
+}
+
+.kumi-chip:hover {
+  border-color: transparent;
+  background: rgba(var(--kumi-accent-rgb), 0.12);
+}
+
+/* Kartu templat: permukaan rata; penanda hover = latar aksen tipis. */
+.kd-templat-kartu,
+.kd-templat-kartu:hover {
+  border-color: transparent;
+}
+
+.kd-templat-kartu:hover {
+  background: color-mix(in srgb, var(--kumi-accent) 12%, var(--kumi-surface-2));
+}
+
+/* Kotak bergulir (pemilih ikon, pratinjau): cukup latar, tanpa garis. */
+.kd-pilih-ikon,
+.kd-pratinjau {
+  border-color: transparent;
+}
+
+/* Bingkai fungsional (QR & pemangkas ikon): dipertahankan tapi dipudarkan
+   supaya menyatu dengan latar. */
+.kd-qr,
+.kd-pangkas__bingkai {
+  border-color: color-mix(in srgb, var(--kumi-line) 45%, transparent);
+}
+
+/* Pemisah baris: tetap ada sebagai penunjuk kelompok, tapi jauh lebih pudar
+   supaya tidak terbaca sebagai garis tebal. */
+.kd-panel .kumi-list__item,
+.kumi-modal .kumi-list__item,
+.kd-cadangan-baris,
+.kd-kaki {
+  border-top-color: color-mix(in srgb, var(--kumi-line) 50%, transparent);
 }
 
 /* ============================================ 18. Hormati gerak minimal === */
