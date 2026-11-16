@@ -324,6 +324,7 @@ window.KD_EN = {
   "Suara antarmuka": "Interface sounds",
   "Cari tombol": "Find buttons",
   "Cari tombol (Ctrl+K)": "Find buttons (Ctrl+K)",
+  "Templat": "Templates",
   "Nama tombol, aksi, atau halaman…": "Button name, action, or page…",
   "Hasil pencarian": "Search results",
   "Ctrl+K kapan saja. Enter membuka hasil pertama.": "Ctrl+K anytime. Enter opens the first result.",
