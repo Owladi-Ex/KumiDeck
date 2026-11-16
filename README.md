@@ -56,7 +56,17 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
 - **Ikon asli aplikasi** diekstrak otomatis saat menambah aplikasi terpasang.
 - **Widget** jam, tanggal, dan lagu yang sedang diputar.
 - **Tambah cepat**, daftar aplikasi terpasang, perekam pintasan.
-- Kunci tata letak, seret & lepas, impor/ekspor papan (JSON).
+- **Seret tombol antar halaman** (lepas ke slot kosong, tukar posisi, atau lepas
+  di tab halaman) dan **salin/tempel tombol** lewat klik kanan atau
+  `Ctrl+C`/`Ctrl+V`/`Ctrl+Shift+V` (tempel gaya hanya menyalin ikon/varian/warna).
+- **Pin "selalu di atas"** untuk jendela papan, tersimpan di setelan.
+- **Latar per halaman** dengan warna pilihan, tampil di desktop dan Remote.
+- **Pemangkas ikon** bawaan: geser, perbesar, lalu simpan PNG 256×256 (<512 KB).
+- **Jeda urutan sampai 60 detik** per langkah, jenis langkah "Tunggu", dan
+  tombol **Hentikan urutan** di desktop maupun Remote.
+- **Pemeriksa bentrok pintasan**: editor memperingatkan kombinasi yang dipakai
+  lebih dari satu tombol, dan tombol yang bentrok ditandai di papan.
+- Kunci tata letak, impor/ekspor papan (JSON).
 - **Pencarian tombol Ctrl+K**, duplikat halaman/tombol.
 - **Cadangan otomatis** 10 versi terakhir + pulihkan, serta unduh log dari setelan.
 - **Warna aksen** tema dan **ekspor papan PNG** (aplikasi desktop).

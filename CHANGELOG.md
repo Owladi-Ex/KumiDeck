@@ -3,7 +3,33 @@
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 versi mengikuti [SemVer](https://semver.org/lang/id/).
 
-## [Belum dirilis]
+## [2.3.0] - 2026-11-16
+
+**"Geser & Atur"** — papan lebih luwes disusun, dan Remote ikut mendapat
+kontrolnya. Versi APK Remote: 2.3.0 (versionCode 230).
+
+### Ditambahkan
+
+- **Seret tombol antar halaman**: lepas ke slot kosong, tukar dengan tombol
+  lain, atau lepas langsung di tab halaman. Berhenti ±600 ms di atas tab membuka
+  halaman itu. Satu langkah simpan = satu titik urungkan, jadi `Ctrl+Z`
+  mengembalikan susunan semula.
+- **Salin/tempel tombol**: klik kanan tombol saat mode sunting untuk *Salin*,
+  *Tempel*, atau *Tempel gaya*; pintasan `Ctrl+C`, `Ctrl+V`, dan `Ctrl+Shift+V`.
+  Tempel mengisi slot kosong; tempel gaya hanya menyalin ikon, varian, dan warna.
+- **Pin "selalu di atas"**: tombol pin di kepala papan dan sakelar di Setelan.
+  Pilihan tersimpan di papan dan berlaku lagi setelah aplikasi dibuka ulang.
+- **Latar per halaman**: pilih warna latar di Kelola halaman; tampil di desktop
+  dan Remote. Tombol *Hapus warna* mengembalikan latar bawaan.
+- **Pemangkas ikon**: unggah gambar (maks 10 MB), geser dan perbesar di kotak
+  pratinjau 360 px, lalu simpan sebagai PNG 256×256 di bawah 512 KB.
+- **Jeda urutan sampai 60 detik** per langkah, plus jenis langkah **Tunggu**.
+  Selama urutan berjalan, tombol **Hentikan urutan** tampil di desktop dan
+  Remote; menekannya membatalkan jeda yang sedang berlangsung tanpa menunggu.
+- **Pemeriksa bentrok pintasan**: saat menyunting pintasan, editor memperingatkan
+  bila kombinasi sudah dipakai tombol lain — termasuk di halaman lain, aksi
+  kedua, aksi kondisional, atau langkah urutan. Tombol yang bentrok ditandai
+  garis putus-putus. Penyimpanan tetap boleh dilakukan.
 
 ### Diperbaiki
 
@@ -16,6 +42,16 @@ versi mengikuti [SemVer](https://semver.org/lang/id/).
   Pilihan perangkat per suara dihapus dari panel Soundboard; pemisahan channel
   dikerjakan aplikasi mixer (mis. Elgato Wave Link) dengan mengarahkan
   `KumiDeck.exe` ke channel yang diinginkan.
+
+### Catatan teknis
+
+- Model papan bertambah: `Setelan.teratas`, `Halaman.warna`, dan jenis aksi
+  `tunggu`; semuanya dinormalkan di `DeckNormalizer` (jeda langkah dibatasi
+  0–60.000 ms). `Halaman.warna` memakai format `#rrggbb` seperti warna aksen.
+- Endpoint baru `POST /api/aksi/hentikan`; event SSE `urutan` memberi tahu
+  desktop dan Remote saat ada urutan berjalan. Pembatalan memakai satu
+  `CancellationTokenSource` bersama di `ActionRunner`, dan urutan berikutnya
+  selalu mendapat token baru.
 
 ## [2.2.0] - 2026-11-15
 
