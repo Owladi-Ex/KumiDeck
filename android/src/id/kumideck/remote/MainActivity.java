@@ -51,7 +51,7 @@ public class MainActivity extends Activity {
     private static final String PREFS = "kumideck-remote";
     private static final String KEY_ASAL = "asal"; /* scheme://host:port */
     private static final String AKSI_SETUP = "id.kumideck.remote.SETUP";
-    private static final String VERSI = "2.2.0";
+    private static final String VERSI = "2.3.0";
 
     private static final int WARNA_LATAR = 0xFF17171B;
     private static final int WARNA_TEKS = 0xFFF4F4F0;
