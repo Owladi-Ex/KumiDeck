@@ -139,23 +139,6 @@
 }
 
 /* ============================================================= 5. Kaki === */
-.kd-remote__kaki {
-  gap: var(--kumi-space-1);
-}
-
-.kd-remote__halaman {
-  flex: none;
-  font-variant-numeric: tabular-nums;
-  color: var(--kumi-fg);
-}
-
-.kd-remote__kaki .kd-hint {
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
 .kd-remote__foot .kumi-chip {
   flex: none;
 }
@@ -227,10 +210,6 @@
     font-size: var(--kumi-text-xs);
   }
 
-  .kd-remote__kaki .kd-hint:last-child {
-    display: none;
-  }
-
   .kd-remote__main .kd-grid {
     grid-auto-rows: minmax(48px, 1fr);
   }
@@ -293,10 +272,6 @@
     min-height: 32px;
     padding: 0 10px;
     font-size: var(--kumi-text-xs);
-  }
-
-  .kd-remote__kaki .kd-hint:last-child {
-    display: none;
   }
 }
 

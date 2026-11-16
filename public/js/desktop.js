@@ -171,6 +171,7 @@
     appsMemuat: false,
     appsGalat: "",
     cepatCari: "",
+    cepatGulir: 0 /* posisi gulir Tambah cepat agar tak melompat ke atas */,
     ikonKustom: null /* daftar ikon kustom dari /api/icons */,
     sinyal: null /* jendela depan + volume terakhir (#20) */,
     rekaman: null /* pendengar perekam pintasan */,
@@ -236,6 +237,22 @@
     return dasar;
   }
 
+  /* Ukuran satu sel kisi (#2.4): dipakai tombol merentang untuk menghitung
+     tinggi petaknya. Lebar sel = (lebar papan - celah) / kolom. */
+  function ukurSelKisi(papan, kolom) {
+    if (!papan || !kolom) return;
+    var gaya = window.getComputedStyle(papan);
+    var padKiri = parseFloat(gaya.paddingLeft) || 0;
+    var padKanan = parseFloat(gaya.paddingRight) || 0;
+    var celah = parseFloat(gaya.columnGap) || 0;
+    var lebar = papan.clientWidth - padKiri - padKanan;
+    if (!(lebar > 0)) return;
+    var sel = Math.max(1, (lebar - celah * (kolom - 1)) / kolom);
+    papan.dataset.kisi = "1";
+    papan.style.setProperty("--kd-cell", sel.toFixed(2) + "px");
+    papan.style.setProperty("--kd-gap", celah + "px");
+  }
+
   function labelPerangkat(platform) {
     return platform === "android" ? "Remote" : "Desktop";
   }
@@ -293,7 +310,6 @@
     renderPerangkat();
     renderAktivitas();
     renderSoundboard();
-    renderKaki();
   }
 
   function renderKepala() {
@@ -355,15 +371,6 @@
     );
   }
 
-  function renderKaki() {
-    var el = $("#kaki-alamat");
-    if (S.deck && S.papanServer) {
-      el.textContent = KD.t("Alamat papan") + ": " + S.papanServer.lanUrl;
-    } else if (S.deck) {
-      el.textContent = KD.t("Alamat papan") + ": —";
-    }
-  }
-
   function renderHalaman() {
     var wadah = $("#daftar-halaman");
     wadah.innerHTML = "";
@@ -417,13 +424,7 @@
           if (seret.indeks === null || seret.halamanId === h.id) return;
           var tujuan = halamanDari(h.id);
           if (!tujuan) return;
-          var kosong = -1;
-          for (var i = 0; i < tujuan.keys.length; i += 1) {
-            if (!tujuan.keys[i]) {
-              kosong = i;
-              break;
-            }
-          }
+          var kosong = slotKosongPertama(tujuan);
           if (kosong < 0) {
             KD.toast(
               "Halaman tujuan penuh. Lepas ke salah satu tombol untuk menukar.",
@@ -486,11 +487,19 @@
     memuat.hidden = true;
     $("#papan-galat").hidden = true;
 
+    /* Ukuran sel kisi (#2.4) supaya tombol merentang bisa menghitung tinggi
+       petaknya. Diukur setelah papan terlihat agar lebarnya pasti. */
+    ukurSelKisi(papan, kolom);
+
     var bentrok = petaBentrok(S.deck);
+    var kisi = KD.susunKisi(halaman.keys, kolom);
 
     halaman.keys.forEach(function (key, indeks) {
+      /* Sel yang tertutup tombol besar tidak digambar tersendiri. */
+      if (kisi.tertutup[indeks]) return;
       var tombol = KD.buatTombol(key, { sunting: S.sunting });
       tombol.dataset.indeks = String(indeks);
+      KD.pasangRentang(tombol, kisi.entri[indeks]);
       /* Jeda masuk bertahap, dibatasi supaya halaman besar tidak lambat. */
       tombol.style.setProperty("--kd-i", String(Math.min(indeks, 12)));
       /* D12: tandai tombol yang berbagi pintasan dengan tombol lain. */
@@ -656,6 +665,10 @@
     var dipindah = asal.keys[dari];
     asal.keys[dari] = tujuan.keys[ke] || null;
     tujuan.keys[ke] = dipindah;
+    /* Tombol yang pindah kembali ke ukuran 1×1: rentangnya bisa menutupi sel
+       yang sudah berisi di posisi barunya. */
+    if (dipindah && dipindah.span) dipindah.span = null;
+    if (asal.keys[dari] && asal.keys[dari].span) asal.keys[dari].span = null;
 
     S.deck = deck;
     S.suntingSel = { halamanId: tujuanId, indeks: ke };
@@ -671,6 +684,17 @@
       renderSemua();
     });
     return true;
+  }
+
+  /* Slot kosong sejati: belum diisi DAN tidak tertutup tombol besar (#2.4).
+     Dipakai saat menempel, menduplikasi, dan menambah cepat. */
+  function slotKosongPertama(halaman) {
+    if (!halaman) return -1;
+    var kisi = KD.susunKisi(halaman.keys, kolomPapan());
+    for (var i = 0; i < halaman.keys.length; i += 1) {
+      if (!halaman.keys[i] && !kisi.tertutup[i]) return i;
+    }
+    return -1;
   }
 
   function pasangSeret(tombol, halamanId, indeks, key) {
@@ -776,13 +800,7 @@
       }
     } else if (indeks < 0 || halaman.keys[indeks]) {
       /* Tidak ada slot kosong terpilih: isi slot kosong pertama halaman ini. */
-      indeks = -1;
-      for (var i = 0; i < halaman.keys.length; i += 1) {
-        if (!halaman.keys[i]) {
-          indeks = i;
-          break;
-        }
-      }
+      indeks = slotKosongPertama(halaman);
       if (indeks < 0) {
         KD.toast("Halaman ini penuh. Hapus atau pindahkan satu tombol dulu.", "danger");
         if (window.Kumi) Kumi.sound.play("error");
@@ -803,6 +821,9 @@
     } else {
       var salinan = JSON.parse(JSON.stringify(S.tempel));
       salinan.id = "";
+      /* Ukuran tombol kembali 1×1 saat ditempel supaya tidak menabrak isi
+         slot di sekitar tujuan. */
+      salinan.span = null;
       target.keys[indeks] = salinan;
     }
 
@@ -1515,6 +1536,17 @@
     });
   }
 
+  /* Ukuran tombol (#2.4): tandai chip yang sesuai rentang draft. */
+  function tandaiUkuranTerpilih() {
+    var sp = KD.spanTombol(S.editor ? S.editor.draft : {});
+    var nilai = sp.c + "x" + sp.r;
+    $$("#editor-ukuran [data-ukuran]").forEach(function (chip) {
+      var aktif = chip.getAttribute("data-ukuran") === nilai;
+      chip.classList.toggle("is-active", aktif);
+      chip.setAttribute("aria-pressed", aktif ? "true" : "false");
+    });
+  }
+
   function tandaiVarianTerpilih() {
     var id = S.editor ? S.editor.draft.variant : "default";
     $$("#editor-varian .kumi-chip").forEach(function (chip) {
@@ -1709,6 +1741,7 @@
     muatIkonKustom();
     tandaiIkonTerpilih();
     tandaiVarianTerpilih();
+    tandaiUkuranTerpilih();
     /* Jenis aksi awal mengikuti slot yang sedang disunting. */
     $("#editor-jenis").value = draft.widget ? "widget" : aksiDraft().type || "kosong";
     /* Penanda status (#20). */
@@ -2945,6 +2978,16 @@
       icon: S.editor.draft.icon || "i-grid",
       variant: S.editor.draft.variant || "default",
       warna: S.editor.draft.warna || null,
+      /* Ukuran tombol (#2.4) dibaca dari chip; 1×1 disimpan sebagai null
+         supaya JSON tetap ringkas. */
+      span: (function () {
+        var chip = $("#editor-ukuran .kumi-chip.is-active");
+        var nilai = chip ? String(chip.getAttribute("data-ukuran") || "1x1") : "1x1";
+        var bagi = nilai.split("x");
+        var c = Math.max(1, Math.round(Number(bagi[0]) || 1));
+        var r = Math.max(1, Math.round(Number(bagi[1]) || 1));
+        return c <= 1 && r <= 1 ? null : { c: Math.min(c, 4), r: Math.min(r, 3) };
+      })(),
       widget: widget,
       action: aksiUtama,
       /* Aksi tekan lama hanya berlaku untuk tombol aksi, bukan widget. */
@@ -2988,13 +3031,7 @@
     });
     if (!halaman) return;
 
-    var kosong = -1;
-    for (var i = 0; i < halaman.keys.length; i += 1) {
-      if (!halaman.keys[i]) {
-        kosong = i;
-        break;
-      }
-    }
+    var kosong = slotKosongPertama(halaman);
     if (kosong < 0) {
       KD.toast("Tidak ada slot kosong di halaman ini. Hapus atau pindahkan tombol dulu.", "danger");
       if (window.Kumi) Kumi.sound.play("error");
@@ -3008,6 +3045,8 @@
     halaman.keys[S.editor.indeks] = keyBaru;
     var salinan = JSON.parse(JSON.stringify(keyBaru));
     salinan.id = "";
+    /* Duplikat mulai sebagai tombol 1×1 agar tidak menutupi slot lain. */
+    salinan.span = null;
     halaman.keys[kosong] = salinan;
 
     var deck = JSON.parse(JSON.stringify(S.deck));
@@ -3102,9 +3141,30 @@
 
   function bukaCepat() {
     S.cepatCari = "";
+    var cari = $("#cepat-cari");
+    if (cari) cari.value = "";
     renderCepat();
     bukaModal("modal-cepat");
     if (!S.apps && !S.appsMemuat) muatApps(false);
+  }
+
+  /* Saring kartu "Tambah cepat" di tempat tanpa membangun ulang seluruh isi,
+     supaya kotak cari tetap fokus dan pengguna tak perlu menggulir jauh.
+     Bagian aplikasi punya penyaringnya sendiri (lihat htmlDaftarCepatApp). */
+  function saringCepatTampil() {
+    var wadah = $("#cepat-isi");
+    if (!wadah) return;
+    var cari = String(S.cepatCari || "").toLowerCase().trim();
+    Array.prototype.forEach.call(wadah.querySelectorAll(".kd-cepat__bagian"), function (bagian) {
+      if (bagian.querySelector("#cepat-daftar-app")) return;
+      var ada = 0;
+      Array.prototype.forEach.call(bagian.querySelectorAll(".kd-cepat__kartu"), function (kartu) {
+        var cocok = !cari || (kartu.textContent || "").toLowerCase().indexOf(cari) !== -1;
+        kartu.hidden = !cocok;
+        if (cocok) ada += 1;
+      });
+      bagian.hidden = !!cari && ada === 0;
+    });
   }
 
   function htmlKartuCepat(item) {
@@ -3204,17 +3264,16 @@
       '<button class="kumi-btn kumi-btn--ghost kumi-btn--sm" type="button" data-cepat-ulang>' +
       KD.ikon("i-refresh") +
       " Pindai ulang</button></div>" +
-      '<div class="kumi-input-icon">' +
-      KD.ikon("i-search") +
-      '<input class="kumi-input" id="cepat-cari-app" type="search" autocomplete="off" placeholder="Cari aplikasi, mis. Spotify…" value="' +
-      KD.escapeHtml(S.cepatCari || "") +
-      '"></div>' +
       '<div class="kd-cepat__daftar" id="cepat-daftar-app">' +
       htmlDaftarCepatApp() +
       "</div></div>";
 
     wadah.innerHTML = html;
     segarkanStatusApps();
+    /* Tahan posisi gulir supaya menambah beberapa tombol berturut-turut tidak
+       melempar pengguna kembali ke atas, lalu terapkan saringan yang aktif. */
+    wadah.scrollTop = Number(S.cepatGulir) || 0;
+    saringCepatTampil();
   }
 
   function tambahCepat(data) {
@@ -3222,9 +3281,7 @@
     var halaman = halamanAktif();
     if (!halaman) return;
 
-    var indeks = halaman.keys.findIndex(function (k) {
-      return !k;
-    });
+    var indeks = slotKosongPertama(halaman);
     if (indeks === -1) {
       KD.toast("Halaman ini penuh. Kosongkan satu slot atau tambah halaman baru.", "danger");
       if (window.Kumi) Kumi.sound.play("error");
@@ -5046,14 +5103,22 @@
           });
       });
     }
-    var cepatIsi = $("#cepat-isi");
-    if (cepatIsi) {
-      cepatIsi.addEventListener("input", function (ev) {
-        if (!ev.target || ev.target.id !== "cepat-cari-app") return;
+    var cepatCari = $("#cepat-cari");
+    if (cepatCari) {
+      cepatCari.addEventListener("input", function (ev) {
         S.cepatCari = ev.target.value;
+        /* Bagian aplikasi disaring ulang dari daftar penuh; kartu bagian lain
+           cukup disembunyikan di tempat. */
         var daftarAppCepat = $("#cepat-daftar-app");
         if (daftarAppCepat) daftarAppCepat.innerHTML = htmlDaftarCepatApp();
+        saringCepatTampil();
         segarkanStatusApps();
+      });
+    }
+    var cepatIsi = $("#cepat-isi");
+    if (cepatIsi) {
+      cepatIsi.addEventListener("scroll", function () {
+        S.cepatGulir = cepatIsi.scrollTop;
       });
       cepatIsi.addEventListener("click", function (ev) {
         var ulang = ev.target.closest("[data-cepat-ulang]");
@@ -5081,6 +5146,21 @@
     $("#editor-hapus").addEventListener("click", hapusTombol);
     if ($("#editor-duplikat")) {
       $("#editor-duplikat").addEventListener("click", duplikatTombol);
+    }
+    /* Ukuran tombol (#2.4): pilihan disimpan di draft, papan berubah setelah
+       tombol disimpan. */
+    if ($("#editor-ukuran")) {
+      $("#editor-ukuran").addEventListener("click", function (ev) {
+        var chip = ev.target.closest("[data-ukuran]");
+        if (!chip || !S.editor) return;
+        var nilai = String(chip.getAttribute("data-ukuran") || "1x1");
+        var bagi = nilai.split("x");
+        var c = Math.max(1, Math.round(Number(bagi[0]) || 1));
+        var r = Math.max(1, Math.round(Number(bagi[1]) || 1));
+        if (c <= 1 && r <= 1) delete S.editor.draft.span;
+        else S.editor.draft.span = { c: c, r: r };
+        tandaiUkuranTerpilih();
+      });
     }
     $("#editor-jenis").addEventListener("change", function () {
       if (!S.editor) return;
@@ -5424,6 +5504,7 @@
       if (jamUbahUkuran) window.clearTimeout(jamUbahUkuran);
       jamUbahUkuran = window.setTimeout(function () {
         if (kolomPapan() !== S.kolomTerpasang) renderPapan();
+        else ukurSelKisi($("#papan"), S.kolomTerpasang);
       }, 120);
     });
   }

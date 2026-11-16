@@ -531,6 +531,66 @@
     },
 
     /* ------------------------------------------------------- tombol --- */    /* KD.buatTombol(key, { kosong, sunting, aktif, indeks }) → <button> */
+    /* Ukuran tombol (#2.4): satu tombol boleh merentang beberapa sel kisi
+       (mis. 2×1) supaya widget dan label besar lebih lega. Selalu kembalikan
+       angka minimal 1 supaya nilai aneh tidak merusak tata letak. */
+    spanTombol: function (key) {
+      var s = key && key.span;
+      var c = s ? Math.round(Number(s.c)) : 1;
+      var r = s ? Math.round(Number(s.r)) : 1;
+      if (!(c >= 1)) c = 1;
+      if (!(r >= 1)) r = 1;
+      return { c: c, r: r };
+    },
+
+    /* Susun peta kisi dari daftar tombol datar (panjang kolom×baris).
+       Kembalikan { tertutup, entri }: `tertutup` menandai sel yang ditutupi
+       tombol lain (tidak perlu digambar), `entri` memetakan indeks → posisi
+       eksplisit { c, r, col, row } untuk tombol dan slot kosong. */
+    susunKisi: function (keys, kolom) {
+      kolom = Math.max(1, Math.round(Number(kolom) || 5));
+      var n = keys ? keys.length : 0;
+      var baris = Math.max(1, Math.ceil(n / kolom));
+      var tertutup = {};
+      var entri = {};
+      for (var i = 0; i < n; i++) {
+        if (tertutup[i]) continue;
+        var col = i % kolom;
+        var row = Math.floor(i / kolom);
+        var key = keys[i];
+        var c = 1;
+        var r = 1;
+        if (key) {
+          var sp = KD.spanTombol(key);
+          c = Math.min(sp.c, kolom - col);
+          r = Math.min(sp.r, baris - row);
+          if (c < 1) c = 1;
+          if (r < 1) r = 1;
+        }
+        entri[i] = { c: c, r: r, col: col, row: row };
+        for (var dr = 0; dr < r; dr++) {
+          for (var dc = 0; dc < c; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            var j = (row + dr) * kolom + (col + dc);
+            if (j < n) tertutup[j] = true;
+          }
+        }
+      }
+      return { tertutup: tertutup, entri: entri };
+    },
+
+    /* Tempatkan tombol pada baris/kolom eksplisit dan atur rasio lebarnya. */
+    pasangRentang: function (tombol, entri) {
+      if (!tombol || !entri) return;
+      tombol.style.gridColumn = String(entri.col + 1) + " / span " + entri.c;
+      tombol.style.gridRow = String(entri.row + 1) + " / span " + entri.r;
+      if (entri.c > 1 || entri.r > 1) {
+        tombol.setAttribute("data-rentang", entri.c + "x" + entri.r);
+        tombol.style.setProperty("--kd-sc", String(entri.c));
+        tombol.style.setProperty("--kd-sr", String(entri.r));
+      }
+    },
+
     buatTombol: function (key, opsi) {
       opsi = opsi || {};
       var btn = document.createElement("button");

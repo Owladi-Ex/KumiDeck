@@ -42,8 +42,18 @@ public sealed class Tombol
     [JsonPropertyName("warna"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] public Warna? Warna { get; set; }
     [JsonPropertyName("widget"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] public Widget? Widget { get; set; }
     [JsonPropertyName("tandaiAktif"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] public Penanda? TandaiAktif { get; set; }
+    [JsonPropertyName("span"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] public Rentang? Span { get; set; }
     [JsonPropertyName("action")] public Aksi Action { get; set; } = Aksi.Kosong();
     [JsonPropertyName("actionKedua"), JsonIgnore(Condition = JsonIgnoreCondition.Never)] public Aksi? ActionKedua { get; set; }
+}
+
+/* Ukuran tombol (#2.4): satu tombol boleh merentang beberapa sel kisi
+   (mis. 2×1) supaya widget dan label besar tampil lebih lega. Nilai c/r
+   adalah jumlah kolom/baris yang ditempati, minimal 1. */
+public sealed class Rentang
+{
+    [JsonPropertyName("c")] public int C { get; set; } = 1;
+    [JsonPropertyName("r")] public int R { get; set; } = 1;
 }
 
 public sealed class Warna

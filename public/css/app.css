@@ -95,6 +95,35 @@
   transform: translateY(-1px);
 }
 
+/* Ukuran tombol (#2.4): tombol yang merentang lebih dari satu sel mengisi
+   seluruh petaknya. Tingginya dihitung dari ukuran sel kisi (variabel
+   --kd-cell yang dipasang halaman) supaya tepinya sejajar dengan tombol
+   tetangga, bukan mengikuti rasio. */
+.kd-key[data-rentang] {
+  aspect-ratio: auto;
+  align-self: stretch;
+}
+
+.kd-grid[data-kisi="1"] .kd-key[data-rentang] {
+  height: calc(
+    var(--kd-cell, 0px) * var(--kd-sr, 1) + var(--kd-gap, 0px) * (var(--kd-sr, 1) - 1)
+  );
+}
+
+/* Tombol besar boleh memuat ikon dan label lebih besar: itulah gunanya
+   merentang — widget dan label panjang jadi lebih terbaca. */
+.kd-key[data-rentang] .kd-key__glyph {
+  font-size: clamp(18px, calc(30cqi * var(--kd-skala, 1)), calc(64px * var(--kd-skala, 1)));
+}
+
+.kd-key[data-rentang] .kd-key__label {
+  font-size: clamp(11px, calc(10cqi * var(--kd-skala, 1)), calc(20px * var(--kd-skala, 1)));
+}
+
+.kd-key[data-rentang] .kd-key__nilai {
+  font-size: clamp(14px, min(26cqi, 34cqb), 56px);
+}
+
 .kd-key:active {
   transform: translateY(0);
 }
@@ -657,15 +686,6 @@
 
 .kd-remote__foot .kd-pages::-webkit-scrollbar {
   display: none;
-}
-
-.kd-remote__kaki {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--kumi-space-2);
-  font-size: var(--kumi-text-xs);
-  color: var(--kumi-fg-muted);
 }
 
 /* Layar pasangkan perangkat & galat koneksi memakai lebar baca yang tenang. */

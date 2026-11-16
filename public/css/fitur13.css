@@ -399,26 +399,8 @@
   padding: 4px 2px 0;
 }
 
-/* Sakelar tema TIDAK memakai tanda aktif biru: ia hanya mengganti tampilan,
-   bukan menyalakan fitur. Ikonnya tetap berganti bulan/matahari. */
-.kd-toggle[data-kumi-toggle-theme],
-.kd-toggle[data-kumi-toggle-theme][aria-pressed="true"],
-.kd-toggle[data-kumi-toggle-theme]:hover,
-.kd-toggle[data-kumi-toggle-theme][aria-pressed="true"]:hover {
-  /* Tema hanya ikon: tanpa bingkai sama sekali, di keadaan apa pun. */
-  color: var(--kumi-fg);
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
-}
-
-.kd-toggle[data-kumi-toggle-theme]:hover .kumi-icon {
-  opacity: 0.72;
-}
-
-.kd-toggle[data-kumi-toggle-theme]:hover {
-  color: var(--kumi-fg);
-  background: var(--kumi-tile);
-}
+/* Sakelar tema ikut pola sakelar lain: ikon redup saat diam, dan menyala saat
+   kursor menyentuh atau saat dipilih — sama seperti sakelar kepala lainnya.
+   Ikonnya tetap berganti bulan / matahari sesuai tema aktif. */
 
 

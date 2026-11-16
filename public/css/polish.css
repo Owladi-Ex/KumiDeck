@@ -340,29 +340,17 @@ body.kumi-page .kd-shell {
   height: 15px;
 }
 
-/* Gulir tipis untuk daftar panjang dan modal setelan. */
-.kd-aktivitas,
-.kd-pages,
-.kumi-modal,
-.kd-remote__setelan {
-  scrollbar-width: thin;
-  scrollbar-color: var(--kumi-line-strong) transparent;
+/* Scrollbar disembunyikan di seluruh aplikasi: gulir tetap bekerja, hanya
+   batangnya tidak ditampilkan supaya tampilan terasa lebih bersih. */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.kd-aktivitas::-webkit-scrollbar,
-.kd-pages::-webkit-scrollbar,
-.kumi-modal::-webkit-scrollbar,
-.kd-remote__setelan::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.kd-aktivitas::-webkit-scrollbar-thumb,
-.kd-pages::-webkit-scrollbar-thumb,
-.kumi-modal::-webkit-scrollbar-thumb,
-.kd-remote__setelan::-webkit-scrollbar-thumb {
-  border-radius: var(--kumi-r-pill);
-  background: var(--kumi-line-strong);
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 /* Chip halaman: jarak gulir nyaman di layar sentuh. */
@@ -524,7 +512,8 @@ body.kumi-page .kd-shell {
   background: color-mix(in srgb, var(--kumi-accent) 16%, var(--kumi-surface-2));
 }
 
-/* Sakelar ikon: penanda aktif = warna aksen + latar tipis, tanpa bingkai. */
+/* Sakelar ikon: penanda aktif = ikon berwarna penuh + latar netral, tanpa
+   bingkai. Warna aksen tidak dipakai supaya tidak terkesan norak. */
 .kd-toggle,
 .kd-toggle:hover,
 .kd-toggle:active,
@@ -532,19 +521,19 @@ body.kumi-page .kd-shell {
   border-color: transparent;
 }
 
-.kd-toggle[aria-pressed="true"] {
-  color: var(--kumi-accent);
-  background: rgba(var(--kumi-accent-rgb), 0.14);
-}
-
 .kd-toggle:hover {
   color: var(--kumi-fg);
-  background: rgba(128, 128, 128, 0.14);
+  background: color-mix(in srgb, var(--kumi-fg) 9%, transparent);
+}
+
+.kd-toggle[aria-pressed="true"] {
+  color: var(--kumi-fg);
+  background: color-mix(in srgb, var(--kumi-fg) 16%, transparent);
 }
 
 .kd-toggle[aria-pressed="true"]:hover {
-  color: var(--kumi-accent);
-  background: rgba(var(--kumi-accent-rgb), 0.2);
+  color: var(--kumi-fg);
+  background: color-mix(in srgb, var(--kumi-fg) 22%, transparent);
 }
 
 /* Tombol utama kepala: latar aksen sudah cukup, tanpa bayangan tebal. */
@@ -629,9 +618,63 @@ body.kumi-page .kd-shell {
    supaya tidak terbaca sebagai garis tebal. */
 .kd-panel .kumi-list__item,
 .kumi-modal .kumi-list__item,
-.kd-cadangan-baris,
-.kd-kaki {
+.kd-cadangan-baris {
   border-top-color: color-mix(in srgb, var(--kumi-line) 50%, transparent);
+}
+
+/* ==================== 19. Modal panjang: isi gulir, kaki tetap =========== */
+/* Editor tombol dan Tambah cepat punya isi panjang. Kepala dan kakinya
+   dipertahankan di tempat sementara hanya isinya yang menggulir, jadi tombol
+   Simpan/Tutup selalu terjangkau tanpa menggulir ke bawah dulu. */
+.kd-modal--editor,
+.kd-modal--cepat {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.kd-modal--editor .kumi-modal__head,
+.kd-modal--editor .kumi-modal__foot,
+.kd-modal--cepat .kumi-modal__head,
+.kd-modal--cepat .kumi-modal__foot {
+  flex: 0 0 auto;
+}
+
+.kd-modal--editor #form-editor,
+.kd-modal--cepat #cepat-isi {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Kotak cari Tambah cepat tepat di bawah keterangan. */
+.kd-cepat-cari {
+  margin-top: var(--kumi-space-2);
+  flex: 0 0 auto;
+}
+
+/* Editor tombol: di layar lebar bidang disusun dua kolom supaya isi lebih
+   pendek dan tak perlu banyak menggulir. Bidang ikon dan parameter aksi
+   memakai lebar penuh. */
+@media (min-width: 720px) {
+  .kd-modal--editor #form-editor {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--kumi-space-2);
+    align-items: start;
+  }
+
+  /* Editor tombol: pilih ikon dipendekkan supaya seluruh form lebih ringkas
+     dan kaki modal (Simpan) tetap terlihat tanpa menggulir jauh. */
+  .kd-modal--editor .kd-pilih-ikon {
+    max-height: 152px;
+  }
+
+  .kd-modal--editor #form-editor > .kd-bidang--lebar,
+  .kd-modal--editor #form-editor > #editor-param {
+    grid-column: 1 / -1;
+  }
 }
 
 /* ============================================ 18. Hormati gerak minimal === */

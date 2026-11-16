@@ -110,20 +110,14 @@
 
   function renderHalaman() {
     var wadah = $("#daftar-halaman");
-    var penghitung = $("#penghitung-halaman");
     if (!wadah) return;
     wadah.innerHTML = "";
 
-    if (!S.deck || !S.deck.pages || !S.deck.pages.length) {
-      if (penghitung) penghitung.textContent = "Halaman —";
-      return;
-    }
+    if (!S.deck || !S.deck.pages || !S.deck.pages.length) return;
 
     var aktif = halamanAktif();
-    var indeks = 0;
 
-    S.deck.pages.forEach(function (h, i) {
-      if (aktif && aktif.id === h.id) indeks = i;
+    S.deck.pages.forEach(function (h) {
       var chip = document.createElement("button");
       chip.type = "button";
       chip.className = "kumi-chip" + (aktif && aktif.id === h.id ? " is-active" : "");
@@ -136,10 +130,6 @@
       });
       wadah.appendChild(chip);
     });
-
-    if (penghitung) {
-      penghitung.textContent = "Halaman " + (indeks + 1) + " dari " + S.deck.pages.length;
-    }
   }
 
   function renderPapan() {
@@ -163,10 +153,17 @@
     terapkanKolom();
     papan.innerHTML = "";
 
+    /* Ukuran tombol (#2.4): tempat eksplisit pada kisi mengikuti rentangnya,
+       jadi tombol besar tetap sejajar dengan Remote desktop. */
+    var kolomKisi = Math.max(1, Number(papan.dataset.kolom) || hitungKolom());
+    var kisi = KD.susunKisi(aktif.keys, kolomKisi);
+
     var adaTombol = false;
     aktif.keys.forEach(function (key, indeks) {
+      if (kisi.tertutup[indeks]) return;
       var tombol = KD.buatTombol(key, { sunting: false });
       tombol.style.setProperty("--kd-i", String(Math.min(indeks, 12)));
+      KD.pasangRentang(tombol, kisi.entri[indeks]);
       if (key) {
         adaTombol = true;
         if (key.widget) {

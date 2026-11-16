@@ -310,10 +310,22 @@ public static class DeckNormalizer
             Variant = varian,
             Warna = NormalWarna(Prop(tombol, "warna")),
             Widget = widget,
+            Span = NormalSpan(Prop(tombol, "span")),
             TandaiAktif = widget is null ? NormalTandaAktif(Prop(tombol, "tandaiAktif")) : null,
             Action = widget is null ? NormalAksi(Prop(tombol, "action")) : Aksi.Kosong(),
             ActionKedua = kedua.Type == "kosong" ? null : kedua,
         };
+    }
+
+    /* Ukuran tombol (#2.4): rentang 1–6 kolom dan 1–4 baris. Rentang 1×1
+       dianggap tidak ada supaya JSON tetap ringkas. */
+    private static Rentang? NormalSpan(JsonElement? span)
+    {
+        if (!Objek(span)) return null;
+        var c = Math.Clamp(AngkaBulat(Prop(span, "c"), 1), 1, 6);
+        var r = Math.Clamp(AngkaBulat(Prop(span, "r"), 1), 1, 4);
+        if (c <= 1 && r <= 1) return null;
+        return new Rentang { C = c, R = r };
     }
 
     /* ---------------------------------------------------------- halaman ---- */
@@ -348,6 +360,39 @@ public static class DeckNormalizer
             }
             halamanBaru.Keys.Add(tombol);
         }
+
+        /* Ukuran tombol (#2.4): jagalah rentang tetap di dalam kisi, dan
+           kosongkan sel yang tertutup agar tidak ada dua tombol di satu sel.
+           Rentang yang keluar kisi dikembalikan ke 1×1. */
+        for (var i = 0; i < halamanBaru.Keys.Count; i++)
+        {
+            var t = halamanBaru.Keys[i];
+            if (t?.Span is null) continue;
+
+            var baris0 = i / kolom;
+            var kolom0 = i % kolom;
+            var c = Math.Min(t.Span.C, kolom - kolom0);
+            var r = Math.Min(t.Span.R, baris - baris0);
+            if (c < 1 || r < 1)
+            {
+                t.Span = null;
+                continue;
+            }
+            t.Span.C = c;
+            t.Span.R = r;
+            if (c <= 1 && r <= 1) t.Span = null;
+            if (t.Span is null) continue;
+
+            for (var dr = 0; dr < r; dr++)
+            {
+                for (var dc = 0; dc < c; dc++)
+                {
+                    var j = (baris0 + dr) * kolom + (kolom0 + dc);
+                    if (j != i && j < halamanBaru.Keys.Count) halamanBaru.Keys[j] = null;
+                }
+            }
+        }
+
         return halamanBaru;
     }
 

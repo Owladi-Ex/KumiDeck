@@ -30,6 +30,10 @@ kontrolnya. Versi APK Remote: 2.3.0 (versionCode 230).
   bila kombinasi sudah dipakai tombol lain — termasuk di halaman lain, aksi
   kedua, aksi kondisional, atau langkah urutan. Tombol yang bentrok ditandai
   garis putus-putus. Penyimpanan tetap boleh dilakukan.
+- **Ukuran tombol**: editor tombol punya pilihan ukuran 1×1, 2×1, 1×2, dan 2×2.
+  Tombol besar memakai beberapa slot sekaligus — cocok untuk widget jam, judul
+  lagu, dan label panjang. Berlaku sama di desktop dan Remote. Seret, tempel,
+  dan duplikat mengembalikan ukuran ke 1×1 agar tidak menabrak slot tetangga.
 
 ### Diperbaiki
 
@@ -59,12 +63,32 @@ kontrolnya. Versi APK Remote: 2.3.0 (versionCode 230).
   `Home`, dan `End`, baik di desktop maupun Remote.
 - **Petunjuk sekali pakai**: Remote memberi tahu sekali bahwa tombol beraksi
   ganda dijalankan dengan tekan lama.
+- **Tambah tombol lebih mudah**: modal *Tambah cepat* kini punya kotak cari di
+  atas (satu kolom untuk semua jenis), kepala dan kakinya menetap sehingga
+  tombol *Tutup* selalu terjangkau, dan posisi gulir dipertahankan saat
+  menambah beberapa tombol berturut-turut.
+- **Editor tombol lebih ringkas**: di layar lebar bidangnya disusun dua kolom
+  dengan pemilih ikon lebih pendek, jadi tombol *Simpan* terlihat tanpa
+  menggulir jauh.
+- **Tanpa scrollbar**: batang gulir disembunyikan di seluruh antarmuka — gulir
+  tetap bekerja lewat roda tetikus dan gestur sentuh.
+- **Kepala lebih bersih**: urutan ikon kini Soundboard, Templat, Cari, suara,
+  baki sistem, pin, kunci, Setelan, lalu tema. Sakelar yang aktif ditandai
+  warna ikon dan latar netral, bukan biru aksen. Sakelar tema ikut punya
+  sorotan hover seperti tombol lain.
+- **Kaki halaman dihapus**: alamat papan di kiri bawah dan keterangan "aksi
+  dijalankan…" di kanan bawah (serta penghitung halaman Remote) dibuang agar
+  tampilan lebih bersih.
 
 ### Catatan teknis
 
 - Model papan bertambah: `Setelan.teratas`, `Halaman.warna`, dan jenis aksi
   `tunggu`; semuanya dinormalkan di `DeckNormalizer` (jeda langkah dibatasi
   0–60.000 ms). `Halaman.warna` memakai format `#rrggbb` seperti warna aksen.
+- `Tombol.span` (`{c, r}`) menyimpan ukuran tombol; `DeckNormalizer` membatasi
+  rentang agar tetap di dalam kisi dan mengosongkan sel yang tertutup. Render
+  desktop dan Remote memakai `KD.susunKisi()` + `KD.pasangRentang()` dengan
+  penempatan `grid-column`/`grid-row` eksplisit.
 - Endpoint baru `POST /api/aksi/hentikan`; event SSE `urutan` memberi tahu
   desktop dan Remote saat ada urutan berjalan. Pembatalan memakai satu
   `CancellationTokenSource` bersama di `ActionRunner`, dan urutan berikutnya

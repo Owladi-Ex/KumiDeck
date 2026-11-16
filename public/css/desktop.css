@@ -113,22 +113,6 @@
   height: 100%;
 }
 
-.kd-kaki {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--kumi-space-2);
-  flex-wrap: wrap;
-  margin-top: var(--kumi-space-3);
-  padding-top: var(--kumi-space-2);
-  border-top: 1px solid var(--kumi-line);
-}
-
-.kd-kaki .kd-hint {
-  max-width: 52ch;
-  text-align: right;
-}
-
 /* ========================================================== 2. Daftar === */
 /* Di dalam tile, baris daftar tidak perlu jadi kartu (hindari kartu dalam
    kartu): permukaan dibiarkan rata dengan pemisah garis tipis. */
@@ -633,10 +617,6 @@
 
   .kd-editor-baris {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .kd-kaki .kd-hint {
-    text-align: left;
   }
 }
 
