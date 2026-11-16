@@ -8,7 +8,7 @@
    - /api/ TIDAK PERNAH disentuh: termasuk aliran SSE /api/events yang harus
      tetap mengalir langsung dari server.
    Naikkan CACHE_VERSION setiap kali aset statis berubah. */
-const CACHE_VERSION = "kumideck-v8";
+const CACHE_VERSION = "kumideck-v9";
 const PRA_CACHE = [
   "/favicon.svg",
   "/manifest.webmanifest",
@@ -20,6 +20,7 @@ const PRA_CACHE = [
   "/kumi/css/components.css",
   "/css/app.css",
   "/css/remote.css",
+  "/css/polish.css",
   "/kumi/js/kumi.js",
   "/js/bahasa.js",
   "/js/bahasa-tambahan.js",
@@ -102,13 +103,26 @@ self.addEventListener("fetch", (event) => {
     (async () => {
       const cache = await caches.open(CACHE_VERSION);
       const tersimpan = await cache.match(request, { ignoreSearch: false });
-      if (tersimpan) return tersimpan;
-      const respons = await fetch(request);
-      /* Jangan arsipkan respons galat atau HTML (jaga agar update tidak macet). */
-      if (respons && respons.ok && !adalahHtml(request, respons)) {
-        cache.put(request, respons.clone()).catch(() => null);
+
+      /* Ambil salinan baru di latar belakang (stale-while-revalidate): papan
+         tetap terbuka cepat dari cache, tetapi aset yang berubah ikut terpakai
+         pada pembukaan berikutnya tanpa harus menaikkan CACHE_VERSION. */
+      const segarkan = fetch(request)
+        .then((respons) => {
+          if (respons && respons.ok && !adalahHtml(request, respons)) {
+            cache.put(request, respons.clone()).catch(() => null);
+          }
+          return respons;
+        })
+        .catch(() => null);
+
+      if (tersimpan) {
+        event.waitUntil(segarkan);
+        return tersimpan;
       }
-      return respons;
+
+      const respons = await segarkan;
+      return respons || Response.error();
     })()
   );
 });

@@ -143,8 +143,13 @@
         var v = localStorage.getItem(SOUND_KEY);
         if (v === "off") enabled = false;
         else if (v === "on") enabled = true;
-        var vol = Number(localStorage.getItem(VOLUME_KEY));
-        if (isFinite(vol) && vol >= 0 && vol <= 1) volume = vol;
+        /* Kunci yang belum pernah disimpan mengembalikan null; Number(null) = 0
+           akan membuat papan senyap tanpa diminta, jadi periksa dulu. */
+        var volMentah = localStorage.getItem(VOLUME_KEY);
+        if (volMentah !== null && volMentah !== "") {
+          var vol = Number(volMentah);
+          if (isFinite(vol) && vol >= 0 && vol <= 1) volume = vol;
+        }
       } catch (err) {
         /* diabaikan */
       }

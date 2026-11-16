@@ -5135,6 +5135,7 @@
       isiFormSetelan();
       muatCadangan();
       renderPerangkatSetelan();
+      pilihTabSetelan(tabSetelanAktif, false);
       var infoVersi = $("#info-versi");
       if (infoVersi) {
         infoVersi.textContent =
@@ -5142,6 +5143,78 @@
       }
       bukaModal("modal-setelan");
     });
+    /* Setelan dua kolom: tab di kiri, isi tab di kanan. */
+    var tabSetelanAktif = "umum";
+
+    function pilihTabSetelan(nama, fokus) {
+      var tab = document.querySelector('#form-setelan [data-setelan-tab="' + nama + '"]');
+      if (!tab) return;
+      var semua = document.querySelectorAll("#form-setelan [data-setelan-tab]");
+      for (var i = 0; i < semua.length; i++) {
+        var t = semua[i];
+        var aktif = t === tab;
+        t.classList.toggle("is-active", aktif);
+        t.setAttribute("aria-selected", aktif ? "true" : "false");
+        t.setAttribute("tabindex", aktif ? "0" : "-1");
+        var panel = document.getElementById(t.getAttribute("aria-controls"));
+        if (panel) {
+          panel.hidden = !aktif;
+          panel.classList.toggle("is-active", aktif);
+        }
+      }
+      tabSetelanAktif = nama;
+      if (fokus) {
+        try {
+          tab.focus({ preventScroll: true });
+        } catch (err) {
+          tab.focus();
+        }
+      }
+    }
+
+    var navSetelan = $("#form-setelan .kd-setelan__nav");
+    if (navSetelan) {
+      /* Tab menumpuk di atas pada layar sempit; orientasi ARIA ikut berubah. */
+      var perbaruiOrientasiTab = function () {
+        navSetelan.setAttribute(
+          "aria-orientation",
+          window.innerWidth <= 640 ? "horizontal" : "vertical"
+        );
+      };
+      window.addEventListener("resize", perbaruiOrientasiTab);
+      perbaruiOrientasiTab();
+
+      navSetelan.addEventListener("click", function (ev) {
+        var tab = ev.target.closest("[data-setelan-tab]");
+        if (!tab) return;
+        var nama = tab.getAttribute("data-setelan-tab");
+        if (nama === tabSetelanAktif) {
+          KD.bunyi.ketuk();
+          return;
+        }
+        KD.bunyi.pindah();
+        pilihTabSetelan(nama, false);
+      });
+      navSetelan.addEventListener("keydown", function (ev) {
+        var tab = ev.target.closest("[data-setelan-tab]");
+        if (!tab) return;
+        var semua = Array.prototype.slice.call(
+          navSetelan.querySelectorAll("[data-setelan-tab]")
+        );
+        var i = semua.indexOf(tab);
+        var tujuan = -1;
+        if (ev.key === "ArrowDown" || ev.key === "ArrowRight") tujuan = (i + 1) % semua.length;
+        else if (ev.key === "ArrowUp" || ev.key === "ArrowLeft")
+          tujuan = (i - 1 + semua.length) % semua.length;
+        else if (ev.key === "Home") tujuan = 0;
+        else if (ev.key === "End") tujuan = semua.length - 1;
+        if (tujuan < 0) return;
+        ev.preventDefault();
+        KD.bunyi.pindah();
+        pilihTabSetelan(semua[tujuan].getAttribute("data-setelan-tab"), true);
+      });
+    }
+
     var pilihBahasa = $("#pilih-bahasa");
     if (pilihBahasa) {
       pilihBahasa.addEventListener("change", function () {

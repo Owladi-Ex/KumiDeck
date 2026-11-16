@@ -128,7 +128,14 @@ body.kumi-page .kd-shell {
 
 /* ============================================ 9. Kepala: bilah aksi rapi == */
 .kd-kepala__aksi {
-  gap: 10px;
+  gap: 8px;
+}
+
+/* Sakelar tampilan (suara, baki, pin, kunci, tema) dikelompokkan rapat supaya
+   kepala papan tetap satu baris rapi di jendela sempit. */
+.kd-kepala__ikon {
+  gap: 4px;
+  flex-wrap: nowrap;
 }
 
 .kd-kepala__aksi .kumi-btn {
@@ -383,7 +390,151 @@ body.kumi-page .kd-shell {
   }
 }
 
-/* ============================================ 16. Hormati gerak minimal === */
+/* ==================================== 16. Setelan: tab kiri, isi kanan ===== */
+/* Modal setelan lebih lebar supaya dua kolom terasa lapang, bukan sempit. */
+.kd-modal--setelan {
+  width: min(880px, 100%);
+}
+
+.kd-setelan {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: var(--kumi-space-3);
+  align-items: start;
+}
+
+/* Daftar tab: hanya latar tipis saat aktif, tanpa bingkai tebal. */
+.kd-setelan__nav {
+  display: grid;
+  gap: 2px;
+  align-content: start;
+  position: sticky;
+  top: 0;
+}
+
+.kd-setelan__tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--kumi-r-sm);
+  background: transparent;
+  color: var(--kumi-fg-muted);
+  font-family: var(--kumi-font-body);
+  font-size: var(--kumi-text-sm);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color var(--kumi-dur-fast) var(--kumi-ease),
+    background-color var(--kumi-dur-fast) var(--kumi-ease);
+}
+
+.kd-setelan__tab .kumi-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+.kd-setelan__tab:hover {
+  color: var(--kumi-fg);
+  background: rgba(128, 128, 128, 0.12);
+}
+
+.kd-setelan__tab:focus-visible {
+  outline: 2px solid var(--kumi-accent);
+  outline-offset: 2px;
+}
+
+.kd-setelan__tab.is-active {
+  color: var(--kumi-accent);
+  background: rgba(var(--kumi-accent-rgb), 0.12);
+}
+
+.kd-setelan__isi {
+  min-width: 0;
+}
+
+.kd-setelan__panel {
+  display: grid;
+  gap: var(--kumi-space-2);
+}
+
+.kd-setelan__panel[hidden] {
+  display: none;
+}
+
+/* Jendela sempit: tab pindah ke atas dan bisa digulir mendatar. */
+@media (max-width: 640px) {
+  .kd-setelan {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--kumi-space-2);
+  }
+
+  .kd-setelan__nav {
+    position: static;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .kd-setelan__nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .kd-setelan__tab {
+    padding: 0 14px;
+    white-space: nowrap;
+  }
+}
+
+/* ====================== 17. Sakelar kepala tanpa bingkai tebal =========== */
+/* Ikon di samping "Sunting meja" cukup warna + latar tipis sebagai penanda
+   aktif; bingkai 2px membuatnya terlihat seperti kotak yang menonjol. */
+.kd-kepala__aksi .kd-toggle,
+.kd-kepala__aksi .kd-toggle:hover,
+.kd-kepala__aksi .kd-toggle:active,
+.kd-kepala__aksi .kd-toggle[aria-pressed="true"] {
+  border-color: transparent;
+}
+
+.kd-kepala__aksi .kd-toggle[aria-pressed="true"] {
+  color: var(--kumi-accent);
+  background: rgba(var(--kumi-accent-rgb), 0.14);
+}
+
+.kd-kepala__aksi .kd-toggle:hover {
+  color: var(--kumi-fg);
+  background: rgba(128, 128, 128, 0.14);
+}
+
+.kd-kepala__aksi .kd-toggle[aria-pressed="true"]:hover {
+  color: var(--kumi-accent);
+  background: rgba(var(--kumi-accent-rgb), 0.2);
+}
+
+/* Tombol berlabel lain: garis 1px, bukan 2px. */
+.kd-kepala__aksi > .kumi-btn {
+  border-width: 1px;
+}
+
+/* Kepala Remote juga: ikon bergaris tipis, bukan bingkai tebal. */
+.kd-remote__aksi .kumi-btn {
+  border-width: 1px;
+}
+
+/* Label kepala sedikit lebih rapat supaya semuanya muat satu baris. */
+.kd-kepala__aksi > .kumi-btn:not(.kumi-btn--icon) {
+  padding-inline: 18px;
+}
+
+/* ============================================ 18. Hormati gerak minimal === */
 @media (prefers-reduced-motion: reduce) {
   .kd-key.menahan::after,
   .kd-grid.kd-masuk > .kd-key,

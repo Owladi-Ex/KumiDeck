@@ -359,7 +359,10 @@ window.KD_EN = {
   /* ---- suara antarmuka & umpan balik ---- */
   "Umum": "General",
   "Perilaku": "Behavior",
+  "Suara": "Sound",
   "Tampilan": "Appearance",
+  "Data": "Data",
+  "Bagian setelan": "Settings sections",
   "Umpan balik": "Feedback",
   "Suara ketukan": "Tap sound",
   "Bunyi halus saat tombol ditekan, halaman berganti, atau aksi gagal. Disimpan di perangkat ini.":
@@ -377,8 +380,7 @@ window.KD_EN = {
   "Aksi tekan lama:": "Hold action:",
   "Getaran": "Haptics",
   "Getar saat tombol ditekan": "Vibrate when a button is pressed",
-  "Hanya berfungsi di perangkat yang mendukung getaran.": "Only works on devices that support vibration.",
-  "Tampilkan ikon di baki sistem": "Show the icon in the system tray"
+  "Hanya berfungsi di perangkat yang mendukung getaran.": "Only works on devices that support vibration."
 };
 
 /* Pola untuk pesan server yang memuat angka/nama sehingga tidak bisa dicocokkan

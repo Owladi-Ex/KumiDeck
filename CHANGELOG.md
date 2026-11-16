@@ -48,9 +48,10 @@ kontrolnya. Versi APK Remote: 2.3.0 (versionCode 230).
 - **Suara interaksi**: ketukan tombol, tekan lama, dan ganti halaman kini punya
   isyarat berbeda. Suara bisa dimatikan, volumenya diatur lewat slider, dan
   tersimpan per perangkat.
-- **Setelan lebih rapi**: panel Setelan dibagi menjadi bagian Umum, Perilaku,
-  Suara antarmuka, dan Tampilan. Remote mendapat bagian Umpan balik (suara +
-  volume + tombol Uji) dan Getaran.
+- **Setelan lebih rapi**: panel Setelan kini dua kolom — daftar tab di kiri
+  (Umum, Perilaku, Suara, Tampilan, Data) dan isi tab di kanan. Tab bisa
+  dipindah dengan panah, `Home`, dan `End`. Remote mendapat bagian Umpan balik
+  (suara + volume + tombol Uji) dan Getaran.
 - **Animasi halus**: papan muncul bertahap saat pertama tampil dan saat pindah
   halaman, tab aktif menandai dirinya, dan tombol menampilkan bilah tipis
   selama ditahan. Semua animasi berhenti bila pengguna memilih gerak minimal.
