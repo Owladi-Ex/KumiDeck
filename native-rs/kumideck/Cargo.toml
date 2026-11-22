@@ -1,0 +1,68 @@
+[package]
+name = "kumideck"
+version = "2.4.0"
+edition = "2021"
+description = "KumiDeck 2.4.0 - inti Rust + WebView2"
+publish = false
+
+[dependencies]
+axum = "0.8"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "sync", "time"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tao = { version = "0.37", features = ["rwh_06"] }
+wry = "0.57"
+qrcode = { version = "0.15", features = ["svg"] }
+include_dir = "0.7"
+uuid = { version = "1", features = ["v4"] }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+native-tls = "0.2"
+tokio-native-tls = "0.3"
+rcgen = "0.13"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+hyper-util = { version = "0.1", features = ["server-auto", "tokio"] }
+
+[build-dependencies]
+winresource = "0.1"
+
+[dependencies.windows]
+version = "0.62"
+features = [
+  "Win32_Foundation",
+  "Win32_System_Threading",
+  "Win32_System_SystemInformation",
+  "Win32_Security",
+  "Win32_System_ProcessStatus",
+  "Win32_NetworkManagement_IpHelper",
+  "Win32_NetworkManagement_Ndis",
+  "Win32_Networking_WinSock",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_UI_Shell",
+  "Win32_System_Console",
+  "Win32_Graphics_Dxgi",
+  "Win32_Graphics_Dxgi_Common",
+  "Win32_System_Performance",
+  "Win32_System_Registry",
+  "Win32_System_Environment",
+  "Win32_System_Power",
+  "Win32_System_Shutdown",
+  "Win32_Media_Audio",
+  "Win32_Media_Audio_Endpoints",
+  "Win32_Media_Multimedia",
+  "Win32_System_Com",
+  "Win32_Storage_FileSystem",
+  "Win32_System_Com_Urlmon",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Foundation",
+  "Foundation_Collections",
+  "Media_Control",
+]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

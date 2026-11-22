@@ -58,6 +58,12 @@ Gunakan `-TanpaTandaTangan` bila hanya ingin memeriksa hasil build.
 naikkan keduanya setiap rilis agar Android mau memperbarui aplikasi yang sudah
 terpasang.
 
+Kunci debug dibuat di mesin yang mem-build, jadi APK dari mesin berbeda punya
+tanda tangan berbeda. Bila Android menolak memperbarui ("Aplikasi tidak
+terpasang"), copot pemasangan **KumiDeck Remote** versi lama lebih dulu — data
+papan tetap di komputer, hanya pengaturan alamat server di ponsel yang perlu
+diisi ulang.
+
 ## Memasang di ponsel
 
 1. Pindahkan APK ke ponsel (kabel USB, Google Drive, atau `adb install`).

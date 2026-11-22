@@ -3,6 +3,83 @@
 Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/) dan
 versi mengikuti [SemVer](https://semver.org/lang/id/).
 
+## [2.4.0] - 2026-11-23
+
+**"Inti Baru"** — KumiDeck ditulis ulang di atas inti Rust dengan antarmuka
+Rangka. `KumiDeck.exe` turun dari 72,89 MB menjadi 2,96 MB, siap dalam sekitar
+0,5 detik, dan .NET tidak lagi dibutuhkan. Papan, ikon, suara, token pasangan,
+sertifikat, dan seluruh endpoint 2.3.0 terbaca apa adanya; pemasang 2.4.0
+menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
+(versionCode 240).
+
+### Ditambahkan
+
+- **Widget pemantauan**: tombol widget baru `cpu`, `ram`, `gpu`, dan `jaringan`.
+  Angka besar di tengah, grafik area 60 detik (20 sampel) yang menskala sendiri,
+  dan penanda `high` saat pemakaian 85% ke atas. Jaringan menampilkan kecepatan
+  unduh dengan unggah di chip kecil; nilai yang tidak tersedia ditulis "tidak
+  tersedia", bukan angka palsu.
+- **Port dan proses**: layar baru yang mendaftar port yang sedang mendengar
+  beserta proses pemiliknya, dan bisa menghentikan proses setelah konfirmasi.
+  Endpoint `GET /api/ports` dan `POST /api/proc/end` bersifat tambahan.
+- **Folder tombol**: satu tombol bisa berisi tombol lain, bertingkat, dengan
+  tombol kembali dan jumlah isi di lencananya. Folder disunting dari panelnya
+  sendiri; pensil di kepala panel menyunting tombol foldernya.
+- **Label bervariabel**: `%jam%`, `%tanggal%`, `%volume%`, `%mic%`, `%lagu%`,
+  `%artis%`, `%halaman%`, `%komputer%`, dan `%clipboard%` diurai saat papan
+  digambar dan disegarkan tiap 30 detik.
+- **Syarat kontekstual lengkap**: jam (rentang), hari (kerja/libur/pilihan),
+  jaringan, proses atau jendela di depan, keadaan mikrofon, dan halaman aktif.
+  Penyunting syarat menyesuaikan bentuk isian menurut jenisnya.
+- **Arsip zip semua data**: ekspor `deck.json`, ikon, dan suara dalam satu
+  berkas, lalu pulihkan kembali dari berkas yang sama. Impor JSON 2.3.0 tetap
+  diterima; jenis berkas dikenali dari isinya, bukan dari namanya.
+- **Pintasan global** untuk menampilkan atau menyembunyikan papan
+  (`settings.pintasan`), dibaca ulang tiap 120 ms sehingga berlaku tanpa
+  membuka ulang aplikasi.
+- **Mulai otomatis dan profil otomatis** dipindahkan ke inti Rust: kunci
+  `HKCU\...\CurrentVersion\Run` yang sama, dan perpindahan halaman mengikuti
+  jendela depan lewat peristiwa `profil` pada SSE.
+
+### Diubah
+
+- **Antarmuka Rangka**: rel ikon ringkas, kepala papan, dan panel kanan yang
+  bisa dilipat. Setelan menjadi satu daftar vertikal yang mengisi sampai tepi
+  kanan, penggeser dan pemilih dibuat ulang, dan semua gerak memakai token
+  Rangka (120-320 ms).
+- **Papan mengisi seluruh jendela**: latar kanvas ungu dan sudut membulat dari
+  prototipe dihapus, jadi tidak ada bingkai berwarna di sekeliling aplikasi.
+- **HTTPS**: berkas `data/tls/kumideck.pfx` 2.3.0 tetap dipakai lewat SChannel,
+  jadi ponsel yang sudah memercayai sertifikat 2.3.0 tetap bisa memasang PWA.
+  Sertifikat baru dibuat ECDSA dan disajikan rustls; `/sertifikat.cer` tetap
+  menyediakan berkas DER untuk Android.
+- **Nama varian** `hijau` dari papan lama dinormalkan menjadi `lime` saat papan
+  dibaca, tanpa mengubah arti warnanya.
+- Aset antarmuka tidak lagi disimpan peramban selama sehari: HTML dan service
+  worker dikirim `no-store`, berkas lain `no-cache`, jadi pembaruan aplikasi
+  langsung terpakai di WebView2 maupun PWA yang sudah dipasang.
+- **APK Remote 2.4.0 memakai kunci debug baru**, karena kunci 2.3.0 tidak ikut
+  terbawa. Bila Android menolak memperbarui, copot pemasangan *KumiDeck Remote*
+  versi lama lalu pasang 2.4.0; papan dan data tetap ada di komputer.
+- Pemutar soundboard tetap memakai perangkat default Windows dan tidak pernah
+  mengalihkan endpoint.
+
+### Dihapus
+
+- **Ikon baki (tray) dan menunya**: tugasnya digantikan pintasan global
+  tampil/sembunyikan. `GET/POST /api/tray` tetap menjawab agar klien lama tidak
+  gagal.
+- **Tombol bisukan mikrofon di kepala aplikasi**: aksinya tetap tersedia di
+  papan dan di Remote.
+- **Ekspor papan PNG** (tangkapan WebView2 di 2.3.0): belum dipindahkan ke inti
+  Rust; `/api/papan/ekspor` menjawab 501 dengan pesan yang jelas, dan tombolnya
+  tidak ditampilkan.
+- **Panel templat papan** dan **pemilih aplikasi terpasang** di UI. Endpoint
+  `/api/apps` tetap ada untuk klien lama, dan aksi "Buka aplikasi atau alamat"
+  kini memakai kolom target seperti di editor 2.3.0.
+- Paket desain `public/kumi/` beserta `public/css/` dan JS 2.3.0 (`core.js`,
+  `desktop.js`, `remote.js`, `bahasa.js`, `bahasa-tambahan.js`).
+
 ## [2.3.0] - 2026-11-16
 
 **"Geser & Atur"** — papan lebih luwes disusun, dan Remote ikut mendapat

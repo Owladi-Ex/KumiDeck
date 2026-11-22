@@ -40,3 +40,9 @@ desktop.ini
 *.log
 *.tmp
 
+# Hasil build inti Rust (cargo)
+native-rs/**/target/
+
+# Catatan internal (Obsidian)
+Documentation/
+

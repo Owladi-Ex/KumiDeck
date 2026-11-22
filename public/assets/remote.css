@@ -1,0 +1,137 @@
+/* Remote ponsel: Rangka penuh layar, tanpa cangkang jendela. */
+
+body.kd-remote-page {
+  min-height: 100dvh;
+  background: var(--bg-muted);
+  overscroll-behavior: none;
+}
+
+.kd-phone-app {
+  width: 100%;
+  max-width: 640px;
+  height: 100dvh;
+  margin: 0 auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+@media (min-width: 641px) {
+  .kd-phone-app {
+    height: min(900px, calc(100dvh - 24px));
+    margin: 12px auto;
+    border: 1px solid var(--line-strong);
+    border-radius: 32px;
+    box-shadow: var(--shadow-shell);
+  }
+}
+
+.kd-phone-app .kd-phone-head {
+  padding-top: max(14px, env(safe-area-inset-top));
+}
+
+.kd-phone-app .kd-phone-body {
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+
+.kd-phone-app .kd-phone-tabbar {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+/* Panel Suara dan Setelan memakai ruang gulir yang sama dengan papan. */
+.kd-phone-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 4px;
+}
+.kd-phone-panel[hidden] { display: none; }
+
+.kd-phone-panel .kd-set-card { padding: 14px 16px; }
+.kd-phone-panel .kd-set-card + .kd-set-card { margin-top: 0; }
+.kd-phone-panel .kd-sb { padding: 0; }
+
+/* Baris media di kaki papan: judul, artis, tombol putar/jeda. */
+.kd-rm-now-teks { min-width: 0; flex: 1; }
+.kd-rm-now-teks b,
+.kd-rm-now-teks span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Lapis pasangan: tampil saat belum ada token atau token ditolak. */
+.kd-rm-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--bg-muted) 88%, transparent);
+  backdrop-filter: blur(6px);
+}
+.kd-rm-veil[hidden] { display: none; }
+
+.kd-rm-card {
+  width: min(400px, 100%);
+  padding: 24px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lift);
+}
+.kd-rm-card .kd-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 14px;
+  border-radius: var(--r-sm);
+  background: var(--brand-soft);
+  color: var(--brand-text);
+}
+.kd-rm-card .kd-mark .icon { width: 22px; height: 22px; }
+.kd-rm-card h2 { margin: 0 0 6px; font: 600 19px/25px var(--font-display); }
+.kd-rm-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 18px 0 14px;
+}
+.kd-rm-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.kd-rm-input {
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--bg-input);
+  font: 600 20px/48px var(--font-mono);
+  letter-spacing: 0.18em;
+  text-align: center;
+  color: var(--text);
+}
+.kd-rm-input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.kd-rm-galat {
+  font-size: 12px;
+  color: var(--danger);
+}
+.kd-rm-galat[hidden] { display: none; }
+
+/* Papan Remote memakai kolom papan sesungguhnya, bukan 5 kolom pratinjau. */
+.kd-phone-app .kd-board {
+  --kd-cols: var(--kd-cols-rm, 5);
+  grid-template-columns: repeat(var(--kd-cols), minmax(0, 1fr));
+}
+.kd-phone-app .kd-tile { aspect-ratio: 1.05; }
+.kd-phone-app .kd-tile[data-span] { aspect-ratio: auto; }

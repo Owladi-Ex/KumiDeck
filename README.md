@@ -4,18 +4,18 @@ Papan tombol (stream deck) lokal untuk Windows: tombol-tombol di layar komputer
 menjalankan aksi di komputer itu sendiri, dan ponsel/tablet bisa dipakai sebagai
 papan tombol nirkabel lewat Wi-Fi.
 
-Mulai versi 2.0.0 KumiDeck adalah **aplikasi native Windows 11** (C#/.NET 10 +
-WPF + WebView2): satu berkas `KumiDeck.exe` mandiri, tanpa Node.js, tanpa
-konsol, dan tanpa peramban `--app`. Antarmukanya tetap UI web KumiDeck
-(**Kumi Design System**) yang dibawa di dalam exe.
+Mulai versi 2.4.0 KumiDeck adalah **aplikasi native Windows** dengan **inti
+Rust** (`wry`/`tao` + `axum`) dan antarmuka web **Rangka** yang ditanam di dalam
+exe: satu berkas `KumiDeck.exe` sekitar 3 MB, tanpa .NET, tanpa Node.js, dan
+tanpa konsol.
 
 ## Unduh
 
 Rilis siap pakai tersedia di halaman **Releases**:
 
-- **Pemasang:** `KumiDeck-<versi>-setup.exe` (mis. `KumiDeck-2.0.1-setup.exe`) —
-  pasang, lalu jalankan KumiDeck dari
-  menu Mulai. Bisa juga membuat pintasan Desktop dan mulai otomatis.
+- **Pemasang:** `KumiDeck-<versi>-setup.exe` — pasang, lalu jalankan KumiDeck
+  dari menu Mulai. Bisa juga membuat pintasan Desktop dan mulai otomatis.
+  Pemasang 2.4.0 menggantikan 2.3.0 di tempat dan **tidak** menghapus data.
 - **Portabel (tanpa pemasangan):** `KumiDeck-<versi>-portabel.zip` — ekstrak,
   lalu klik dua kali **`Jalankan KumiDeck.cmd`** (atau `KumiDeck.exe`).
 
@@ -27,11 +27,13 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
 
 | Path | Isi |
 |---|---|
-| `native/KumiDeck/` | **Aplikasi native**: server lokal (HTTP/HTTPS, SSE, API), eksekusi aksi, pemindai aplikasi, soundboard, mikrofon, ikon, tray, autostart, QR, jendela WPF + WebView2 |
-| `public/` | Antarmuka web: UI desktop (`index.html`), UI Remote (`remote.html`), CSS/JS aplikasi, PWA (manifest + service worker), `kumi/` (paket desain) |
-| `assets/` | Ikon aplikasi & ikon baki sistem (`.ico`) |
-| `server/` | Server Node.js versi lama (1.x) sebagai rujukan; tidak dipakai aplikasi native |
-| `scripts/` | Perkakas build rilis (internal, tidak ikut ke repositori) |
+| `native-rs/kumideck/` | **Aplikasi 2.4.0**: inti Rust — server lokal (HTTP/HTTPS, SSE, API), eksekusi aksi, pemantauan, port & proses, pemindai aplikasi, soundboard, mikrofon, ikon, mulai otomatis, QR, jendela `tao` + WebView2 |
+| `prototipe/` | Prototipe UI Rangka (`kumideck-2.4.html`) dan bagian sumbernya di `parts/` |
+| `public/` | Antarmuka yang ikut ke exe: `index.html`, `remote.html`, `assets/` (Rangka + CSS aplikasi + sprite), `js/`, PWA (manifest + service worker) |
+| `assets/` | Ikon aplikasi & sprite ikon Kumi untuk perakitan UI |
+| `native/` | Aplikasi .NET 2.3.0 — rujukan bacaan, tidak dibangun lagi |
+| `server/` | Server Node.js versi lama (1.x) sebagai rujukan dan tempat empat uji otomatis |
+| `scripts/` | Perkakas build rilis dan perakit UI |
 | `CHANGELOG.md` | Riwayat versi |
 | `LICENSE` | Lisensi MIT |
 | `data/` | **tidak** ada di repo — dibuat saat pertama dijalankan (papan, token pasangan, ikon & suara unggahan, sertifikat) |
@@ -41,48 +43,45 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
 - Papan tombol berhalaman (kolom 3–6, baris 2–4) dengan ikon, warna, dan varian tombol.
 - Aksi: pintasan papan ketik, mengetik teks, buka aplikasi/berkas/tautan,
   permintaan HTTP (dengan header tambahan), kontrol media, pindah halaman,
-  urutan aksi, tindakan jendela, volume sistem, daya komputer, aksi bersyarat
-  menurut aplikasi di depan, serta menjalankan skrip `.bat`/`.cmd`/`.ps1`/`.exe`
-  dengan izin sekali per tombol.
+  urutan aksi, tindakan jendela, volume sistem, daya komputer, aksi bersyarat,
+  serta menjalankan skrip `.bat`/`.cmd`/`.ps1`/`.exe` dengan izin sekali per tombol.
+- **Syarat kontekstual**: jam, hari kerja/libur, jaringan, proses atau jendela di
+  depan, keadaan mikrofon, dan halaman aktif.
 - **Dua aksi per tombol**: ketuk menjalankan aksi utama, tekan lama menjalankan
   aksi kedua — di papan desktop maupun Remote.
 - **Umpan balik halus**: isyarat suara untuk ketukan, tekan lama, dan ganti
-  halaman (volume bisa diatur atau dimatikan per perangkat), animasi masuk
-  papan, serta navigasi tombol dengan panah.
-- **Templat papan bawaan**: Streaming, Ngoding, Media, dan Kerja, siap diisi
-  dalam satu klik.
+  halaman (volume bisa diatur atau dimatikan per perangkat).
+- **Templat papan bawaan**: Streaming, Ngoding, Media, dan Kerja.
 - **Urungkan/ulangi** (`Ctrl+Z`/`Ctrl+Y`) untuk perubahan papan.
 - **Soundboard**: unggah berkas atau tautan dan atur volume per suara; semua
-  suara diputar lewat perangkat default Windows, tanpa mengubah endpoint
-  sistem (pemisahan channel lewat aplikasi mixer seperti Wave Link).
-- **Mute/unmute mikrofon** dari tombol papan.
+  suara diputar lewat perangkat default Windows, tanpa mengubah endpoint sistem.
+- **Mute/unmute mikrofon** dari tombol papan dan Remote.
 - **Ikon asli aplikasi** diekstrak otomatis saat menambah aplikasi terpasang.
-- **Widget** jam, tanggal, dan lagu yang sedang diputar.
+- **Widget**: jam, tanggal, lagu yang sedang diputar, serta **pemantauan CPU,
+  RAM, GPU, dan jaringan** dalam bentuk grafik 60 detik.
+- **Layar Port dan proses**: port yang sedang mendengar beserta proses
+  pemiliknya, dan tombol hentikan proses setelah konfirmasi.
+- **Folder tombol** bertingkat, dengan tombol kembali dan jumlah isi.
+- **Label bervariabel** (`%jam%`, `%volume%`, `%lagu%`, `%halaman%`, …).
 - **Tambah cepat**, daftar aplikasi terpasang, perekam pintasan.
-- **Seret tombol antar halaman** (lepas ke slot kosong, tukar posisi, atau lepas
-  di tab halaman) dan **salin/tempel tombol** lewat klik kanan atau
-  `Ctrl+C`/`Ctrl+V`/`Ctrl+Shift+V` (tempel gaya hanya menyalin ikon/varian/warna).
-- **Pin "selalu di atas"** untuk jendela papan, tersimpan di setelan.
-- **Latar per halaman** dengan warna pilihan, tampil di desktop dan Remote.
-- **Pemangkas ikon** bawaan: geser, perbesar, lalu simpan PNG 256×256 (<512 KB).
-- **Jeda urutan sampai 60 detik** per langkah, jenis langkah "Tunggu", dan
-  tombol **Hentikan urutan** di desktop maupun Remote.
+- **Seret tombol antar halaman** dan **salin/tempel tombol** lewat klik kanan
+  atau `Ctrl+C`/`Ctrl+V`/`Ctrl+Shift+V`.
+- **Pin "selalu di atas"**, **latar per halaman**, **pemangkas ikon** bawaan.
+- **Jeda urutan sampai 30 detik** per langkah dan tombol **Hentikan urutan**.
 - **Pemeriksa bentrok pintasan**: editor memperingatkan kombinasi yang dipakai
-  lebih dari satu tombol, dan tombol yang bentrok ditandai di papan.
-- Kunci tata letak, impor/ekspor papan (JSON).
+  lebih dari satu tombol.
+- Kunci tata letak, impor/ekspor papan (JSON), **arsip zip** semua data.
 - **Pencarian tombol Ctrl+K**, duplikat halaman/tombol.
-- **Cadangan otomatis** 10 versi terakhir + pulihkan, serta unduh log dari setelan.
-- **Warna aksen** tema dan **ekspor papan PNG** (aplikasi desktop).
-- Profil otomatis, penanda status, tray icon, mulai otomatis.
-- **Skala tombol per halaman** (100–140%) untuk layar sentuh besar.
+- **Cadangan otomatis** 10 versi terakhir + pulihkan, serta unduh log.
+- **Warna aksen** tema dan **skala tombol per halaman** (100–140%).
+- **Pintasan global** untuk menampilkan atau menyembunyikan papan, **mulai
+  otomatis**, dan **profil otomatis** (halaman mengikuti jendela depan).
 - Klien Remote di ponsel/tablet (dipasangkan lewat kode QR) dengan halaman awal
-  sendiri, mode kios/layar tetap menyala, dan token per perangkat sehingga bisa
-  dilupakan satu per satu. Bisa dipasang sebagai **APK KumiDeck Remote**
-  (Android, tanpa sertifikat) atau sebagai PWA bila tersedia HTTPS.
-- Jendela native Windows 11: title bar sendiri (perkecil/perbesar/tutup),
-  kepala aplikasi dipakai untuk menggeser jendela, tata letak padat tanpa
-  batang gulir halaman.
-- Mode terang/gelap, riwayat aktivitas, daftar perangkat, bahasa Indonesia/English.
+  sendiri, mode kios, dan token per perangkat. Bisa dipasang sebagai **APK
+  KumiDeck Remote** atau sebagai PWA bila HTTPS aktif.
+- Jendela native: title bar sendiri (perkecil/perbesar/tutup), kepala aplikasi
+  dipakai untuk menggeser jendela.
+- Mode terang/gelap, riwayat aktivitas, daftar perangkat.
 
 ## Syarat
 
@@ -105,43 +104,50 @@ Untuk memasang Remote sebagai aplikasi di Android ada dua pilihan:
   `KumiDeck-<versi>-remote.apk` dari halaman rilis, izinkan pemasangan dari
   sumber tak dikenal, lalu isi alamat server saat aplikasi pertama dibuka.
   Sumber dan cara membangunnya ada di [`android/README.md`](android/README.md).
-- **PWA lewat HTTPS**: Chrome Android hanya menawarkan “Pasang aplikasi” pada
-  konteks aman (`https://` dengan sertifikat dipercaya), jadi mode HTTPS di
-  bawah ini diperlukan.
+- **PWA lewat HTTPS**: Chrome Android hanya menawarkan "Pasang aplikasi" pada
+  konteks aman. HTTPS menyala dari Setelan (bawaan 2.4.0: aktif); sertifikat
+  lokal dibuat saat pertama dijalankan dan bisa diunduh dari
+  `https://<ip-komputer>:4174/sertifikat.cer`. Sertifikat PFX 2.3.0 tetap
+  dipakai, jadi ponsel yang sudah memercayainya tidak perlu mengulang.
 
-Dari kode sumber (butuh .NET SDK 10):
+## Dari kode sumber
+
+Butuh Rust (stable) dan Visual Studio Build Tools (C++).
 
 ```powershell
-git clone https://github.com/Owladi-Ex/KumiDeck.git
-cd KumiDeck
-dotnet run --project native\KumiDeck
+cargo run --release --manifest-path native-rs\kumideck\Cargo.toml
 ```
 
-Membuat `KumiDeck.exe` tunggal:
+Membuat `KumiDeck.exe` tunggal (UI dirakit dulu, lalu ditanam ke exe):
 
 ```powershell
 pwsh -File scripts\buat-exe.ps1      # -> _exe\KumiDeck.exe
 ```
 
-Mode HTTPS lokal (diperlukan agar ponsel Android mau memasang PWA):
+Mengubah antarmuka: sunting `prototipe/parts/*`, lalu rakit ulang ke `public\`.
 
 ```powershell
-$env:KD_HTTPS = "1"
-dotnet run --project native\KumiDeck
+powershell -ExecutionPolicy Bypass -File scripts\ui-rakit.ps1
 ```
 
-Buka `https://127.0.0.1:4173`, pasang sertifikat yang disajikan di
-`http://<ip-komputer>:4174/sertifikat.cer`, lalu buka
-`https://<ip-komputer>:4173/remote`.
+Pemasang Inno Setup (butuh ISCC.exe dari Inno Setup 6 atau 7):
+
+```powershell
+pwsh -File scripts\buat-installer.ps1
+```
+
+Saat pengembangan, `cargo run` membaca `public/` langsung dari disk, jadi
+suntingan UI terlihat setelah halaman dimuat ulang. Rilis memakai berkas
+tertanam.
 
 ## Data & keamanan
 
 - Data disimpan di `data/` **di samping exe** (mode portabel). Bila folder itu
   tidak bisa ditulis (mis. dipasang di `Program Files`), data dipindah otomatis
   ke `%LOCALAPPDATA%\KumiDeck\data`.
-- Karena ini server lokal, akses dari perangkat lain di jaringan yang sama
-  memakai **kode pasangan** (token) yang dibuat otomatis saat pertama dijalankan
-  dan disimpan di `data/secret.json`.
+- Akses dari perangkat lain di jaringan yang sama memakai **kode pasangan**
+  (token) yang dibuat otomatis saat pertama dijalankan dan disimpan di
+  `data/secret.json`. Percobaan pasangan dibatasi 10 per menit per alamat IP.
 - Folder `data/` **tidak** masuk repositori (`.gitignore`): berisi papan, token,
   ikon unggahan, suara, dan sertifikat TLS. Mencopot pemasangan tidak
   menghapusnya.
@@ -150,7 +156,7 @@ Buka `https://127.0.0.1:4173`, pasang sertifikat yang disajikan di
 
 ## Uji
 
-Uji lama untuk server Node (versi 1.x) masih bisa dijalankan:
+Empat uji otomatis yang ada masih untuk server Node (versi 1.x):
 
 ```powershell
 node server/qr.test.js
@@ -159,14 +165,9 @@ node server/appicons.test.js
 node server/audio.test.js
 ```
 
-Tidak ada langkah build untuk antarmuka: berkas di `public/` dibawa apa adanya
-ke dalam exe.
+Inti Rust 2.4.0 belum punya uji otomatis; pemeriksaannya dilakukan lewat
+endpoint dan UI seperti tercatat di rencana implementasi.
 
 ## Lisensi
 
 MIT — lihat `LICENSE`.
-
----
-
-Kumi Design System adalah paket desain terpisah yang disertakan di
-`public/kumi/`; jangan mengubah isinya dari dalam repo ini.

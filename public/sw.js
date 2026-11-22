@@ -1,6 +1,6 @@
 /* KumiDeck — service worker untuk klien Android (/remote).
    Aturan cache:
-   - Aset statis same-origin (/css/, /js/, /kumi/, /icons/, favicon, manifest)
+   - Aset statis same-origin (/assets/, /js/, /icons/, favicon, manifest)
      dilayani cache-first supaya papan terbuka cepat dan tetap tampil saat
      jaringan Wi-Fi putus sebentar.
    - HTML selalu diambil dari jaringan (network-first, tanpa cache) supaya
@@ -8,7 +8,7 @@
    - /api/ TIDAK PERNAH disentuh: termasuk aliran SSE /api/events yang harus
      tetap mengalir langsung dari server.
    Naikkan CACHE_VERSION setiap kali aset statis berubah. */
-const CACHE_VERSION = "kumideck-v15";
+const CACHE_VERSION = "kumideck-v18";
 const PRA_CACHE = [
   "/favicon.svg",
   "/manifest.webmanifest",
@@ -16,23 +16,16 @@ const PRA_CACHE = [
   "/icons/icon-512.png",
   "/icons/icon-maskable-512.png",
   "/icons/apple-touch-icon.png",
-  "/kumi/css/kumi.css",
-  "/kumi/css/components.css",
-  "/css/app.css",
-  "/css/remote.css",
-  "/css/polish.css",
-  "/kumi/js/kumi.js",
-  "/js/bahasa.js",
-  "/js/bahasa-tambahan.js",
-  "/js/core.js",
-  "/js/remote.js",
-  "/kumi/fonts/inter-latin.woff2",
-  "/kumi/fonts/space-grotesk-latin.woff2",
-  "/kumi/assets/icons.svg",
+  "/assets/rangka.css",
+  "/assets/app.css",
+  "/assets/remote.css",
+  "/assets/sprite.svg",
+  "/js/app.js",
+  "/js/remote-rangka.js",
 ];
 
 /* Jalur yang boleh memakai cache-first. */
-const AWALAN_BOLEH = ["/css/", "/js/", "/kumi/", "/icons/"];
+const AWALAN_BOLEH = ["/assets/", "/js/", "/icons/"];
 const BERKAS_BOLEH = ["/favicon.svg", "/favicon.ico", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
