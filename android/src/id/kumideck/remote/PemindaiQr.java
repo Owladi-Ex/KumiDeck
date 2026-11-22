@@ -67,10 +67,14 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
     private static final String PREFS = "kumideck-remote";
     private static final String KEY_PUTAR = "putarKamera";
 
-    private static final int WARNA_LATAR = 0xFF000000;
-    private static final int WARNA_TEKS = 0xFFF4F4F0;
-    private static final int WARNA_REDUP = 0xFF9A9AA2;
-    private static final int WARNA_AKSEN = 0xFFD9F25B;
+    /* Palet terang Rangka. Pratinjau kamera mengisi layar, jadi teks duduk di
+       atas kartu putih tipis, bukan langsung di atas gambar kamera. */
+    private static final int WARNA_LATAR = 0xFFF5F5F7;
+    private static final int WARNA_KARTU = 0xF7FFFFFF;
+    private static final int WARNA_TEKS = 0xFF16171D;
+    private static final int WARNA_REDUP = 0xFF6C6D78;
+    private static final int WARNA_GARIS = 0xFFE2E2E7;
+    private static final int WARNA_AKSEN = 0xFF4F5FDB;
 
     private static final int ISI = ViewGroup.LayoutParams.MATCH_PARENT;
     private static final int BUNGKUS = ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -139,7 +143,12 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
 
         LinearLayout kepala = new LinearLayout(aktivitas);
         kepala.setOrientation(LinearLayout.VERTICAL);
-        kepala.setPadding(dp(18), dp(18), dp(18), dp(18));
+        kepala.setPadding(dp(18), dp(14), dp(18), dp(14));
+        kepala.setBackground(kartu(18));
+        FrameLayout.LayoutParams lpKepala = new FrameLayout.LayoutParams(BUNGKUS, BUNGKUS,
+            Gravity.TOP | Gravity.START);
+        lpKepala.setMargins(dp(14), dp(14), dp(14), dp(14));
+        akar.addView(kepala, lpKepala);
 
         TextView judul = new TextView(aktivitas);
         judul.setText("Pindai kode QR");
@@ -148,10 +157,10 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
         kepala.addView(judul);
 
         TextView putar = new TextView(aktivitas);
-        putar.setText("↺ Putar kiri");
+        putar.setText("Putar kiri");
         putar.setTextColor(WARNA_AKSEN);
         putar.setTextSize(13);
-        putar.setPadding(0, dp(10), 0, 0);
+        putar.setPadding(0, dp(8), 0, 0);
         putar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -160,40 +169,47 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
         });
         kepala.addView(putar);
 
-        akar.addView(kepala,
-            new FrameLayout.LayoutParams(BUNGKUS, BUNGKUS, Gravity.TOP | Gravity.START));
-
         TextView tutup = new TextView(aktivitas);
         tutup.setText("Tutup");
         tutup.setTextColor(WARNA_AKSEN);
         tutup.setTextSize(15);
-        tutup.setPadding(dp(18), dp(18), dp(18), dp(18));
+        tutup.setPadding(dp(18), dp(12), dp(18), dp(12));
+        tutup.setBackground(kartu(999));
         tutup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 batal();
             }
         });
-        akar.addView(tutup,
-            new FrameLayout.LayoutParams(BUNGKUS, BUNGKUS, Gravity.TOP | Gravity.END));
+        FrameLayout.LayoutParams lpTutup = new FrameLayout.LayoutParams(BUNGKUS, BUNGKUS,
+            Gravity.TOP | Gravity.END);
+        lpTutup.setMargins(dp(14), dp(14), dp(14), dp(14));
+        akar.addView(tutup, lpTutup);
+
+        LinearLayout kaki = new LinearLayout(aktivitas);
+        kaki.setOrientation(LinearLayout.VERTICAL);
+        kaki.setGravity(Gravity.CENTER);
+        kaki.setPadding(dp(20), dp(14), dp(20), dp(14));
+        kaki.setBackground(kartu(18));
 
         pesan = new TextView(aktivitas);
         pesan.setText("Arahkan kamera ke kode QR di layar komputer.");
         pesan.setTextColor(WARNA_TEKS);
         pesan.setTextSize(13);
         pesan.setGravity(Gravity.CENTER);
-        pesan.setPadding(dp(24), dp(16), dp(24), dp(28));
-        akar.addView(pesan,
-            new FrameLayout.LayoutParams(ISI, BUNGKUS, Gravity.BOTTOM));
+        kaki.addView(pesan);
 
         TextView catatan = new TextView(aktivitas);
-        catatan.setText("Kode QR di layar Remote komputer sudah memuat alamat dan kuncinya. Gambar miring? Tekan ↺ Putar kiri.");
+        catatan.setText("Kode QR di layar Remote komputer sudah memuat alamat dan kuncinya. Gambar miring? Tekan Putar kiri.");
         catatan.setTextColor(WARNA_REDUP);
         catatan.setTextSize(11);
         catatan.setGravity(Gravity.CENTER);
-        catatan.setPadding(dp(24), 0, dp(24), dp(16));
-        akar.addView(catatan,
-            new FrameLayout.LayoutParams(ISI, BUNGKUS, Gravity.BOTTOM));
+        catatan.setPadding(0, dp(8), 0, 0);
+        kaki.addView(catatan);
+
+        FrameLayout.LayoutParams lpKaki = new FrameLayout.LayoutParams(ISI, BUNGKUS, Gravity.BOTTOM);
+        lpKaki.setMargins(dp(14), dp(14), dp(14), dp(14));
+        akar.addView(kaki, lpKaki);
     }
 
     public View tampilan() {
@@ -632,6 +648,17 @@ public class PemindaiQr implements TextureView.SurfaceTextureListener {
         return Math.round(android.util.TypedValue.applyDimension(
             android.util.TypedValue.COMPLEX_UNIT_DIP, nilai,
             aktivitas.getResources().getDisplayMetrics()));
+    }
+
+    /* Kartu putih tipis dengan sudut membulat dan garis halus, sama seperti
+       permukaan Rangka. Dipakai kepala, tombol tutup, dan kaki pesan. */
+    private GradientDrawable kartu(int radius) {
+        GradientDrawable d = new GradientDrawable();
+        d.setShape(GradientDrawable.RECTANGLE);
+        d.setColor(WARNA_KARTU);
+        d.setCornerRadius(dp(radius));
+        d.setStroke(Math.max(1, dp(1)), WARNA_GARIS);
+        return d;
     }
 
     /* ------------------------------------------------- permukaan pratinjau --- */

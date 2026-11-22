@@ -318,9 +318,10 @@ fn jaringan_cocok(nilai: &str) -> bool {
     }
 
     /* Cari SSID lewat netsh; hanya dipakai saat tombol bersyarat ditekan. */
-    let keluaran = std::process::Command::new("netsh")
-        .args(["wlan", "show", "interfaces"])
-        .output();
+    let mut netsh = std::process::Command::new("netsh");
+    netsh.args(["wlan", "show", "interfaces"]);
+    crate::core::tanpa_jendela(&mut netsh);
+    let keluaran = netsh.output();
     match keluaran {
         Ok(o) => String::from_utf8_lossy(&o.stdout)
             .lines()

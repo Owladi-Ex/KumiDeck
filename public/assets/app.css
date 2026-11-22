@@ -1111,7 +1111,7 @@ body.kd-body {
 .kd-pill-ink.is-on { opacity: 1; }
 .kd-pill-ink[data-tone="brand"] { background: var(--brand-soft); box-shadow: none; }
 .kd-seg .kd-pill-ink { border-radius: 7px; }
-.kd-phone-tabs .kd-pill-ink { border-radius: var(--r-xs); }
+.kd-phone-tabs .kd-pill-ink { border-radius: 999px; }
 .kd-phone-tabbar .kd-pill-ink { border-radius: var(--r-sm); }
 
 .kd-swatches { display: flex; gap: 6px; }
@@ -1305,7 +1305,7 @@ body.kd-body {
   scrollbar-width: none;
 }
 .kd-phone-tabs::-webkit-scrollbar { display: none; }
-.kd-phone-tabs .tab { position: relative; z-index: 1; height: 30px; padding: 0 10px; border-radius: var(--r-xs); font-size: 12px; }
+.kd-phone-tabs .tab { position: relative; z-index: 1; height: 30px; padding: 0 10px; border-radius: 999px; font-size: 12px; }
 .kd-phone-tabs .tab::after { display: none; }
 
 .kd-phone-body {

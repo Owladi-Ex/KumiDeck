@@ -160,3 +160,41 @@ body.kd-remote-page {
 }
 .kd-phone-app .kd-tile { aspect-ratio: 1.05; }
 .kd-phone-app .kd-tile[data-span] { aspect-ratio: auto; }
+
+/* Layar penuh: sisakan papan dan satu tombol bulat untuk keluar. */
+.kd-phone-app.is-kiosk .kd-phone-head {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: auto;
+  z-index: 90;
+  padding: max(8px, env(safe-area-inset-top)) 8px 8px;
+  background: transparent;
+}
+.kd-phone-app.is-kiosk .kd-phone-title,
+.kd-phone-app.is-kiosk #kdRmUlang { display: none; }
+.kd-phone-app.is-kiosk #kdRmKios {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-card) 78%, transparent);
+  box-shadow: 0 1px 2px rgba(18, 22, 48, 0.18), inset 0 0 0 1px var(--line);
+  color: var(--text-2);
+  opacity: 0.5;
+  backdrop-filter: blur(10px);
+  transition: opacity var(--m-1) var(--e-out), background-color var(--m-1) var(--e-out);
+}
+.kd-phone-app.is-kiosk #kdRmKios:hover,
+.kd-phone-app.is-kiosk #kdRmKios:focus-visible,
+.kd-phone-app.is-kiosk #kdRmKios:active {
+  opacity: 1;
+  background: var(--bg-card);
+}
+.kd-phone-app.is-kiosk .kd-phone-tabs,
+.kd-phone-app.is-kiosk .kd-phone-now,
+.kd-phone-app.is-kiosk .kd-phone-vol,
+.kd-phone-app.is-kiosk .kd-phone-tabbar { display: none; }
+.kd-phone-app.is-kiosk .kd-phone-body { padding: 0; gap: 0; }
+.kd-phone-app.is-kiosk .kd-phone-stage {
+  padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+}

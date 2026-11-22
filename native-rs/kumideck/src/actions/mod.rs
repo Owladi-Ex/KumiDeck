@@ -203,6 +203,7 @@ fn http(aksi: &Aksi) -> (bool, String, Value) {
         }
     }
     cmd.arg(url);
+    crate::core::tanpa_jendela(&mut cmd);
     match cmd.output() {
         Ok(out) => {
             let kode = String::from_utf8_lossy(&out.stdout).trim().to_string();

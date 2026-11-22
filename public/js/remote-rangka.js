@@ -217,21 +217,37 @@
     var host = $("#kdRmTabs");
     if (!host) return;
     var pages = (S.deck && S.deck.pages) || [];
-    host.innerHTML = pages.map(function (p) {
+    var isi = pages.map(function (p) {
       var aktif = p.id === S.pageId;
       return '<button class="tab" type="button" role="tab" data-page="' + esc(p.id) + '"' +
         ' aria-selected="' + (aktif ? "true" : "false") + '">' + esc(p.name || "Halaman") + '</button>';
     }).join("");
-    var aktifEl = host.querySelector('[aria-selected="true"]');
+
+    /* Kapsul aktif tidak ikut dibuang saat tombol digambar ulang, supaya ia
+       bisa meluncur dari tab lama ke tab baru. */
     var ink = host.querySelector(".kd-pill-ink");
-    if (!aktifEl) { if (ink) ink.classList.remove("is-on"); return; }
-    if (!ink) {
+    if (ink) {
+      while (host.firstChild && host.firstChild !== ink) host.removeChild(host.firstChild);
+      ink.insertAdjacentHTML("beforebegin", isi);
+      while (ink.nextSibling) host.removeChild(ink.nextSibling);
+    } else {
+      host.innerHTML = isi;
       ink = document.createElement("span");
       ink.className = "kd-pill-ink";
       host.appendChild(ink);
     }
+
+    var aktifEl = host.querySelector('.tab[aria-selected="true"]');
+    if (!aktifEl) { ink.classList.remove("is-on"); return; }
+    ukurKapsul(host, ink, aktifEl);
+  };
+
+  /* Tempatkan kapsul tepat di atas tab aktif. Tidak ada animasi saat pertama
+     tampil; setelah itu perpindahan transform yang membuatnya meluncur. */
+  var ukurKapsul = function (host, ink, aktifEl) {
     var r = host.getBoundingClientRect();
     var a = aktifEl.getBoundingClientRect();
+    if (!a.width || !a.height) return;
     ink.style.width = Math.round(a.width) + "px";
     ink.style.height = Math.round(a.height) + "px";
     ink.style.transform = "translate(" + Math.round(a.left - r.left - host.clientLeft + host.scrollLeft) +
@@ -325,11 +341,23 @@
     }
   };
 
+  /* Isi lintasan slider mengikuti nilai, bukan hanya posisi bulatan. */
+  var isiRange = function (input) {
+    if (!input) return;
+    var min = Number(input.min) || 0;
+    var max = Number(input.max) || 100;
+    var v = ((Number(input.value) - min) / (max - min)) * 100;
+    input.style.setProperty("--v", Math.max(0, Math.min(100, v)).toFixed(2) + "%");
+  };
+
   var renderVolume = function () {
     var v = S.sinyal && S.sinyal.volume;
     if (!v) return;
     var input = $("#kdRmVol");
-    if (input && document.activeElement !== input) input.value = v.persen;
+    if (input) {
+      if (document.activeElement !== input) input.value = v.persen;
+      isiRange(input);
+    }
     if ($("#kdRmVolVal")) $("#kdRmVolVal").textContent = v.persen + "%";
   };
 
@@ -420,6 +448,24 @@
     var baris = $("#kdRmTabs");
     if (baris) baris.hidden = tab !== "papan";
     if (tab === "papan") requestAnimationFrame(pasPapan);
+  };
+
+  /* Layar penuh: kepala, tab, media, volume, dan kaki disembunyikan; tinggal
+     papan dan satu tombol bulat untuk keluar. */
+  var setKiosk = function (aktif) {
+    var akar = $("#kdRm");
+    if (!akar) return;
+    if (aktif && S.view !== "papan") switchTab("papan");
+    akar.classList.toggle("is-kiosk", aktif);
+    var btn = $("#kdRmKios");
+    if (btn) {
+      btn.setAttribute("aria-pressed", aktif ? "true" : "false");
+      btn.innerHTML = ic(aktif ? "k-minimize" : "k-maximize");
+      var label = aktif ? "Keluar layar penuh" : "Layar penuh";
+      btn.setAttribute("aria-label", label);
+      btn.setAttribute("title", label);
+    }
+    requestAnimationFrame(pasPapan);
   };
 
   /* --------------------------------------------------------------- muatan --- */
@@ -595,6 +641,7 @@
 
     $("#kdRmVol").addEventListener("input", function (e) {
       var nilai = Number(e.target.value);
+      isiRange(e.target);
       if ($("#kdRmVolVal")) $("#kdRmVolVal").textContent = nilai + "%";
       clearTimeout(bind._vol);
       bind._vol = setTimeout(function () {
@@ -602,6 +649,8 @@
           .catch(function () { toast("Volume gagal diubah.", false); });
       }, 220);
     });
+
+    isiRange($("#kdRmVol"));
 
     $("#kdRmMain").addEventListener("click", function () {
       api("/api/aksi", { method: "POST", body: { type: "media", cmd: "playpause" } })
@@ -620,14 +669,22 @@
     });
 
     $("#kdRmKios").addEventListener("click", function () {
+      var mau = !$("#kdRm").classList.contains("is-kiosk");
+      setKiosk(mau);
       var el = document.documentElement;
-      if (!document.fullscreenElement) {
-        (el.requestFullscreen || function () {}).call(el).catch(function () {});
-        $("#kdRmKios").setAttribute("aria-pressed", "true");
-      } else {
+      if (mau) {
+        if (!document.fullscreenElement && el.requestFullscreen) {
+          el.requestFullscreen().catch(function () {});
+        }
+      } else if (document.fullscreenElement) {
         document.exitFullscreen().catch(function () {});
-        $("#kdRmKios").setAttribute("aria-pressed", "false");
       }
+    });
+
+    /* Keluar dari layar penuh lewat gestur sistem juga harus mengembalikan
+       kepala, tab, dan kaki papan. */
+    document.addEventListener("fullscreenchange", function () {
+      if (!document.fullscreenElement) setKiosk(false);
     });
 
     $("#kdRmPutus").addEventListener("click", function () {

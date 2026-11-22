@@ -114,7 +114,9 @@ function Simpan-Ikon([System.Drawing.Image]$sumber, [int]$ukuran, [string]$tujua
         $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
         $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
         $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
-        $g.Clear([System.Drawing.Color]::FromArgb(255, 23, 23, 27))
+        # Sudut ikon lama tetap putih, bukan gelap, supaya tidak tampak terpotong
+        # di peluncur yang tidak memasang topeng.
+        $g.Clear([System.Drawing.Color]::White)
         if ($bulat) {
             $jalur = New-Object System.Drawing.Drawing2D.GraphicsPath
             $jalur.AddEllipse(0, 0, $ukuran, $ukuran)
@@ -122,6 +124,27 @@ function Simpan-Ikon([System.Drawing.Image]$sumber, [int]$ukuran, [string]$tujua
             $jalur.Dispose()
         }
         $g.DrawImage($sumber, 0, 0, $ukuran, $ukuran)
+    } finally {
+        $g.Dispose()
+    }
+    $bmp.Save($tujuan, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bmp.Dispose()
+}
+
+# Lapisan depan adaptive icon: kanvas 108 dp dengan zona aman lingkaran 66 dp.
+# Seni diperkecil ke 70% kanvas supaya keempat sudut kotak tidak terpotong
+# topeng bulat peluncur (peluncur memotong lingkaran ~66 dp dari tengah).
+function Simpan-LapisanDepan([System.Drawing.Image]$sumber, [int]$ukuran, [string]$tujuan) {
+    $bmp = New-Object System.Drawing.Bitmap($ukuran, $ukuran, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+    $g = [System.Drawing.Graphics]::FromImage($bmp)
+    try {
+        $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+        $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+        $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+        $g.Clear([System.Drawing.Color]::Transparent)
+        $s = [int][Math]::Round($ukuran * 0.70)
+        $o = [int][Math]::Floor(($ukuran - $s) / 2)
+        $g.DrawImage($sumber, $o, $o, $s, $s)
     } finally {
         $g.Dispose()
     }
@@ -161,7 +184,7 @@ function Siapkan-Ikon {
         foreach ($k in $kepadatanAdaptif) {
             $folder = Join-Path $FolderRes ("mipmap-" + $k.nama)
             New-Item -ItemType Directory -Force $folder | Out-Null
-            Simpan-Ikon $maskable $k.ukuran (Join-Path $folder "ic_launcher_foreground.png") $false
+            Simpan-LapisanDepan $maskable $k.ukuran (Join-Path $folder "ic_launcher_foreground.png")
         }
     } finally {
         $biasa.Dispose()

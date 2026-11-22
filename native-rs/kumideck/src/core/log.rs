@@ -13,7 +13,9 @@ pub fn init(berkas: PathBuf) {
 
 fn tulis(tanda: &str, pesan: &str) {
     let baris = format!("{tanda} {pesan}");
-    eprintln!("{baris}");
+    // Exe rilis tidak punya konsol, jadi stderr bisa tidak ada. Tulis tanpa
+    // peduli hasilnya supaya log tidak pernah membuat proses berhenti.
+    let _ = writeln!(std::io::stderr(), "{baris}");
     if let Some(b) = BERKAS.get() {
         if let Ok(mut f) = OpenOptions::new().create(true).append(true).open(b) {
             let _ = writeln!(f, "{baris}");

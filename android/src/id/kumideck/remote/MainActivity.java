@@ -3,12 +3,12 @@ package id.kumideck.remote;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.net.http.SslError;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -51,12 +51,17 @@ public class MainActivity extends Activity {
     private static final String PREFS = "kumideck-remote";
     private static final String KEY_ASAL = "asal"; /* scheme://host:port */
     private static final String AKSI_SETUP = "id.kumideck.remote.SETUP";
-    private static final String VERSI = "2.3.0";
+    private static final String VERSI = "2.4.0";
 
-    private static final int WARNA_LATAR = 0xFF17171B;
-    private static final int WARNA_TEKS = 0xFFF4F4F0;
-    private static final int WARNA_REDUP = 0xFF9A9AA2;
-    private static final int WARNA_AKSEN = 0xFFD9F25B;
+    /* Palet terang Rangka. Layar QR memakai warnanya sendiri karena berada di
+       atas pratinjau kamera. */
+    private static final int WARNA_LATAR = 0xFFF5F5F7;
+    private static final int WARNA_KARTU = 0xFFFFFFFF;
+    private static final int WARNA_TEKS = 0xFF16171D;
+    private static final int WARNA_REDUP = 0xFF6C6D78;
+    private static final int WARNA_GARIS = 0xFFE2E2E7;
+    private static final int WARNA_AKSEN = 0xFF4F5FDB;
+    private static final int WARNA_AKSEN_TEKS = 0xFFFFFFFF;
 
     private static final int ISI = ViewGroup.LayoutParams.MATCH_PARENT;
     private static final int BUNGKUS = ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -245,12 +250,7 @@ public class MainActivity extends Activity {
         ket.setPadding(0, dp(10), 0, dp(26));
         isi.addView(ket);
 
-        Button pindai = new Button(this);
-        pindai.setText("Pindai kode QR");
-        pindai.setAllCaps(false);
-        pindai.setTextSize(16);
-        pindai.setTextColor(WARNA_LATAR);
-        pindai.setBackgroundTintList(ColorStateList.valueOf(WARNA_AKSEN));
+        Button pindai = tombol("Pindai kode QR", true);
         isi.addView(pindai, new LinearLayout.LayoutParams(ISI, dp(52)));
         pindai.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -259,12 +259,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        Button kode = new Button(this);
-        kode.setText("Masukkan kode");
-        kode.setAllCaps(false);
-        kode.setTextSize(16);
-        kode.setTextColor(WARNA_AKSEN);
-        kode.setBackgroundTintList(ColorStateList.valueOf(0xFF23232A));
+        Button kode = tombol("Masukkan kode", false);
         LinearLayout.LayoutParams lpKode = new LinearLayout.LayoutParams(ISI, dp(52));
         lpKode.topMargin = dp(10);
         isi.addView(kode, lpKode);
@@ -283,10 +278,7 @@ public class MainActivity extends Activity {
 
         final String tersimpan = alamatTersimpan();
         if (!tersimpan.isEmpty()) {
-            Button kembali = new Button(this);
-            kembali.setText("Kembali ke papan");
-            kembali.setAllCaps(false);
-            kembali.setTextColor(WARNA_TEKS);
+            Button kembali = tombol("Kembali ke papan", false);
             LinearLayout.LayoutParams lpKembali = new LinearLayout.LayoutParams(ISI, dp(48));
             lpKembali.topMargin = dp(10);
             kembali.setOnClickListener(new View.OnClickListener() {
@@ -341,8 +333,11 @@ public class MainActivity extends Activity {
 
         final EditText input = new EditText(this);
         input.setHint("192.168.1.10:4173");
-        input.setHintTextColor(0xFF6E6E78);
+        input.setHintTextColor(WARNA_REDUP);
         input.setTextColor(WARNA_TEKS);
+        input.setTextSize(16);
+        input.setBackground(bentuk(WARNA_KARTU, 12, WARNA_GARIS));
+        input.setPadding(dp(16), dp(12), dp(16), dp(12));
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
         input.setSingleLine(true);
         input.setImeOptions(EditorInfo.IME_ACTION_GO);
@@ -367,12 +362,7 @@ public class MainActivity extends Activity {
         pindaiKet.setPadding(0, 0, 0, dp(18));
         isi.addView(pindaiKet);
 
-        Button pindai = new Button(this);
-        pindai.setText("Pindai kode QR");
-        pindai.setAllCaps(false);
-        pindai.setTextSize(16);
-        pindai.setTextColor(WARNA_LATAR);
-        pindai.setBackgroundTintList(ColorStateList.valueOf(WARNA_AKSEN));
+        Button pindai = tombol("Pindai kode QR", true);
         isi.addView(pindai, new LinearLayout.LayoutParams(ISI, dp(52)));
         pindai.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -381,12 +371,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        Button sambung = new Button(this);
-        sambung.setText("Sambung dengan alamat");
-        sambung.setAllCaps(false);
-        sambung.setTextSize(16);
-        sambung.setTextColor(WARNA_AKSEN);
-        sambung.setBackgroundTintList(ColorStateList.valueOf(0xFF23232A));
+        Button sambung = tombol("Sambung dengan alamat", false);
         LinearLayout.LayoutParams lpSambung = new LinearLayout.LayoutParams(ISI, dp(52));
         lpSambung.topMargin = dp(10);
         isi.addView(sambung, lpSambung);
@@ -425,10 +410,7 @@ public class MainActivity extends Activity {
            pintasan tekan-lama ikon: sediakan jalan kembali tanpa memutus. */
         final String tersimpan = alamatTersimpan();
         if (!tersimpan.isEmpty()) {
-            Button kembali = new Button(this);
-            kembali.setText("Kembali ke papan");
-            kembali.setAllCaps(false);
-            kembali.setTextColor(WARNA_TEKS);
+            Button kembali = tombol("Kembali ke papan", false);
             LinearLayout.LayoutParams lpKembali = new LinearLayout.LayoutParams(ISI, dp(48));
             lpKembali.topMargin = dp(10);
             kembali.setOnClickListener(new View.OnClickListener() {
@@ -453,7 +435,7 @@ public class MainActivity extends Activity {
         diSetup = false;
 
         web = new WebView(this);
-        web.setBackgroundColor(Color.parseColor("#eeede8"));
+        web.setBackgroundColor(WARNA_LATAR);
         web.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
         WebSettings s = web.getSettings();
@@ -673,11 +655,7 @@ public class MainActivity extends Activity {
         pesanGalat.setGravity(Gravity.CENTER);
         lapis.addView(pesanGalat);
 
-        Button ulang = new Button(this);
-        ulang.setText("Coba lagi");
-        ulang.setAllCaps(false);
-        ulang.setTextColor(WARNA_LATAR);
-        ulang.setBackgroundTintList(ColorStateList.valueOf(WARNA_AKSEN));
+        Button ulang = tombol("Coba lagi", true);
         ulang.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -686,10 +664,7 @@ public class MainActivity extends Activity {
         });
         lapis.addView(ulang, new LinearLayout.LayoutParams(ISI, dp(48)));
 
-        Button diChrome = new Button(this);
-        diChrome.setText("Buka di Chrome");
-        diChrome.setAllCaps(false);
-        diChrome.setTextColor(WARNA_TEKS);
+        Button diChrome = tombol("Buka di Chrome", false);
         LinearLayout.LayoutParams lpChrome = new LinearLayout.LayoutParams(ISI, dp(48));
         lpChrome.topMargin = dp(10);
         diChrome.setOnClickListener(new View.OnClickListener() {
@@ -707,10 +682,7 @@ public class MainActivity extends Activity {
         });
         lapis.addView(diChrome, lpChrome);
 
-        Button ganti = new Button(this);
-        ganti.setText("Ganti alamat server");
-        ganti.setAllCaps(false);
-        ganti.setTextColor(WARNA_TEKS);
+        Button ganti = tombol("Ganti alamat server", false);
         LinearLayout.LayoutParams lpGanti = new LinearLayout.LayoutParams(ISI, dp(48));
         lpGanti.topMargin = dp(10);
         ganti.setOnClickListener(new View.OnClickListener() {
@@ -803,7 +775,13 @@ public class MainActivity extends Activity {
                     | View.SYSTEM_UI_FLAG_FULLSCREEN
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         } else {
-            dekor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
+            /* Kembali ke tema terang: ikon status bar dan bilah navigasi gelap,
+               bukan putih di atas latar abu muda. */
+            int tanda = View.SYSTEM_UI_FLAG_VISIBLE | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                tanda |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+            dekor.setSystemUiVisibility(tanda);
         }
     }
 
@@ -879,6 +857,31 @@ public class MainActivity extends Activity {
         if (tebal) t.setTypeface(t.getTypeface(), Typeface.BOLD);
         t.setLineSpacing(0, 1.15f);
         return t;
+    }
+
+    /* Tombol Rangka: sudut membulat, tanpa kapital paksa dan tanpa tint
+       bawaan Material yang membuat layar terang terlihat seperti UI lama. */
+    private Button tombol(String label, boolean utama) {
+        Button b = new Button(this);
+        b.setText(label);
+        b.setAllCaps(false);
+        b.setTextSize(15.5f);
+        b.setTextColor(utama ? WARNA_AKSEN_TEKS : WARNA_AKSEN);
+        b.setBackground(bentuk(utama ? WARNA_AKSEN : WARNA_KARTU, 14, utama ? 0 : WARNA_GARIS));
+        b.setPadding(dp(18), 0, dp(18), 0);
+        b.setMinHeight(0);
+        b.setMinimumHeight(0);
+        b.setStateListAnimator(null);
+        return b;
+    }
+
+    private GradientDrawable bentuk(int isi, int radius, int garis) {
+        GradientDrawable d = new GradientDrawable();
+        d.setShape(GradientDrawable.RECTANGLE);
+        d.setColor(isi);
+        d.setCornerRadius(dp(radius));
+        if (garis != 0) d.setStroke(Math.max(1, dp(1)), garis);
+        return d;
     }
 
     /* ------------------------------------------------------------ daur --- */

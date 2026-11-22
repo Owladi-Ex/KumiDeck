@@ -172,9 +172,10 @@ pub fn daya(perintah: &str) -> Result<(), String> {
 }
 
 fn shutdown(arg: &str) -> Result<(), String> {
-    std::process::Command::new("shutdown.exe")
-        .args([arg, "/t", "0"])
-        .spawn()
+    let mut cmd = std::process::Command::new("shutdown.exe");
+    cmd.args([arg, "/t", "0"]);
+    crate::core::tanpa_jendela(&mut cmd);
+    cmd.spawn()
         .map(|_| ())
         .map_err(|e| format!("Perintah daya gagal: {e}"))
 }

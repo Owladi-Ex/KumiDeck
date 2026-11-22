@@ -79,6 +79,10 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 
 ### Diperbaiki
 
+- **Tidak ada lagi jendela terminal**: exe rilis dibangun sebagai aplikasi
+  jendela, jadi hanya KumiDeck yang muncul. Log tetap ditulis ke
+  `data/kumideck.log`, dan perintah latar (curl, netsh, PowerShell, shutdown)
+  dijalankan tanpa jendela konsol sekilas.
 - **Ikon baki sistem kembali ada** (baki Windows): menu Buka KumiDeck, Buka di
   peramban, Salin tautan Remote, dan Keluar. Ikonnya memakai bahan yang sama
   dengan ikon aplikasi.
@@ -112,6 +116,21 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 - **Widget jam dan media dipoles**: jam memakai pemisah titik dua dan angka
   tabular yang lebih besar, tanggal rata tengah, judul media dua baris dengan
   ikon putar/jeda sesuai status.
+- **Layar penuh Remote benar-benar penuh**: tombol layar penuh di ponsel kini
+  menyembunyikan kepala, tab halaman, kartu media, volume, dan kaki tab; yang
+  tersisa hanya papan dan satu tombol bulat kecil untuk keluar. Keluar lewat
+  gestur sistem juga mengembalikan tampilan.
+- **Kapsul tab Remote meluncur**: kapsul tab halaman tidak lagi digambar ulang
+  di tempat baru, jadi ia benar-benar bergeser dari tab lama ke tab baru; bentuk
+  kapsulnya kini bulat penuh.
+- **Slider volume Remote mengikuti jari**: isi lintasan ikut bergerak bersama
+  bulatan dan angka persen, bukan hanya labelnya.
+- **Layar pindai QR memakai tema terang**: halaman masuk, formulir alamat,
+  layar galat, dan bingkai pemindai QR di APK memakai permukaan putih, abu muda,
+  dan aksen indigo yang sama dengan Rangka, bukan latar hitam dan aksen limau.
+- **Ikon Android tidak terpotong**: lapisan depan ikon adaptif diperkecil ke
+  zona aman 66 dp, jadi keempat sudutnya utuh di bawah topeng bulat peluncur;
+  ikon lama juga memakai sudut putih, bukan gelap.
 
 ## [2.3.0] - 2026-11-16
 

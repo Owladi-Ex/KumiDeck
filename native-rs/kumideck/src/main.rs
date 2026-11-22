@@ -1,5 +1,9 @@
 //! KumiDeck 2.4.0 — inti Rust + WebView2.
 
+// Rilis berjalan sebagai aplikasi jendela: tidak ada konsol yang ikut terbuka.
+// Build debug tetap memakai konsol supaya log gampang dibaca saat mengembangkan.
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod actions;
 mod app;
 mod apps;
@@ -25,7 +29,6 @@ fn main() {
     unsafe {
         let _ = CreateMutexW(None, false, w!("KumiDeck.Instance"));
         if GetLastError() == ERROR_ALREADY_EXISTS {
-            eprintln!("KumiDeck sudah berjalan.");
             return;
         }
     }

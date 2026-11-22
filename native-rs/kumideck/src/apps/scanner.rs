@@ -140,16 +140,17 @@ fn pindai_semua() -> (Vec<Kandidat>, String) {
 /// `Get-StartApps` memberi nama dan AppUserModelID untuk aplikasi Store maupun
 /// desktop. Satu panggilan, di-cache 5 menit bersama hasil lain.
 fn pindai_store() -> Result<Vec<Kandidat>, String> {
-    let keluaran = std::process::Command::new("powershell.exe")
-        .args([
-            "-NoProfile",
-            "-NonInteractive",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-Command",
-            "Get-StartApps | Select-Object Name,AppID | ConvertTo-Json -Compress",
-        ])
-        .output();
+    let mut pemindai = std::process::Command::new("powershell.exe");
+    pemindai.args([
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "Get-StartApps | Select-Object Name,AppID | ConvertTo-Json -Compress",
+    ]);
+    crate::core::tanpa_jendela(&mut pemindai);
+    let keluaran = pemindai.output();
 
     let out = match keluaran {
         Ok(o) => o,
