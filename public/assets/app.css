@@ -36,6 +36,12 @@
 
 html, body { height: 100%; }
 
+/* Semua bagian boleh bergulir, tetapi batang gulirnya tidak ditampilkan.
+   Selain terlihat lebih bersih, lebar isi tidak lagi berubah 15 px saat
+   guliran muncul atau hilang, jadi papan tidak bergeser mendadak. */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
 body.kd-body {
   overflow: hidden;
   background-color: var(--bg-muted);
@@ -368,7 +374,10 @@ body.kd-body {
   grid-template-columns: minmax(0, 1fr) var(--kd-side-w);
   min-height: 0;
   min-width: 0;
-  transition: grid-template-columns var(--m-3) var(--e-out);
+  /* Durasi dan lengkung disamakan dengan animasi lebar jendela di app.js
+     (12 langkah × 30 ms, mulai dan berhenti pelan) supaya panel dan tepi
+     jendela bergerak bersamaan sebagai satu gerakan. */
+  transition: grid-template-columns 360ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 .kd-content[data-panel="off"] { grid-template-columns: minmax(0, 1fr) 0px; }
 
@@ -377,7 +386,6 @@ body.kd-body {
   min-height: 0;
   overflow: auto;
   padding: 16px;
-  scrollbar-gutter: stable;
 }
 .kd-view[hidden] { display: none; }
 
@@ -387,14 +395,14 @@ body.kd-body {
   from { opacity: 0; transform: translateY(8px); }
 }
 
-/* Tombol papan masuk berurutan saat pindah halaman */
-.kd-board.is-swap > .kd-tile,
-.kd-board.is-swap > .kd-empty {
-  animation: kd-tile-in 320ms var(--e-out) backwards;
-  animation-delay: calc(var(--i, 0) * 16ms);
+/* Papan masuk sebagai satu lapisan saat pindah halaman. Satu animasi untuk
+   seluruh papan jauh lebih ringan daripada belasan tombol beranimasi
+   bersamaan, yang membuat perpindahan halaman terasa tersendat. */
+.kd-board.is-swap {
+  animation: kd-board-in 200ms var(--e-out) both;
 }
-@keyframes kd-tile-in {
-  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+@keyframes kd-board-in {
+  from { opacity: 0; transform: translateY(6px); }
 }
 
 .kd-view--papan {
@@ -423,6 +431,9 @@ body.kd-body {
   box-shadow: var(--shadow-paper);
 }
 .kd-content[data-panel="off"][data-view="papan"] .kd-panel-open { display: grid; }
+/* Saat panel sedang meluncur, tombol pembuka belum ditampilkan supaya tidak
+   menumpuk di atas panel yang belum selesai pergi. */
+.kd-content.is-geser[data-view="papan"] .kd-panel-open { display: none; }
 .kd-panel-open:hover { color: var(--text-1); background: var(--bg-hover); }
 .kd-panel-open .icon { width: 13px; height: 13px; }
 
@@ -807,10 +818,13 @@ body.kd-body {
   overflow: hidden;
   border-left: 1px solid var(--line);
   background: var(--bg-muted);
-  opacity: 1;
-  transition: opacity var(--m-2) var(--e-out);
 }
-.kd-content[data-panel="off"] .kd-side { opacity: 0; pointer-events: none; border-left-color: transparent; }
+/* Isi panel tetap selebar 296 px dan digeser bersama kolomnya, jadi saat
+   panel dibuka/ditutup isinya meluncur keluar alih-alih terhimpit dan
+   membungkus ulang teks di setiap bingkai. */
+.kd-side-head,
+.kd-side-body { width: var(--kd-side-w); }
+.kd-content[data-panel="off"] .kd-side { pointer-events: none; border-left-color: transparent; }
 
 .kd-side-head {
   display: flex;
@@ -1639,6 +1653,9 @@ input[type="color"]:hover { border-color: var(--line-strong); }
   :root { --kd-rail-w: 56px; --kd-side-w: 0px; }
   .kd-content { grid-template-columns: minmax(0, 1fr) 0px; }
   .kd-side { display: none; }
+  /* Panel tidak tersedia pada jendela sempit, jadi tombol pembukanya ikut
+     disembunyikan daripada menawarkan sesuatu yang tidak bisa dibuka. */
+  .kd-panel-open { display: none !important; }
   .kd-view { padding: 12px; }
   .kd-rail-logo { width: 34px; height: 34px; }
   .kd-rail-btn { width: 36px; height: 36px; }
@@ -1736,6 +1753,7 @@ input[type="color"]:hover { border-color: var(--line-strong); }
   .status[data-s="done"]::before { animation: none !important; }
   .kd-rail-ink, .kd-tabs-ink, .kd-pill-ink { transition: none !important; }
   .kd-view.is-enter,
+  .kd-board.is-swap,
   .kd-board.is-swap > .kd-tile,
   .kd-board.is-swap > .kd-empty { animation: none !important; }
 }

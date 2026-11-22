@@ -6,7 +6,7 @@ versi mengikuti [SemVer](https://semver.org/lang/id/).
 ## [2.4.0] - 2026-11-23
 
 **"Inti Baru"** — KumiDeck ditulis ulang di atas inti Rust dengan antarmuka
-Rangka. `KumiDeck.exe` turun dari 72,89 MB menjadi 2,96 MB, siap dalam sekitar
+Rangka. `KumiDeck.exe` turun dari 72,89 MB menjadi 3,45 MB, siap dalam sekitar
 0,5 detik, dan .NET tidak lagi dibutuhkan. Papan, ikon, suara, token pasangan,
 sertifikat, dan seluruh endpoint 2.3.0 terbaca apa adanya; pemasang 2.4.0
 menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
@@ -131,6 +131,21 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 - **Ikon Android tidak terpotong**: lapisan depan ikon adaptif diperkecil ke
   zona aman 66 dp, jadi keempat sudutnya utuh di bawah topeng bulat peluncur;
   ikon lama juga memakai sudut putih, bukan gelap.
+- **Ukuran jendela bergerak halus**: saat panel Ringkasan dibuka atau ditutup,
+  tepi jendela bergerak dalam dua belas langkah kecil yang merata, bukan satu
+  lompatan besar. Papan dikunci di posisinya selama panel meluncur, jadi kotak
+  tombol tidak ikut bergeser atau bergetar, dan isi panel meluncur keluar
+  selebar aslinya alih-alih terhimpit dan membungkus ulang teks.
+- **Seret tepi jendela tanpa patahan**: ukuran ubin mengikuti lebar isi secara
+  pecahan selama jendela diseret, lalu dibulatkan setelah seretan berhenti.
+  Penataan digabung menjadi satu per bingkai, dan lebar jendela pilihan
+  pengguna tidak lagi dirapatkan sendiri setelah seret.
+- **Pindah halaman papan lebih ringan**: papan masuk sebagai satu lapisan;
+  animasi lama yang menjalankan belasan tombol sekaligus dengan jeda 16 ms per
+  tombol dihapus. Garis bawah tab baru bergerak setelah papan selesai ditata.
+- **Tanpa batang gulir**: batang gulir disembunyikan di semua bagian dan di tab
+  halaman, sehingga lebar isi tidak berubah 15–18 px saat guliran muncul atau
+  hilang.
 
 ## [2.3.0] - 2026-11-16
 

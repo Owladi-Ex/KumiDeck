@@ -69,10 +69,9 @@ fn tinggi_pas(app: &App, lebar: f64) -> f64 {
     // dilipat oleh media query, jadi lebarnya ikut hilang.
     let (rel, panel) = if lebar <= 900.0 { (56.0, 0.0) } else { (68.0, 296.0) };
     let bingkai = 56.0 + 30.0; // kepala + kaki
-    let tepi = 32.0; // padding .kd-view kiri dan kanan
-    let gulir = 18.0; // scrollbar-gutter
+    let tepi = 28.0; // padding .kd-view kiri dan kanan
     let jarak = 8.0;
-    let ubin = ((lebar - rel - panel - tepi - gulir - jarak * (kolom - 1.0)) / kolom)
+    let ubin = ((lebar - rel - panel - tepi - jarak * (kolom - 1.0)) / kolom)
         .clamp(84.0, 168.0);
     (bingkai + tepi + baris * ubin + jarak * (baris - 1.0)).max(480.0)
 }

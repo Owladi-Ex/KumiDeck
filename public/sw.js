@@ -1,4 +1,4 @@
-/* KumiDeck — service worker untuk klien Android (/remote).
+/* KumiDeck Ã¢â‚¬â€ service worker untuk klien Android (/remote).
    Aturan cache:
    - Aset statis same-origin (/assets/, /js/, /icons/, favicon, manifest)
      dilayani cache-first supaya papan terbuka cepat dan tetap tampil saat
@@ -8,7 +8,7 @@
    - /api/ TIDAK PERNAH disentuh: termasuk aliran SSE /api/events yang harus
      tetap mengalir langsung dari server.
    Naikkan CACHE_VERSION setiap kali aset statis berubah. */
-const CACHE_VERSION = "kumideck-v22";
+const CACHE_VERSION = "kumideck-v25";
 const PRA_CACHE = [
   "/favicon.svg",
   "/manifest.webmanifest",
