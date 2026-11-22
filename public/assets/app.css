@@ -371,15 +371,17 @@ body.kd-body {
 .kd-content {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--kd-side-w);
+  /* Lebar kolom panel diisi app.js per bingkai (--kd-side-live) selama panel
+     meluncur. Tidak memakai transisi CSS: nilainya digerakkan dari skrip pada
+     setiap bingkai, jadi panel dan papan berbagi satu jam dan tidak ada yang
+     tertinggal. */
+  grid-template-columns: minmax(0, 1fr) var(--kd-side-live, var(--kd-side-w));
   min-height: 0;
   min-width: 0;
-  /* Durasi dan lengkung disamakan dengan animasi lebar jendela di app.js
-     (12 langkah × 30 ms, mulai dan berhenti pelan) supaya panel dan tepi
-     jendela bergerak bersamaan sebagai satu gerakan. */
-  transition: grid-template-columns 360ms cubic-bezier(0.65, 0, 0.35, 1);
 }
-.kd-content[data-panel="off"] { grid-template-columns: minmax(0, 1fr) 0px; }
+.kd-content[data-panel="off"] {
+  grid-template-columns: minmax(0, 1fr) var(--kd-side-live, 0px);
+}
 
 .kd-view {
   min-width: 0;
@@ -824,6 +826,13 @@ body.kd-body {
    membungkus ulang teks di setiap bingkai. */
 .kd-side-head,
 .kd-side-body { width: var(--kd-side-w); }
+/* Selama panel meluncur, isinya digeser ke kiri sebesar sisa jalurnya: sisi
+   kanan tetap menempel di tepi jendela, jadi panel tampak keluar dari tepi
+   itu, bukan terpotong di tengah teks. */
+.kd-content.is-geser .kd-side-head,
+.kd-content.is-geser .kd-side-body {
+  transform: translateX(calc(var(--kd-side-live, 0px) - var(--kd-side-w)));
+}
 .kd-content[data-panel="off"] .kd-side { pointer-events: none; border-left-color: transparent; }
 
 .kd-side-head {

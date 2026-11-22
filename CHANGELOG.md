@@ -110,7 +110,8 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 - **Jendela mengikuti isi papan**: tinggi awal dihitung dari baris dan kolom
   profil, jadi tidak ada ruang kosong besar di bawah tombol. Saat panel ringkasan
   ditutup atau jendela diubah ukurannya, lebar dan tinggi dirapatkan ke kotak
-  tombol, dan membuka panel kembali melebarkan jendela secukupnya.
+  tombol, dan membuka panel kembali melebarkan jendela secukupnya. Setelah
+  seretan tepi berhenti, tinggi dirapatkan lagi ke papan.
 - **Setelan berbahasa Indonesia**: baris "Bahasa antarmuka" dan "Tombol jendela"
   dihapus, sehingga tidak ada lagi teks English atau versi 2.3.0 di Setelan.
 - **Widget jam dan media dipoles**: jam memakai pemisah titik dua dan angka
@@ -131,11 +132,20 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 - **Ikon Android tidak terpotong**: lapisan depan ikon adaptif diperkecil ke
   zona aman 66 dp, jadi keempat sudutnya utuh di bawah topeng bulat peluncur;
   ikon lama juga memakai sudut putih, bukan gelap.
-- **Ukuran jendela bergerak halus**: saat panel Ringkasan dibuka atau ditutup,
-  tepi jendela bergerak dalam dua belas langkah kecil yang merata, bukan satu
-  lompatan besar. Papan dikunci di posisinya selama panel meluncur, jadi kotak
-  tombol tidak ikut bergeser atau bergetar, dan isi panel meluncur keluar
-  selebar aslinya alih-alih terhimpit dan membungkus ulang teks.
+- **Ukuran jendela bergerak halus**: panel Ringkasan tidak lagi meluncur
+  bersama jendela yang dianimasikan langkah demi langkah — Windows hanya
+  memasang sekitar tiga puluh ukuran per detik, jadi tepi jendela terlihat
+  patah. Sekarang, saat panel dibuka, jendela langsung menyediakan jalur
+  selebar panel lalu isi panel meluncur masuk dari tepi kanan pada 60 bingkai
+  per detik; saat ditutup, panel meluncur keluar lebih dulu, baru jalurnya
+  dibuang. Papan dikunci di posisinya selama gerakan, jadi kotak tombol tidak
+  bergeser, berubah ukuran, atau bergetar. Isi panel tetap selebar aslinya dan
+  digeser bersama jalurnya, jadi teksnya tidak terhimpit atau terpotong di
+  tengah kata.
+- **Tinggi jendela merapat setelah seret**: begitu tepi jendela dilepas,
+  tingginya dirapatkan ke tinggi kotak tombol, jadi tidak ada pita kosong di
+  bawah papan. Lebar yang dipilih pengguna dibiarkan apa adanya; hanya tinggi
+  yang menyusul isi.
 - **Seret tepi jendela tanpa patahan**: ukuran ubin mengikuti lebar isi secara
   pecahan selama jendela diseret, lalu dibulatkan setelah seretan berhenti.
   Penataan digabung menjadi satu per bingkai, dan lebar jendela pilihan
