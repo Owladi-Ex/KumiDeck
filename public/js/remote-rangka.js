@@ -239,7 +239,7 @@
     ink.classList.add("is-on");
   };
 
-  var renderBoard = function () {
+  var renderBoardIsi = function () {
     var host = $("#kdRmBoard");
     var kosong = $("#kdRmKosong");
     var barFolder = $("#kdRmFolderBar");
@@ -248,6 +248,8 @@
     var kolom = (S.deck && S.deck.profile && S.deck.profile.columns) || 5;
     var baris = (S.deck && S.deck.profile && S.deck.profile.rows) || 3;
     host.style.setProperty("--kd-cols-rm", kolom);
+    host.dataset.kolom = kolom;
+    host.dataset.baris = baris;
 
     if (S.folder) {
       if (barFolder) {
@@ -281,6 +283,29 @@
       return tileHTML(k, i);
     }).join("");
     if ($("#kdRmJudul")) $("#kdRmJudul").textContent = (S.deck.profile && S.deck.profile.name) || "KumiDeck";
+  };
+
+  /* Papan Remote selalu muat di layar: lebar dibatasi oleh ruang tegak yang
+     tersedia, jadi posisi mendatar tidak lagi memaksa papan tergulung. */
+  var pasPapan = function () {
+    var host = $("#kdRmBoard");
+    if (!host) return;
+    var stage = host.parentElement;
+    if (!stage) return;
+    var kolom = Number(host.dataset.kolom) || 5;
+    var baris = Number(host.dataset.baris) || 3;
+    var tinggi = stage.clientHeight;
+    var lebar = stage.clientWidth;
+    if (!tinggi || !lebar) return;
+    var celah = 6;
+    var tinggiTile = (tinggi - celah * (baris - 1)) / baris;
+    var lebarMaks = tinggiTile * 1.05 * kolom + celah * (kolom - 1);
+    host.style.maxWidth = Math.max(0, Math.min(lebar, Math.round(lebarMaks))) + "px";
+  };
+
+  var renderBoard = function () {
+    renderBoardIsi();
+    pasPapan();
   };
 
   var renderMedia = function () {
@@ -394,6 +419,7 @@
     $("#kdRmSetelan").hidden = tab !== "setelan";
     var baris = $("#kdRmTabs");
     if (baris) baris.hidden = tab !== "papan";
+    if (tab === "papan") requestAnimationFrame(pasPapan);
   };
 
   /* --------------------------------------------------------------- muatan --- */
@@ -628,16 +654,27 @@
   /* ----------------------------------------------------------------- mulai --- */
 
   var mulai = function () {
-    S.token = ambilLokal(TOKEN);
-    var url = new URL(location.href);
-    var kode = url.searchParams.get("kode");
-    if (kode && !S.token) S.token = kode;
     pasangTema(ambilLokal(TEMA));
     bind();
     switchTab("papan");
+    window.addEventListener("resize", pasPapan);
+    window.addEventListener("orientationchange", function () { setTimeout(pasPapan, 180); });
+    var url = new URL(location.href);
+    var kode = url.searchParams.get("kode");
+    /* QR membawa kode di tautan: selalu pasangkan ulang supaya ponsel yang
+       pernah tertaut tidak memakai token lama. Kode dibuang dari URL agar muat
+       ulang berikutnya tidak memicu percobaan pasangan baru. */
+    if (kode) {
+      try {
+        url.searchParams.delete("kode");
+        history.replaceState(null, "", url.toString());
+      } catch (e) { /* abaikan */ }
+      pasangkan(kode);
+      return;
+    }
+    S.token = ambilLokal(TOKEN);
     if (!S.token) {
       mintaPasangan("");
-      if (kode) pasangkan(kode);
       return;
     }
     muat().then(function (s) {

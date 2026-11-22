@@ -9,6 +9,14 @@ use tao::dpi::{LogicalPosition, LogicalSize};
 use tao::event::{Event, WindowEvent};
 use tao::event_loop::{ControlFlow, EventLoopBuilder, EventLoopProxy};
 use tao::window::{Window, WindowBuilder};
+use tray_icon::{
+    menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem},
+    Icon, TrayIcon, TrayIconBuilder,
+};
+use windows::Win32::System::DataExchange::{
+    CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData,
+};
+use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_ALT, MOD_CONTROL, MOD_SHIFT, MOD_WIN,
 };
@@ -23,9 +31,14 @@ use crate::server::state::App;
 #[derive(Debug, Clone)]
 pub enum Pesan {
     Pintasan,
+    Menu(String),
 }
 
 const ID_PINTASAN: i32 = 0x4B44;
+
+/// 32x32 RGBA dari `assets/icon.png`, ditanam supaya baki sistem tetap punya
+/// ikon walau berkas gambar tidak ikut terpasang.
+const IKON_TRAY: &[u8] = include_bytes!("../../../../assets/tray32.rgba");
 
 #[derive(Debug, Clone)]
 struct Geometri {
@@ -46,23 +59,58 @@ impl Default for Geometri {
     }
 }
 
+/// Tinggi jendela yang pas dengan baris tombol, bukan ruang kosong di bawahnya.
+/// Lebar tetap seperti tersimpan; ubin persegi mengikuti lebar itu.
+fn tinggi_pas(app: &App, lebar: f64) -> f64 {
+    let profil = app.store.deck().profile;
+    let kolom = profil.columns.clamp(1, 12) as f64;
+    let baris = profil.rows.clamp(1, 12) as f64;
+    // Sama dengan token --kd-rail-w/--kd-side-w; di bawah 900 px panel kanan
+    // dilipat oleh media query, jadi lebarnya ikut hilang.
+    let (rel, panel) = if lebar <= 900.0 { (56.0, 0.0) } else { (68.0, 296.0) };
+    let bingkai = 56.0 + 30.0; // kepala + kaki
+    let tepi = 32.0; // padding .kd-view kiri dan kanan
+    let gulir = 18.0; // scrollbar-gutter
+    let jarak = 8.0;
+    let ubin = ((lebar - rel - panel - tepi - gulir - jarak * (kolom - 1.0)) / kolom)
+        .clamp(84.0, 168.0);
+    (bingkai + tepi + baris * ubin + jarak * (baris - 1.0)).max(480.0)
+}
+
 fn berkas_geometri(app: &App) -> std::path::PathBuf {
     app.paths.jendela().join("jendela.json")
 }
 
 fn muat_geometri(app: &App) -> Geometri {
+    let bawaan = || {
+        let lebar = 1180.0;
+        Geometri {
+            tinggi: tinggi_pas(app, lebar),
+            ..Geometri::default()
+        }
+    };
     let Ok(teks) = std::fs::read_to_string(berkas_geometri(app)) else {
-        return Geometri::default();
+        return bawaan();
     };
     let Ok(v) = serde_json::from_str::<Value>(&teks) else {
-        return Geometri::default();
+        return bawaan();
     };
     let ambil = |k: &str, b: f64| v.get(k).and_then(|x| x.as_f64()).unwrap_or(b);
+    let lebar = ambil("lebar", 1180.0).max(720.0);
+    // versi 1 (2.3.0/2.4.0 awal) menyimpan tinggi apa adanya; sekali saja
+    // tinggi dirapatkan ke isi tombol, sesudah itu ukuran pilihan pengguna
+    // dihormati lagi.
+    let versi = v.get("versi").and_then(|x| x.as_i64()).unwrap_or(1);
+    let tinggi = if versi < 2 {
+        tinggi_pas(app, lebar)
+    } else {
+        ambil("tinggi", 760.0).max(480.0)
+    };
     Geometri {
         x: ambil("x", 120.0),
         y: ambil("y", 80.0),
-        lebar: ambil("lebar", 1180.0).max(720.0),
-        tinggi: ambil("tinggi", 760.0).max(480.0),
+        lebar,
+        tinggi,
     }
 }
 
@@ -77,7 +125,7 @@ fn simpan_geometri(app: &App, w: &Window) {
         ukuran.width as f64 / skala,
         ukuran.height as f64 / skala,
     );
-    let v = json!({ "x": x, "y": y, "lebar": lebar, "tinggi": tinggi });
+    let v = json!({ "versi": 2, "x": x, "y": y, "lebar": lebar, "tinggi": tinggi });
     let _ = std::fs::create_dir_all(app.paths.jendela());
     let _ = std::fs::write(
         berkas_geometri(app),
@@ -201,11 +249,80 @@ fn mulai_pintasan(app: Arc<App>, proxy: EventLoopProxy<Pesan>) {
     });
 }
 
+/// Salin teks ke clipboard Windows. Dipakai menu baki sistem.
+fn salin_teks(teks: &str) {
+    unsafe {
+        if OpenClipboard(None).is_err() {
+            return;
+        }
+        let _ = EmptyClipboard();
+        let data: Vec<u16> = teks.encode_utf16().chain(std::iter::once(0)).collect();
+        let bytes = data.len() * 2;
+        if let Ok(handle) = GlobalAlloc(GMEM_MOVEABLE, bytes) {
+            let ptr = GlobalLock(handle);
+            if !ptr.is_null() {
+                std::ptr::copy_nonoverlapping(data.as_ptr() as *const u8, ptr as *mut u8, bytes);
+                let _ = GlobalUnlock(handle);
+                // CF_UNICODETEXT = 13
+                let _ = SetClipboardData(
+                    13,
+                    Some(windows::Win32::Foundation::HANDLE(handle.0)),
+                );
+            }
+        }
+        let _ = CloseClipboard();
+    }
+}
+
+/// Ikon baki sistem: menu Buka, Buka di peramban, Salin tautan Remote, Keluar.
+fn siapkan_tray(proxy: EventLoopProxy<Pesan>) -> Option<TrayIcon> {
+    let buka = MenuItem::with_id("buka", "Buka KumiDeck", true, None);
+    let peramban = MenuItem::with_id("peramban", "Buka di peramban", true, None);
+    let salin = MenuItem::with_id("salin", "Salin tautan Remote", true, None);
+    let keluar = MenuItem::with_id("keluar", "Keluar", true, None);
+    let pisah = PredefinedMenuItem::separator();
+    let menu = Menu::new();
+    menu.append_items(&[&buka, &peramban, &salin, &pisah, &keluar])
+        .ok()?;
+    let ikon = Icon::from_rgba(IKON_TRAY.to_vec(), 32, 32).ok()?;
+    let tray = TrayIconBuilder::new()
+        .with_menu(Box::new(menu))
+        .with_icon(ikon)
+        .with_tooltip("KumiDeck")
+        .build()
+        .ok()?;
+    // Menu dikirim lewat kanal global muda; teruskan ke thread jendela.
+    std::thread::spawn(move || {
+        while let Ok(ev) = MenuEvent::receiver().recv() {
+            if proxy.send_event(Pesan::Menu(ev.id.0)).is_err() {
+                break;
+            }
+        }
+    });
+    Some(tray)
+}
+
 pub fn jalankan(app: Arc<App>) -> ! {
     let geo = muat_geometri(&app);
     let event_loop = EventLoopBuilder::<Pesan>::with_user_event().build();
     let proxy = event_loop.create_proxy();
     mulai_pintasan(app.clone(), proxy);
+    let url = format!("http://127.0.0.1:{}/", app.port);
+    let tautan_remote = if app.https_port > 0 {
+        format!(
+            "https://{}:{}/remote?kode={}",
+            app.lan, app.https_port, app.store.token
+        )
+    } else {
+        format!(
+            "http://{}:{}/remote?kode={}",
+            app.lan, app.port, app.store.token
+        )
+    };
+    let tray = siapkan_tray(event_loop.create_proxy());
+    if tray.is_none() {
+        crate::core::log::warn("ikon baki sistem tidak bisa dibuat");
+    }
     let teratas = app.store.deck().settings.teratas;
     let window = Arc::new(
         WindowBuilder::new()
@@ -227,9 +344,8 @@ pub fn jalankan(app: Arc<App>) -> ! {
     let win_untuk_ipc = window.clone();
     let app_untuk_ipc = app.clone();
 
-    let url = format!("http://127.0.0.1:{}/", app.port);
     let wv = WebViewBuilder::new()
-        .with_url(url)
+        .with_url(url.clone())
         .with_initialization_script(SKRIP_JENDELA)
         .with_background_color((247, 247, 250, 255))
         .with_devtools(cfg!(debug_assertions))
@@ -279,6 +395,8 @@ pub fn jalankan(app: Arc<App>) -> ! {
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
+        // Baki sistem harus hidup selama jendela hidup.
+        let _ = &tray;
         match event {
             Event::UserEvent(Pesan::Pintasan) => {
                 let tampil = window.is_visible();
@@ -287,6 +405,23 @@ pub fn jalankan(app: Arc<App>) -> ! {
                     window.set_focus();
                 }
             }
+            Event::UserEvent(Pesan::Menu(aksi)) => match aksi.as_str() {
+                "buka" => {
+                    window.set_visible(true);
+                    window.set_focus();
+                }
+                "peramban" => {
+                    if let Err(e) = crate::actions::proses::buka(&url) {
+                        crate::core::log::warn(&e);
+                    }
+                }
+                "salin" => salin_teks(&tautan_remote),
+                "keluar" => {
+                    simpan_geometri(&app, &window);
+                    *control_flow = ControlFlow::Exit;
+                }
+                lain => crate::core::log::warn(&format!("menu baki tidak dikenal: {lain}")),
+            },
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 ..

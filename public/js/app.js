@@ -134,8 +134,9 @@
     sinyal: { jendela: { ada: false, proses: "", judul: "" }, volume: null },
     sw: {
       sound: true, lock: false, hotkey: false, hotkeyCombo: "ctrl+alt+k",
-      top: false, auto: false, https: true, backup: true
+      top: false, auto: false, https: true, backup: true, update: true
     },
+    versi: "2.4.0",
     kode: "",
     lan: "127.0.0.1",
     port: 4173,
@@ -315,7 +316,8 @@
       S.port = s.server.port || S.port;
       S.https = !!s.server.https;
       S.httpsPort = Number(s.server.httpsPort) || 0;
-      if ($("#kdSetVersi")) $("#kdSetVersi").textContent = s.server.versi || "2.4.0";
+      S.versi = s.server.versi || S.versi;
+      if ($("#kdSetVersi")) $("#kdSetVersi").textContent = S.versi;
       if ($("#kdServed")) $("#kdServed").textContent = (s.server.connected || 0) + " klien";
     }
     S.dataState = S.deck && S.deck.pages && S.deck.pages.length ? "normal" : "kosong";
@@ -331,6 +333,7 @@
     S.sw.hotkey = !!String(st.pintasan || "").trim();
     S.sw.hotkeyCombo = String(st.pintasan || "").trim() || "ctrl+alt+k";
     S.sw.https = st.https !== false;
+    S.sw.update = st.periksaPembaruan !== false;
     var hex = String(st.aksen || "");
     S.aksen = /^#[0-9a-f]{6}$/i.test(hex) ? hex : "#4F5FDB";
     var sakelar = function (id, nyala) {
@@ -343,6 +346,7 @@
     sakelar("#kdSetAuto", S.sw.auto);
     sakelar("#kdSetHotkey", S.sw.hotkey);
     sakelar("#kdSetHttps", S.sw.https);
+    sakelar("#kdSetUpdate", S.sw.update);
     if ($("#kdSetHotkeyRow")) $("#kdSetHotkeyRow").toggleAttribute("data-off", !S.sw.hotkey);
     if ($("#kdSetHotkeyCombo")) {
       $("#kdSetHotkeyCombo").value = S.sw.hotkeyCombo;
@@ -514,7 +518,10 @@
     }
     if ($("#kdSetAlamat")) $("#kdSetAlamat").textContent = url.replace(/^https?:\/\//, "");
     var img = $("#kdQrImg");
-    var qr = (S.https && j.qrUrlHttps) || j.qrUrl;
+    /* Tautan HTTP selalu dipakai untuk QR: sertifikat HTTPS lokal belum tentu
+       dipercaya ponsel, dan halaman peringatan sertifikat membuat pemindaian
+       tampak gagal. */
+    var qr = j.qrUrl || j.qrUrlHttps;
     if (img && qr) {
       img.src = qr;
       img.hidden = false;
@@ -596,9 +603,10 @@
     var pages = (S.deck && S.deck.pages) || [];
     return pages.filter(function (p) { return p.id === S.pageId; })[0] || pages[0] || null;
   };
+  var dua = function (n) { return String(n).padStart(2, "0"); };
   var jamNow = function () {
-    try { return new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit" }).format(new Date()); }
-    catch (e) { return "20.41"; }
+    var d = new Date();
+    return dua(d.getHours()) + ":" + dua(d.getMinutes());
   };
   var tglNow = function () {
     try { return new Intl.DateTimeFormat("id-ID", { weekday: "short", day: "numeric", month: "short" }).format(new Date()); }
@@ -606,8 +614,7 @@
   };
   var jamDetik = function () {
     var d = new Date();
-    var p = function (n) { return String(n).padStart(2, "0"); };
-    return p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+    return dua(d.getHours()) + ":" + dua(d.getMinutes()) + ":" + dua(d.getSeconds());
   };
   var resolve = function (label) {
     var map = nilaiVariabel();
@@ -651,8 +658,68 @@
     $("#kdToastText").textContent = text;
     t.classList.add("is-open");
     t.querySelector(".kd-toast-icon").style.color = ok === false ? "var(--danger)" : "";
+    if (ok === false) bunyi(true);
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { t.classList.remove("is-open"); }, 2600);
+  };
+
+  /* Bunyi pendek dari WebAudio. Konteks dibuat pada klik pertama supaya
+     WebView2 mengizinkan pemutaran; tanpa ini sakelar menyala tapi diam. */
+  var AUDIO = null;
+  var bunyi = function (gagal) {
+    if (!S.sw.sound) return;
+    try {
+      var C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return;
+      if (!AUDIO) AUDIO = new C();
+      if (AUDIO.state === "suspended") AUDIO.resume();
+      var t = AUDIO.currentTime;
+      var lama = gagal ? 0.16 : 0.055;
+      var osc = AUDIO.createOscillator();
+      var gain = AUDIO.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(gagal ? 240 : 880, t);
+      if (gagal) osc.frequency.exponentialRampToValueAtTime(180, t + lama);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(gagal ? 0.07 : 0.045, t + 0.006);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + lama);
+      osc.connect(gain);
+      gain.connect(AUDIO.destination);
+      osc.start(t);
+      osc.stop(t + lama + 0.02);
+    } catch (e) { /* suara tidak wajib */ }
+  };
+
+  /* ------------------------------------------------------------------ pembaruan */
+  var bandingVersi = function (a, b) {
+    var pa = String(a).replace(/^v/i, "").split(".");
+    var pb = String(b).replace(/^v/i, "").split(".");
+    for (var i = 0; i < Math.max(pa.length, pb.length); i += 1) {
+      var x = parseInt(pa[i], 10) || 0;
+      var y = parseInt(pb[i], 10) || 0;
+      if (x !== y) return x > y ? 1 : -1;
+    }
+    return 0;
+  };
+
+  var cekPembaruan = function (manual) {
+    return fetch("https://api.github.com/repos/Owladi-Ex/KumiDeck/releases/latest", {
+      headers: { Accept: "application/vnd.github+json" },
+      cache: "no-store"
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (j) {
+      var tag = String((j && j.tag_name) || "").replace(/^v/i, "");
+      if (!tag) throw new Error("tag kosong");
+      if (bandingVersi(tag, S.versi) > 0) {
+        toast("KumiDeck " + tag + " tersedia. Unduh dari halaman rilis.", true);
+      } else if (manual) {
+        toast("KumiDeck " + S.versi + " adalah versi terbaru.", true);
+      }
+    }).catch(function () {
+      if (manual) toast("Pemeriksaan pembaruan gagal. Periksa koneksi internet.", false);
+    });
   };
 
   /* ------------------------------------------------------------------ tema */
@@ -847,13 +914,17 @@
       /* Judul lagu dari SMTC; label tombol hanya dipakai saat tidak ada artis. */
       var md = (S.live && S.live.media) || {};
       var adaMedia = !!(md.ada && md.judul);
+      var jeda = String(md.status || "").toLowerCase() === "paused";
       var judul = adaMedia ? md.judul : "Tidak ada media";
-      var artis = adaMedia && md.artis ? md.artis : resolve(key.label);
+      var artis = adaMedia
+        ? (md.artis || "Sedang diputar")
+        : "Putar musik di komputer";
+      var ikonMedia = adaMedia ? (jeda ? "k-pause" : "k-play") : (key.icon || "k-play");
       var ket = adaMedia
         ? "Sedang diputar: " + md.judul + (md.artis ? " — " + md.artis : "")
         : "Sedang diputar: tidak ada media";
       return '<div ' + attrs + ' data-widget="media" role="img" aria-label="' + esc(ket) + '">' +
-        '<span class="kd-tile-ico">' + ic(ikon(key.icon || "k-music")) + '</span>' +
+        '<span class="kd-tile-ico">' + ic(ikon(ikonMedia)) + '</span>' +
         '<span class="kd-tile-media-val">' + esc(judul) + '</span>' +
         '<span class="kd-tile-label">' + esc(artis) + '</span>' +
         '<span class="kd-tile-grip" aria-hidden="true">' + ic("k-more") + '</span></div>';
@@ -1157,6 +1228,7 @@
     if (key.folder) { openFolder(key); return; }
     if (kedua && !key.actionKedua) return;
     if (!kedua && (!key.action || key.action.type === "kosong")) return;
+    bunyi(false);
     kirimTekan(key, el, sumber, kedua, false);
   };
 
@@ -1876,6 +1948,7 @@
       $("#kdSetTop").setAttribute("aria-checked", String(!on));
       S.sw.top = !on;
       aturSetelan("teratas", !on);
+      ipc("teratas:" + (!on ? "1" : "0"));
       toast(on ? "Jendela tidak lagi selalu di atas." : "Jendela selalu di atas.");
     });
     $("#kdCopyUrl").addEventListener("click", function () { salin($("#kdRemoteUrl").textContent); });
@@ -2096,7 +2169,8 @@
           $("#kdPairHttps").textContent = baru ? "HTTPS aktif" : "HTTP saja";
           $("#kdRemoteUrl").textContent = new URL("/remote", alamatRemote()).href;
         }
-        var peta = { sound: "sound", lock: "terkunci", top: "teratas", auto: "mulaiOtomatis" };
+        if (kunci === "update" && baru) cekPembaruan(true);
+        var peta = { sound: "sound", lock: "terkunci", top: "teratas", auto: "mulaiOtomatis", update: "periksaPembaruan" };
         if (peta[kunci]) aturSetelan(peta[kunci], baru);
         toast(label + (baru ? " diaktifkan." : " dimatikan."));
       });
@@ -2108,6 +2182,8 @@
     sw("#kdSetAuto", "auto", "Mulai otomatis");
     sw("#kdSetHttps", "https", "HTTPS");
     sw("#kdSetBackup", "backup", "Cadangan otomatis");
+    sw("#kdSetUpdate", "update", "Periksa pembaruan");
+    $("#kdSetCheckUpdate").addEventListener("click", function () { cekPembaruan(true); });
 
     var simpanPintasan = function (teks) {
       var nilai = String(teks || "").trim().toLowerCase();
@@ -2610,5 +2686,6 @@
     minta("/api/monitor").then(function (j) {
       monMasuk(j && j.monitor ? j.monitor : j);
     }).catch(function () { /* monitor menyusul lewat SSE */ });
+    if (S.sw.update) cekPembaruan(false);
   });
 })();

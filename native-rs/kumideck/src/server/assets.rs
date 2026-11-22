@@ -46,9 +46,13 @@ pub async fn fallback(State(app): State<Arc<App>>, uri: Uri) -> Response {
     let tipe = mime(jalur);
     /* Berkas ikut ke dalam exe dan dilayani dari komputer ini, jadi tidak ada
        untungnya menyimpan salinan lama: setiap versi baru harus langsung
-       terpakai di WebView2 maupun ponsel yang sudah memasang PWA. HTML dan
-       service worker tidak disimpan sama sekali; berkas lain divalidasi ulang. */
-    let singgah = if jalur.ends_with(".html") || jalur.ends_with("sw.js") {
+       terpakai di WebView2 maupun ponsel yang sudah memasang PWA. HTML, kode,
+       dan gaya tidak disimpan sama sekali; gambar dan font divalidasi ulang. */
+    let singgah = if jalur.ends_with(".html")
+        || jalur.ends_with(".js")
+        || jalur.ends_with(".css")
+        || jalur.ends_with(".webmanifest")
+    {
         "no-store"
     } else {
         "no-cache"

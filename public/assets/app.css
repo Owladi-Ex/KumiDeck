@@ -12,6 +12,26 @@
   --kd-foot-h: 30px;
   --kd-side-w: 296px;
   --kd-gap: 8px;
+
+  /* Dasar Rangka berwarna biru-ungu. KumiDeck memakai netral supaya latar
+     tidak terbaca ungu; aksen tetap mengikuti setelan pengguna. */
+  --bg-shell: #F5F5F6;
+  --bg-muted: #F7F7F8;
+  --bg-sunken: #ECECEE;
+  --bg-hover: #F0F0F2;
+  --line: #E4E4E7;
+  --line-strong: #D1D1D6;
+}
+
+[data-theme="dark"] {
+  --bg-shell: #101113;
+  --bg-rail: #141518;
+  --bg-card: #18191C;
+  --bg-muted: #151619;
+  --bg-sunken: #1E1F23;
+  --bg-hover: #232428;
+  --line: #282A2E;
+  --line-strong: #35373C;
 }
 
 html, body { height: 100%; }
@@ -469,10 +489,10 @@ body.kd-body {
   --tile-ink-2: color-mix(in srgb, var(--on-brand) 82%, transparent);
 }
 .kd-tile[data-variant="dark"] {
-  --tile-bg: #1B2137;
-  --tile-line: #2A3150;
-  --tile-ink: #F1F3FE;
-  --tile-ink-2: #B7BFDB;
+  --tile-bg: #1D1E23;
+  --tile-line: #2B2D33;
+  --tile-ink: #F1F1F4;
+  --tile-ink-2: #B6B8BE;
 }
 [data-theme="dark"] .kd-tile[data-variant="dark"] {
   --tile-bg: var(--bg-sunken);
@@ -522,31 +542,50 @@ body.kd-body {
 
 /* Widget */
 .kd-tile[data-widget="jam"] {
-  grid-template-rows: 1fr;
+  grid-template-rows: auto auto;
   align-content: center;
-  gap: 3px;
-  padding: 10px 6px;
+  justify-items: center;
+  gap: 7px;
+  padding: 12px 8px;
 }
 .kd-tile-time {
-  font: 600 clamp(17px, 16cqi, 44px)/1 var(--font-mono);
-  letter-spacing: -0.03em;
+  font: 700 clamp(20px, 24cqi, 56px)/0.95 var(--font-mono);
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
+  color: var(--tile-ink, var(--text-1));
 }
 .kd-tile-date {
   font: 500 clamp(9px, 6.4cqi, 13px)/1.2 var(--font-sans);
+  letter-spacing: 0.01em;
   color: var(--tile-ink-2, var(--text-3));
 }
-.kd-tile[data-widget="media"] { grid-template-rows: auto 1fr auto; }
-.kd-tile[data-widget="media"] .kd-tile-label { grid-row: 3; }
+.kd-tile[data-widget="media"] {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: center;
+  gap: 6px;
+  padding: 11px 10px;
+}
+.kd-tile[data-widget="media"] .kd-tile-ico .icon {
+  width: clamp(16px, 20cqi, 36px);
+  height: clamp(16px, 20cqi, 36px);
+}
+.kd-tile[data-widget="media"] .kd-tile-label {
+  grid-row: 3;
+  font: 500 clamp(8.5px, 5.6cqi, 11.5px)/1.2 var(--font-sans);
+  -webkit-line-clamp: 1;
+  opacity: 0.9;
+}
 .kd-tile-media-val {
   grid-row: 2;
   align-self: center;
-  font: 500 clamp(9.5px, 6.6cqi, 13px)/1.3 var(--font-sans);
-  color: var(--tile-ink-2, var(--text-3));
+  font: 600 clamp(10px, 7cqi, 14px)/1.3 var(--font-sans);
+  color: var(--tile-ink, var(--text-1));
   max-width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-wrap: pretty;
 }
 .kd-tile[data-widget] .kd-tile-label { color: var(--tile-ink-2, var(--text-3)); font-weight: 500; }
 

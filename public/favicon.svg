@@ -1,7 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="KumiDeck">
-  <rect width="32" height="32" rx="8" fill="#17171b"/>
-  <rect x="7" y="7" width="7" height="7" rx="2" fill="#3d5afe"/>
-  <rect x="18" y="7" width="7" height="7" rx="2" fill="#d9f25b"/>
-  <rect x="7" y="18" width="7" height="7" rx="2" fill="#d9f25b"/>
-  <rect x="18" y="18" width="7" height="7" rx="2" fill="#3d5afe"/>
+  <rect width="32" height="32" rx="7" fill="#FFFFFF"/>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" fill="none" stroke="#E4E4E7"/>
+  <rect x="6.6" y="6.6" width="8.2" height="8.2" rx="2.4" fill="#4F5FDB"/>
+  <rect x="17.2" y="6.6" width="8.2" height="8.2" rx="2.4" fill="#4F5FDB"/>
+  <rect x="6.6" y="17.2" width="8.2" height="8.2" rx="2.4" fill="#4F5FDB"/>
+  <rect x="17.2" y="17.2" width="8.2" height="8.2" rx="2.4" fill="#4F5FDB"/>
 </svg>

@@ -8,7 +8,7 @@
    - /api/ TIDAK PERNAH disentuh: termasuk aliran SSE /api/events yang harus
      tetap mengalir langsung dari server.
    Naikkan CACHE_VERSION setiap kali aset statis berubah. */
-const CACHE_VERSION = "kumideck-v18";
+const CACHE_VERSION = "kumideck-v20";
 const PRA_CACHE = [
   "/favicon.svg",
   "/manifest.webmanifest",

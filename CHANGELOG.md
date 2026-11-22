@@ -66,9 +66,6 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 
 ### Dihapus
 
-- **Ikon baki (tray) dan menunya**: tugasnya digantikan pintasan global
-  tampil/sembunyikan. `GET/POST /api/tray` tetap menjawab agar klien lama tidak
-  gagal.
 - **Tombol bisukan mikrofon di kepala aplikasi**: aksinya tetap tersedia di
   papan dan di Remote.
 - **Ekspor papan PNG** (tangkapan WebView2 di 2.3.0): belum dipindahkan ke inti
@@ -79,6 +76,38 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
   kini memakai kolom target seperti di editor 2.3.0.
 - Paket desain `public/kumi/` beserta `public/css/` dan JS 2.3.0 (`core.js`,
   `desktop.js`, `remote.js`, `bahasa.js`, `bahasa-tambahan.js`).
+
+### Diperbaiki
+
+- **Ikon baki sistem kembali ada** (baki Windows): menu Buka KumiDeck, Buka di
+  peramban, Salin tautan Remote, dan Keluar. Ikonnya memakai bahan yang sama
+  dengan ikon aplikasi.
+- **Ikon aplikasi mengikuti tema terang**: kotak putih membulat dengan empat
+  kotak indigo, tanpa latar hitam dan tanpa kuning, dipakai untuk `.exe`,
+  pemasang, baki, favicon, PWA, dan launcher Android.
+- **Umpan balik suara benar-benar berbunyi**: klik tombol papan dan nada galat
+  pendek diputar lewat WebAudio di sisi klien dan mengikuti sakelar "Umpan
+  balik suara".
+- **Selalu di atas**: tombol pin di kepala kini mengirim perintah native ke
+  jendela, jadi pin bekerja seketika dan tetap sama dengan sakelar di Setelan.
+- **Periksa pembaruan**: sakelar dan tombol "Periksa" membandingkan versi
+  aplikasi dengan rilis terbaru `Owladi-Ex/KumiDeck`; pemeriksaan otomatis saat
+  aplikasi dibuka berjalan diam, pemeriksaan manual memberi kabar.
+- **Remote mendatar**: ponsel dalam posisi mendatar tidak lagi memaksa papan
+  tergulung; kepala, tab, dan kaki dirapatkan, papan menyesuaikan lebar dengan
+  ruang tegak yang ada, dan bingkai ponsel desktop tidak muncul di ponsel.
+- **Pindai QR langsung memasangkan**: QR membawa kode pasangan di tautannya,
+  Remote memasangkan perangkat sendiri lalu membuang kode dari URL, dan QR
+  memakai alamat HTTP agar tidak berhenti di peringatan sertifikat.
+- **Warna ungu dihapus dari seluruh permukaan**: token permukaan diganti netral
+  terang (`#F5F5F6`/`#F7F7F8`) dan netral gelap, termasuk kanvas papan.
+- **Jendela mengikuti isi papan**: tinggi awal dihitung dari baris dan kolom
+  profil, jadi tidak ada ruang kosong besar di bawah tombol.
+- **Setelan berbahasa Indonesia**: baris "Bahasa antarmuka" dan "Tombol jendela"
+  dihapus, sehingga tidak ada lagi teks English atau versi 2.3.0 di Setelan.
+- **Widget jam dan media dipoles**: jam memakai pemisah titik dua dan angka
+  tabular yang lebih besar, tanggal rata tengah, judul media dua baris dengan
+  ikon putar/jeda sesuai status.
 
 ## [2.3.0] - 2026-11-16
 

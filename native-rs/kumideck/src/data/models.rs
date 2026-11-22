@@ -376,6 +376,9 @@ pub struct Setelan {
     /// HTTPS di port 4174. Dibaca saat aplikasi mulai.
     #[serde(default = "benar")]
     pub https: bool,
+    /// Periksa rilis baru di GitHub saat aplikasi dibuka.
+    #[serde(default = "benar", rename = "periksaPembaruan")]
+    pub periksa_pembaruan: bool,
 }
 
 impl Default for Setelan {
@@ -391,6 +394,7 @@ impl Default for Setelan {
             aksen2: String::new(),
             pintasan: String::new(),
             https: true,
+            periksa_pembaruan: true,
         }
     }
 }

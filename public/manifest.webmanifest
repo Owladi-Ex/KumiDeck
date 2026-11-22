@@ -1,6 +1,6 @@
 {
   "id": "/remote",
-  "name": "KumiDeck — Papan Tombol",
+  "name": "KumiDeck â€” Papan Tombol",
   "short_name": "KumiDeck",
   "description": "Papan tombol jarak jauh KumiDeck: kendalikan desktop dengan ketukan dari ponsel atau tablet Anda.",
   "lang": "id",
@@ -10,8 +10,8 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "any",
-  "background_color": "#eeede8",
-  "theme_color": "#17171b",
+  "background_color": "#FFFFFF",
+  "theme_color": "#F5F5F6",
   "categories": ["productivity", "utilities"],
   "prefer_related_applications": false,
   "icons": [

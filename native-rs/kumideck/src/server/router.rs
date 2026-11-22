@@ -531,16 +531,24 @@ async fn pair_info(
     } else {
         String::new()
     };
+    /* QR langsung memasangkan: Remote membawa kode di query, jadi pindai lalu
+       papan terbuka tanpa mengetik ulang kode di ponsel. */
+    let tautan = format!("{url}?kode={}", app.store.token);
+    let tautan_https = if url_https.is_empty() {
+        String::new()
+    } else {
+        format!("{url_https}?kode={}", app.store.token)
+    };
     ok_json(
         StatusCode::OK,
         json!({
             "url": url,
             "urlHttps": url_https,
-            "qrUrl": format!("/api/qr.svg?data={}", urlencoding(&url)),
-            "qrUrlHttps": if url_https.is_empty() {
+            "qrUrl": format!("/api/qr.svg?data={}", urlencoding(&tautan)),
+            "qrUrlHttps": if tautan_https.is_empty() {
                 String::new()
             } else {
-                format!("/api/qr.svg?data={}", urlencoding(&url_https))
+                format!("/api/qr.svg?data={}", urlencoding(&tautan_https))
             },
             "code": app.store.kode_tampil(),
             "kode": app.store.kode_tampil(),
