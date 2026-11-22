@@ -116,7 +116,10 @@ fn muat_geometri(app: &App) -> Geometri {
 
 fn simpan_geometri(app: &App, w: &Window) {
     let pos = w.outer_position().ok();
-    let ukuran = w.outer_size();
+    // Simpan ukuran dalam (inner), karena saat dimuat dipasang lewat
+    // `with_inner_size`. Memakai outer_size membuat jendela membesar
+    // beberapa piksel setiap kali dibuka.
+    let ukuran = w.inner_size();
     let skala = w.scale_factor();
     let Some(p) = pos else { return };
     let (x, y, lebar, tinggi) = (
@@ -324,12 +327,14 @@ pub fn jalankan(app: Arc<App>) -> ! {
         crate::core::log::warn("ikon baki sistem tidak bisa dibuat");
     }
     let teratas = app.store.deck().settings.teratas;
+    let ikon_jendela = tao::window::Icon::from_rgba(IKON_TRAY.to_vec(), 32, 32).ok();
     let window = Arc::new(
         WindowBuilder::new()
             .with_title("KumiDeck")
             .with_decorations(false)
             .with_resizable(true)
             .with_always_on_top(teratas)
+            .with_window_icon(ikon_jendela)
             .with_inner_size(LogicalSize::new(geo.lebar, geo.tinggi))
             .with_position(LogicalPosition::new(geo.x, geo.y))
             .with_min_inner_size(LogicalSize::new(720.0, 480.0))
@@ -386,6 +391,25 @@ pub fn jalankan(app: Arc<App>) -> ! {
                     let _ = win_untuk_ipc.set_always_on_top(lain.ends_with('1'));
                 }
                 lain if lain.starts_with("warna:") => {}
+                lain if lain.starts_with("ukuran:") => {
+                    // UI meminta jendela menyesuaikan isi papan. Saat jendela
+                    // sedang dimaksimalkan, ukuran tidak boleh diubah.
+                    if win_untuk_ipc.is_maximized() {
+                        return;
+                    }
+                    let sisa = lain.trim_start_matches("ukuran:");
+                    let mut bagian = sisa.split(':');
+                    if let (Some(w), Some(h)) = (bagian.next(), bagian.next()) {
+                        if let (Ok(w), Ok(h)) = (w.parse::<f64>(), h.parse::<f64>()) {
+                            if w.is_finite() && h.is_finite() {
+                                let _ = win_untuk_ipc.set_inner_size(LogicalSize::new(
+                                    w.clamp(720.0, 2400.0),
+                                    h.clamp(480.0, 2000.0),
+                                ));
+                            }
+                        }
+                    }
+                }
                 _ => crate::core::log::warn(&format!("perintah jendela tidak dikenal: {pesan}")),
             }
         })

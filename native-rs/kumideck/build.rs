@@ -3,6 +3,7 @@
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=../../assets/icon.ico");
+    println!("cargo:rerun-if-changed=../../assets/tray32.rgba");
 
     #[cfg(target_os = "windows")]
     {

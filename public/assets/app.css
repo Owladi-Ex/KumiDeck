@@ -1631,7 +1631,6 @@ input[type="color"]:hover { border-color: var(--line-strong); }
 }
 
 @media (max-width: 1040px) {
-  :root { --kd-side-w: 260px; }
   .kd-title-tag { display: none; }
   .kd-top-right .kd-hide-md { display: none; }
 }
@@ -1639,7 +1638,7 @@ input[type="color"]:hover { border-color: var(--line-strong); }
 @media (max-width: 900px) {
   :root { --kd-rail-w: 56px; --kd-side-w: 0px; }
   .kd-content { grid-template-columns: minmax(0, 1fr) 0px; }
-  .kd-side, .kd-panel-open { display: none; }
+  .kd-side { display: none; }
   .kd-view { padding: 12px; }
   .kd-rail-logo { width: 34px; height: 34px; }
   .kd-rail-btn { width: 36px; height: 36px; }

@@ -1028,6 +1028,55 @@
     board.style.maxWidth = "100%";
   };
 
+  /* Jendela mengikuti isi papan: lebar dan tinggi dihitung dari kotak tombol
+     yang sudah dipas, bukan dari ruang kosong yang tersisa. Dipanggil setelah
+     papan selesai ditata, saat panel kanan dibuka/ditutup, dan sekali setelah
+     pengguna berhenti menyeret tepi jendela. */
+  var pasJendela = function (paksa) {
+    if (S.view !== "papan" || !S.deck) return;
+    var view = $("#view-papan");
+    var board = $("#kdBoard");
+    var rail = document.querySelector(".kd-rail");
+    var kepala = document.querySelector(".kd-top");
+    var kaki = document.querySelector(".kd-foot");
+    if (!view || !board || !kepala || !kaki) return;
+    var kotak = board.getBoundingClientRect();
+    if (!kotak.width || !kotak.height) return;
+    var gaya = getComputedStyle(view);
+    var padX = (parseFloat(gaya.paddingLeft) || 14) + (parseFloat(gaya.paddingRight) || 14);
+    var padY = (parseFloat(gaya.paddingTop) || 14) + (parseFloat(gaya.paddingBottom) || 14);
+    var gulir = Math.max(0, view.offsetWidth - view.clientWidth);
+    var panelTerbuka = $("#kdContent").dataset.panel === "open";
+    var rel = rail ? rail.offsetWidth : 68;
+    if (paksa && rel < 68) rel = 68;
+    var panel = panelTerbuka ? 296 : 0;
+    var bar = $("#kdEditbar");
+    var bilah = bar && !bar.hidden ? bar.offsetHeight + 10 : 0;
+    var lebar = Math.round(rel + panel + gulir + padX + kotak.width);
+    /* Di bawah 900 px rel menjadi 56 px; sesuaikan supaya tidak menyisakan
+       ruang kosong di kanan papan. */
+    if (!panelTerbuka && lebar < 900) {
+      lebar = Math.round(56 + gulir + padX + kotak.width);
+    }
+    var tinggi = Math.round(kepala.offsetHeight + kaki.offsetHeight + padY + kotak.height + bilah);
+    if (Math.abs(lebar - window.innerWidth) < 2 && Math.abs(tinggi - window.innerHeight) < 2) return;
+    pasTerakhir = Date.now();
+    ipc("ukuran:" + lebar + ":" + tinggi);
+  };
+
+  /* Menyeret tepi jendela memicu resize terus-menerus. Penyesuaian ukuran
+     dijalankan sekali setelah seretan berhenti, dan tidak diulang sesudah
+     penyesuaian buatan sendiri. */
+  var pasTunda = 0;
+  var pasTerakhir = 0;
+  var jadwalPas = function () {
+    clearTimeout(pasTunda);
+    pasTunda = setTimeout(function () {
+      if (Date.now() - pasTerakhir < 600) return;
+      pasJendela();
+    }, 280);
+  };
+
   /* --------------------------------------------------- penanda geser aktif */
   var inkEl = function (host, kind, tone) {
     var cls = kind === "underline" ? "kd-tabs-ink" : "kd-pill-ink";
@@ -1897,7 +1946,12 @@
     var setPanel = function (open) {
       S.panel = open;
       $("#kdContent").dataset.panel = open && S.view === "papan" ? "open" : "off";
-      setTimeout(fitBoard, 340);
+      /* Ukuran jendela dihitung dari papan yang sedang tampil, sebelum
+         fitBoard sempat mengecilkannya karena ruang panel berubah. */
+      requestAnimationFrame(function () {
+        pasJendela(open);
+        setTimeout(fitBoard, 400);
+      });
     };
     $("#kdSideClose").addEventListener("click", function () { setPanel(false); });
     $("#kdPanelOpen").addEventListener("click", function () { setPanel(true); });
@@ -2486,7 +2540,10 @@
     }, 30000);
 
     window.addEventListener("resize", function () {
-      if (S.view === "papan") fitBoard();
+      if (S.view === "papan") {
+        fitBoard();
+        jadwalPas();
+      }
       moveRailInk();
       placeInk($("#kdTabs"), "underline");
       placeInk($("#kdThemeSeg"), "pill", 'button[aria-pressed="true"]', "");

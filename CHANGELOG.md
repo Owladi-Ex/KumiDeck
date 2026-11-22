@@ -84,7 +84,9 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
   dengan ikon aplikasi.
 - **Ikon aplikasi mengikuti tema terang**: kotak putih membulat dengan empat
   kotak indigo, tanpa latar hitam dan tanpa kuning, dipakai untuk `.exe`,
-  pemasang, baki, favicon, PWA, dan launcher Android.
+  pemasang, baki, favicon, PWA, dan launcher Android. Berkas `.ico` kini memakai
+  bingkai DIB yang sah (bukan PNG di dalam ICO), dan ikon baki dibaca ulang
+  setiap build.
 - **Umpan balik suara benar-benar berbunyi**: klik tombol papan dan nada galat
   pendek diputar lewat WebAudio di sisi klien dan mengikuti sakelar "Umpan
   balik suara".
@@ -102,7 +104,9 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 - **Warna ungu dihapus dari seluruh permukaan**: token permukaan diganti netral
   terang (`#F5F5F6`/`#F7F7F8`) dan netral gelap, termasuk kanvas papan.
 - **Jendela mengikuti isi papan**: tinggi awal dihitung dari baris dan kolom
-  profil, jadi tidak ada ruang kosong besar di bawah tombol.
+  profil, jadi tidak ada ruang kosong besar di bawah tombol. Saat panel ringkasan
+  ditutup atau jendela diubah ukurannya, lebar dan tinggi dirapatkan ke kotak
+  tombol, dan membuka panel kembali melebarkan jendela secukupnya.
 - **Setelan berbahasa Indonesia**: baris "Bahasa antarmuka" dan "Tombol jendela"
   dihapus, sehingga tidak ada lagi teks English atau versi 2.3.0 di Setelan.
 - **Widget jam dan media dipoles**: jam memakai pemisah titik dua dan angka
