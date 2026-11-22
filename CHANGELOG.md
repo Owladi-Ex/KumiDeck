@@ -142,10 +142,14 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
   bergeser, berubah ukuran, atau bergetar. Isi panel tetap selebar aslinya dan
   digeser bersama jalurnya, jadi teksnya tidak terhimpit atau terpotong di
   tengah kata.
-- **Tinggi jendela merapat setelah seret**: begitu tepi jendela dilepas,
-  tingginya dirapatkan ke tinggi kotak tombol, jadi tidak ada pita kosong di
-  bawah papan. Lebar yang dipilih pengguna dibiarkan apa adanya; hanya tinggi
-  yang menyusul isi.
+- **Jendela merapat ke papan setelah seret, kedua arah**: begitu tepi jendela
+  dilepas, lebar dan tingginya dirapatkan ke kotak tombol, jadi tidak ada pita
+  kosong di bawah maupun di samping papan. Perapatan itu berjalan dalam langkah
+  sepuluh piksel yang sama besar mengikuti irama Windows (~20 ms per ukuran),
+  jadi tepi jendela mengalir ke tempatnya alih-alih melompat. Papan tidak ikut
+  bergerak; hanya tepi jendela yang menyusul. Ukuran jendela yang tersimpan juga
+  dirapatkan sekali saat aplikasi dibuka, jadi sisa ruang dari profil atau panel
+  lama tidak terbawa.
 - **Seret tepi jendela tanpa patahan**: ukuran ubin mengikuti lebar isi secara
   pecahan selama jendela diseret, lalu dibulatkan setelah seretan berhenti.
   Penataan digabung menjadi satu per bingkai, dan lebar jendela pilihan
