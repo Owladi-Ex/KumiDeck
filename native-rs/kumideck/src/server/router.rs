@@ -1501,9 +1501,20 @@ async fn audio_mainkan(State(app): State<Shared>, Json(body): Json<Value>) -> Re
     if sumber.is_empty() {
         return galat(StatusCode::BAD_REQUEST, "Pilih suara atau isi sumber suara.");
     }
-    let volume = item
-        .map(|s| s.volume)
-        .unwrap_or_else(|| body.get("volume").and_then(|v| v.as_i64()).unwrap_or(100));
+    let volume_item = item.map(|s| s.volume).unwrap_or(100).clamp(0, 100);
+    /* Slider di halaman Soundboard adalah pengali master untuk pemutaran cepat:
+       hasilnya tidak pernah melebihi volume yang disetel per suara, jadi nilai
+       kecil yang disengaja tidak bisa terdengar lebih keras dari setelannya. */
+    let volume_master = body
+        .get("volume")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(100)
+        .clamp(0, 100);
+    let volume = if item.is_some() {
+        (volume_item * volume_master + 50) / 100
+    } else {
+        volume_master
+    };
     let hasil = crate::soundboard::mainkan(app.paths.clone(), &sumber, volume).await;
     let ok = hasil.get("ok").and_then(|v| v.as_bool()).unwrap_or(false);
     ok_json(

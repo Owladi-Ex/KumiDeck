@@ -193,6 +193,12 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
   tampak "tidak ada" di aplikasi terpasang meski sudah ikut ke dalam exe:
   `app.js` lama tersaji dari cache dengan stale-while-revalidate. Versi cache
   naik ke `kumideck-v47`.
+- **Slider volume Soundboard akhirnya berpengaruh**: sebelumnya nilai slider
+  dikirim tetapi diabaikan server, karena volume suara per item selalu menang.
+  Kini slider menjadi pengali master untuk pemutaran dari halaman Soundboard
+  (`volume suara × slider / 100`), sedangkan pemutaran dari papan dan Remote
+  tetap memakai volume suara itu saja. Label kedua kolom diperjelas: "Volume
+  pemutaran" di kepala halaman dan "Volume suara (%)" di dialog ubah.
 
 ## [2.3.0] - 2026-11-16
 
