@@ -206,7 +206,11 @@ body.kd-body {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 22ch;
+  cursor: pointer;
+  border-radius: 4px;
 }
+.kd-title:hover { color: var(--brand-text); }
+.kd-title:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .kd-title-tag {
   flex: none;
   font: 500 11px/16px var(--font-mono);

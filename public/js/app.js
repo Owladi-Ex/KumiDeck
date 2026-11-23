@@ -1262,6 +1262,8 @@
     var rows = (S.deck && S.deck.profile && S.deck.profile.rows) || 3;
     var names = { papan: nama, soundboard: "KumiDeck", riwayat: "KumiDeck", proses: "KumiDeck", perangkat: "KumiDeck", setelan: "KumiDeck" };
     $("#kdTitle").textContent = names[S.view];
+    if (S.view === "papan") $("#kdTitle").title = nama + " — klik untuk mengubah nama papan";
+    else $("#kdTitle").removeAttribute("title");
     $("#kdTitleTag").textContent = cols + " × " + rows;
     if ($("#kdSetGridVal")) $("#kdSetGridVal").textContent = cols + " × " + rows;
     var onBoard = S.view === "papan";
@@ -2131,6 +2133,8 @@
       if (!dlg) return;
       var cols = (S.deck && S.deck.profile && S.deck.profile.columns) || 5;
       var rows = (S.deck && S.deck.profile && S.deck.profile.rows) || 3;
+      var nama = (S.deck && S.deck.profile && S.deck.profile.name) || "Meja Kerja";
+      if ($("#kdGdNama")) $("#kdGdNama").value = nama;
       $("#kdGdCols").value = cols;
       $("#kdGdRows").value = rows;
       $$("#kdGdPresets button").forEach(function (b) {
@@ -2138,43 +2142,68 @@
         b.setAttribute("aria-pressed", String(aktif));
       });
       dlg.showModal();
+      if ($("#kdGdNama")) setTimeout(function () { $("#kdGdNama").focus(); $("#kdGdNama").select(); }, 40);
     };
 
-    var ubahUkuranGrid = function (kolomBaru, barisBaru) {
+    var ubahPapan = function (namaBaru, kolomBaru, barisBaru) {
       kolomBaru = Math.max(1, Math.min(8, Number(kolomBaru) || 5));
       barisBaru = Math.max(1, Math.min(6, Number(barisBaru) || 3));
       if (!S.deck) return;
       if (!S.deck.profile) S.deck.profile = { name: "Meja Kerja", columns: 5, rows: 3 };
+      namaBaru = (namaBaru || "").trim().slice(0, 48) || "Meja Kerja";
       var lamaC = S.deck.profile.columns;
       var lamaR = S.deck.profile.rows;
-      if (lamaC === kolomBaru && lamaR === barisBaru) return;
+      var lamaNama = S.deck.profile.name || "Meja Kerja";
+      var ukuranSama = lamaC === kolomBaru && lamaR === barisBaru;
+      var namaSama = lamaNama === namaBaru;
+      if (ukuranSama && namaSama) return;
 
-      var totalBaru = kolomBaru * barisBaru;
-      S.deck.profile.columns = kolomBaru;
-      S.deck.profile.rows = barisBaru;
-      (S.deck.pages || []).forEach(function (p) {
-        if (!Array.isArray(p.keys)) p.keys = [];
-        while (p.keys.length < totalBaru) p.keys.push(null);
-        if (p.keys.length > totalBaru) p.keys.length = totalBaru;
-      });
+      S.deck.profile.name = namaBaru;
+      if (!ukuranSama) {
+        var totalBaru = kolomBaru * barisBaru;
+        S.deck.profile.columns = kolomBaru;
+        S.deck.profile.rows = barisBaru;
+        (S.deck.pages || []).forEach(function (p) {
+          if (!Array.isArray(p.keys)) p.keys = [];
+          while (p.keys.length < totalBaru) p.keys.push(null);
+          if (p.keys.length > totalBaru) p.keys.length = totalBaru;
+        });
+      }
 
       renderHeader();
-      renderBoard();
+      if (!ukuranSama) renderBoard();
       simpanDeck();
-      pasIsi();
-      toast("Ukuran papan diubah menjadi " + kolomBaru + " × " + barisBaru + ".", true);
+      if (!ukuranSama) { pasIsi(); toast("Ukuran papan diubah menjadi " + kolomBaru + " × " + barisBaru + ".", true); }
+      else toast("Nama papan diubah menjadi " + namaBaru + ".", true);
     };
 
     if ($("#kdTitleTag")) $("#kdTitleTag").addEventListener("click", bukaDialogGrid);
+    if ($("#kdTitle")) {
+      $("#kdTitle").addEventListener("click", function () {
+        if (S.view === "papan") bukaDialogGrid();
+      });
+      $("#kdTitle").addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          if (S.view === "papan") bukaDialogGrid();
+        }
+      });
+    }
     if ($("#kdSetGridBtn")) $("#kdSetGridBtn").addEventListener("click", bukaDialogGrid);
     if ($("#kdGdClose")) $("#kdGdClose").addEventListener("click", function () { $("#kdDlgGrid").close(); });
     if ($("#kdGdBatal")) $("#kdGdBatal").addEventListener("click", function () { $("#kdDlgGrid").close(); });
     if ($("#kdGdSimpan")) {
       $("#kdGdSimpan").addEventListener("click", function () {
+        var nama = $("#kdGdNama") ? $("#kdGdNama").value : "";
         var c = $("#kdGdCols").value;
         var r = $("#kdGdRows").value;
         $("#kdDlgGrid").close();
-        ubahUkuranGrid(c, r);
+        ubahPapan(nama, c, r);
+      });
+    }
+    if ($("#kdGdNama")) {
+      $("#kdGdNama").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); $("#kdGdSimpan").click(); }
       });
     }
     $$("#kdGdPresets button").forEach(function (b) {

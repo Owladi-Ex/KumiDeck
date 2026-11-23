@@ -244,6 +244,10 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
   lebar Soundboard tampil dua kolom mulai 1200 px.
 - **Panel folder benar-benar modal**: Tab berputar di dalam panel, tidak lagi
   lolos ke tombol di belakangnya.
+- **Nama papan bisa diganti**: klik judul di kepala jendela (atau tag ukuran /
+  tombol *Ubah* di Setelan) untuk membuka dialog Papan. Isinya nama papan
+  (sampai 48 karakter) plus kolom × baris. Sebelumnya "Meja Kerja" terkunci di
+  kode.
 - **Konfirmasi hapus memakai dialog aplikasi**: hapus halaman, folder, tombol,
   pulihkan arsip, dan izin menjalankan skrip tidak lagi memunculkan kotak
   bawaan WebView2 ("127.0.0.1:4173 says", tombol OK/Cancel berbahasa Inggris),

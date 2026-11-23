@@ -182,8 +182,8 @@
       <header class="kd-top">
         <div class="kd-top-left">
           <div class="kd-title-wrap">
-            <h1 class="kd-title" id="kdTitle">Meja Kerja</h1>
-            <button type="button" class="kd-title-tag" id="kdTitleTag" title="Klik untuk mengubah ukuran tombol papan">5 × 3</button>
+            <h1 class="kd-title" id="kdTitle" tabindex="0" role="button" title="Klik untuk mengubah nama papan">Meja Kerja</h1>
+            <button type="button" class="kd-title-tag" id="kdTitleTag" title="Klik untuk mengubah nama dan ukuran papan">5 × 3</button>
           </div>
           <span class="kd-top-sep" aria-hidden="true"></span>
           <div class="kd-tabs tabs" id="kdTabs" role="tablist" aria-label="Halaman papan"></div>
@@ -443,8 +443,8 @@
               <header><b>Papan</b><p>Perilaku tombol dan tata letak.</p></header>
               <div class="kd-set-rows">
                 <div class="kd-set-row">
-                  <div><span class="kd-set-lbl">Ukuran tombol papan</span><span class="kd-set-hint">Jumlah kolom dan baris tombol di seluruh halaman (1–8 kolom × 1–6 baris).</span></div>
-                  <div class="kd-set-ctl"><button class="btn btn-sm" type="button" id="kdSetGridBtn">Ubah ukuran (<span id="kdSetGridVal">5 × 3</span>)</button></div>
+                  <div><span class="kd-set-lbl">Nama dan ukuran papan</span><span class="kd-set-hint">Nama tampil di kepala jendela; ukuran = kolom dan baris tombol di seluruh halaman (1–8 × 1–6).</span></div>
+                  <div class="kd-set-ctl"><button class="btn btn-sm" type="button" id="kdSetGridBtn">Ubah (<span id="kdSetGridVal">5 × 3</span>)</button></div>
                 </div>
                 <div class="kd-set-row">
                   <div><span class="kd-set-lbl">Kunci tata letak</span><span class="kd-set-hint">Mencegah tombol bergeser tanpa sengaja saat dipakai.</span></div>
@@ -859,13 +859,17 @@
 
 <dialog class="kd-dlg kd-dlg-sm" id="kdDlgGrid" aria-labelledby="kdGdTitle">
   <div class="dlg-head">
-    <h2 id="kdGdTitle">Ukuran papan</h2>
-    <p>Atur jumlah kolom dan baris tombol untuk seluruh halaman.</p>
+    <h2 id="kdGdTitle">Papan</h2>
+    <p>Nama papan tampil di kepala jendela; ukuran berlaku untuk seluruh halaman.</p>
     <button class="icon-btn dlg-close" type="button" id="kdGdClose" aria-label="Tutup dialog">
       <svg class="icon" aria-hidden="true"><use href="#k-close"></use></svg>
     </button>
   </div>
   <div class="dlg-body">
+    <div class="field" style="margin-bottom:14px">
+      <label for="kdGdNama">Nama papan</label>
+      <input type="text" id="kdGdNama" maxlength="48" placeholder="Meja Kerja">
+    </div>
     <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">
       <div class="field" style="flex:1">
         <label for="kdGdCols">Kolom (1–8)</label>
