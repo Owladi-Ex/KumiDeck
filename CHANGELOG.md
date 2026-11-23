@@ -244,6 +244,16 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
   lebar Soundboard tampil dua kolom mulai 1200 px.
 - **Panel folder benar-benar modal**: Tab berputar di dalam panel, tidak lagi
   lolos ke tombol di belakangnya.
+- **Konfirmasi hapus memakai dialog aplikasi**: hapus halaman, folder, tombol,
+  pulihkan arsip, dan izin menjalankan skrip tidak lagi memunculkan kotak
+  bawaan WebView2 ("127.0.0.1:4173 says", tombol OK/Cancel berbahasa Inggris),
+  melainkan dialog gelap-terang yang mengikuti tema, dengan tombol
+  "Hapus/Batal" berbahasa Indonesia dan fokus awal di Batal.
+- **Widget GPU dan RAM tidak lagi menulis "tidak tersedia" di kepala**: angka
+  pemakaian tetap tampil; label suhu/total RAM hanya muncul bila nilainya
+  memang terbaca. Suhu GPU tidak tersedia karena Windows tidak menyediakan
+  penghitung PDH untuknya — kini ditulis sebagai ketiadaan, bukan seolah
+  seluruh widget gagal.
 
 ## [2.3.0] - 2026-11-16
 

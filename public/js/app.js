@@ -665,6 +665,32 @@
     toastTimer = setTimeout(function () { t.classList.remove("is-open"); }, 2600);
   };
 
+  /* Konfirmasi bergaya aplikasi. window.confirm bawaan WebView2 muncul sebagai
+     "127.0.0.1:4173 says" dengan tombol OK/Cancel berbahasa Inggris. */
+  var tanya = function (judul, pesan, labelOk) {
+    return new Promise(function (selesai) {
+      var dlg = $("#kdDlgTanya");
+      if (!dlg) { selesai(window.confirm(pesan)); return; }
+      var ok = $("#kdTanyaOk");
+      var batal = $("#kdTanyaBatal");
+      $("#kdTanyaTitle").textContent = judul;
+      $("#kdTanyaPesan").textContent = pesan;
+      ok.textContent = labelOk || "Hapus";
+      var tutup = function (hasil) {
+        ok.onclick = null;
+        batal.onclick = null;
+        dlg.oncancel = null;
+        if (dlg.open) dlg.close();
+        selesai(hasil);
+      };
+      ok.onclick = function () { tutup(true); };
+      batal.onclick = function () { tutup(false); };
+      dlg.oncancel = function (e) { e.preventDefault(); tutup(false); };
+      dlg.showModal();
+      batal.focus();
+    });
+  };
+
   /* Bunyi pendek dari WebAudio. Konteks dibuat pada klik pertama supaya
      WebView2 mengizinkan pemutaran; tanpa ini sakelar menyala tapi diam. */
   var AUDIO = null;
@@ -833,14 +859,14 @@
     if (w === "ram") {
       var total = m.ramTotal ? angka(m.ramTotal, 0) : "—";
       return '<div ' + attrs + ' data-widget="ram" role="img" aria-label="RAM terpakai ' + angka(m.ram, 1) + ' dari ' + total + ' gigabita">' +
-        top("kd-ram", "RAM", m.ramTotal ? "dari " + total + " GB" : "tidak tersedia") +
+        top("kd-ram", "RAM", m.ramTotal ? "dari " + total + " GB" : "") +
         '<span class="kd-mon-val">' + (m.ada ? angka(m.ram, 1) : "—") + '<span class="kd-mon-unit">' + (m.ada ? "GB" : "") + '</span></span>' +
         monChart("ram", m.ramTotal || 1, m.ram) + grip + '</div>';
     }
     if (w === "gpu") {
       var gpu = Math.round(m.gpu);
-      var suhu = m.gpuTemp == null ? "tidak tersedia" : Math.round(m.gpuTemp) + " °C";
-      return '<div ' + attrs + ' data-widget="gpu" role="img" aria-label="Penggunaan GPU ' + gpu + ' persen, suhu ' + suhu + '">' +
+      var suhu = m.gpuTemp == null ? "" : Math.round(m.gpuTemp) + " °C";
+      return '<div ' + attrs + ' data-widget="gpu" role="img" aria-label="Penggunaan GPU ' + gpu + ' persen' + (suhu ? ", suhu " + Math.round(m.gpuTemp) + " derajat" : "") + '">' +
         top("kd-gpu", "GPU", suhu) +
         '<span class="kd-mon-val">' + (m.gpu == null ? "—" : gpu) + '<span class="kd-mon-unit">' + (m.gpu == null ? "" : "%") + '</span></span>' +
         monChart("gpu", 100, gpu) + grip + '</div>';
@@ -875,7 +901,7 @@
     if (w === "ram") {
       if (val) val.innerHTML = (MONITOR.ada ? angka(MONITOR.ram, 1) : "—") + '<span class="kd-mon-unit">' + (MONITOR.ada ? "GB" : "") + '</span>';
       lukis("ram", MONITOR.ramTotal || 1, MONITOR.ram);
-      if (extra) extra.textContent = MONITOR.ramTotal ? "dari " + angka(MONITOR.ramTotal, 0) + " GB" : "tidak tersedia";
+      if (extra) extra.textContent = MONITOR.ramTotal ? "dari " + angka(MONITOR.ramTotal, 0) + " GB" : "";
       el.setAttribute("aria-label", "RAM terpakai " + angka(MONITOR.ram, 1) + " dari " + angka(MONITOR.ramTotal, 0) + " gigabita");
       return;
     }
@@ -883,7 +909,7 @@
       var g = Math.round(MONITOR.gpu);
       if (val) val.innerHTML = (MONITOR.gpu == null ? "—" : g) + '<span class="kd-mon-unit">' + (MONITOR.gpu == null ? "" : "%") + '</span>';
       lukis("gpu", 100, g);
-      if (extra) extra.textContent = MONITOR.gpuTemp == null ? "tidak tersedia" : Math.round(MONITOR.gpuTemp) + " °C";
+      if (extra) extra.textContent = MONITOR.gpuTemp == null ? "" : Math.round(MONITOR.gpuTemp) + " °C";
       el.setAttribute("aria-label", "Penggunaan GPU " + g + " persen");
       return;
     }
@@ -1323,8 +1349,10 @@
     }
     minta(jalur, { method: "POST", body: JSON.stringify(isi) }).then(function (j) {
       if (j.code === "butuh-izin") {
-        var pesan = (j.message || "Jalankan skrip ini?") + "\n\n" + (j.alasan || "");
-        if (window.confirm(pesan)) kirimTekan(key, el, sumber, kedua, true);
+        var pesan = (j.message || "Jalankan skrip ini?") + (j.alasan ? "\n\n" + j.alasan : "");
+        tanya("Izin menjalankan", pesan, "Jalankan").then(function (ya) {
+          if (ya) kirimTekan(key, el, sumber, kedua, true);
+        });
         return;
       }
       if (j.navigate) switchPage(j.navigate);
@@ -2013,12 +2041,16 @@
       var idx = keys.indexOf(S.folder);
       if (idx < 0) return;
       var label = S.folder.label || "Folder";
-      if (!window.confirm('Hapus folder "' + label + '" beserta ' + (S.folder.keys || []).length + " tombol isinya?")) return;
-      keys[idx] = null;
-      closeFolder();
-      renderBoard(); renderTabs();
-      simpanDeck();
-      toast("Folder " + label + " dihapus.", true);
+      var jumlah = (S.folder.keys || []).length;
+      tanya("Hapus folder?", 'Folder "' + label + '"' + (jumlah ? " beserta " + jumlah + " tombol isinya" : "") +
+        " akan dilepas dari papan.", "Hapus folder").then(function (ya) {
+        if (!ya) return;
+        keys[idx] = null;
+        closeFolder();
+        renderBoard(); renderTabs();
+        simpanDeck();
+        toast("Folder " + label + " dihapus.", true);
+      });
     });
     /* Panel folder berperan sebagai dialog modal: Tab berputar di dalamnya. */
     $("#kdFolder").addEventListener("keydown", function (e) {
@@ -2064,16 +2096,19 @@
       var p = pageById(S.pageId);
       if (!p) return;
       var isi = p.keys.filter(Boolean).length;
-      if (!window.confirm('Hapus halaman "' + p.name + '"' + (isi ? " beserta " + isi + " tombolnya" : "") + "?")) return;
-      S.deck.pages = pages.filter(function (x) { return x.id !== p.id; });
-      S.folder = null;
-      S.edFolder = null;
-      try { localStorage.removeItem("kumideck-halaman"); } catch (e) { /* penyimpanan UI tidak wajib */ }
-      S.pageId = halamanAwal(S.deck);
-      try { localStorage.setItem("kumideck-halaman", S.pageId); } catch (e) { /* penyimpanan UI tidak wajib */ }
-      renderTabs(); renderBoard(); renderHeader(); staggerBoard();
-      simpanDeck();
-      toast("Halaman " + p.name + " dihapus.", true);
+      tanya("Hapus halaman?", 'Halaman "' + p.name + '"' + (isi ? " beserta " + isi + " tombolnya" : "") +
+        " akan dihapus. Tindakan ini tidak bisa dibatalkan.", "Hapus halaman").then(function (ya) {
+        if (!ya) return;
+        S.deck.pages = pages.filter(function (x) { return x.id !== p.id; });
+        S.folder = null;
+        S.edFolder = null;
+        try { localStorage.removeItem("kumideck-halaman"); } catch (e) { /* penyimpanan UI tidak wajib */ }
+        S.pageId = halamanAwal(S.deck);
+        try { localStorage.setItem("kumideck-halaman", S.pageId); } catch (e) { /* penyimpanan UI tidak wajib */ }
+        renderTabs(); renderBoard(); renderHeader(); staggerBoard();
+        simpanDeck();
+        toast("Halaman " + p.name + " dihapus.", true);
+      });
     });
     $("#kdPgSave").addEventListener("click", function () {
       var nama = $("#kdPgName").value.trim();
@@ -2539,18 +2574,20 @@
         var zip = kepala.length === 4 && kepala[0] === 0x50 && kepala[1] === 0x4b;
 
         if (zip) {
-          if (!window.confirm("Pulihkan semua data dari " + f.name + "? Data sekarang diganti.")) return;
-          fetch("/api/cadangan/arsip", {
-            method: "POST",
-            headers: { "content-type": "application/zip" },
-            body: isi
-          }).then(function (r) { return r.json(); }).then(function (j) {
-            if (!j.ok) { toast(j.message || "Arsip tidak dapat dipulihkan.", false); return; }
-            if (j.deck) { pasangDeck(j.deck); S.pageId = halamanAwal(j.deck); }
-            renderTabs(); renderBoard(); renderSide(); renderHeader();
-            muatAwal();
-            toast("Arsip dipulihkan: " + (j.ikon || 0) + " ikon, " + (j.suara || 0) + " suara.", true);
-          }).catch(function () { toast("Arsip tidak dapat dipulihkan.", false); });
+          tanya("Pulihkan arsip?", "Semua data dari " + f.name + " akan menggantikan data sekarang.", "Pulihkan").then(function (ya) {
+            if (!ya) return;
+            fetch("/api/cadangan/arsip", {
+              method: "POST",
+              headers: { "content-type": "application/zip" },
+              body: isi
+            }).then(function (r) { return r.json(); }).then(function (j) {
+              if (!j.ok) { toast(j.message || "Arsip tidak dapat dipulihkan.", false); return; }
+              if (j.deck) { pasangDeck(j.deck); S.pageId = halamanAwal(j.deck); }
+              renderTabs(); renderBoard(); renderSide(); renderHeader();
+              muatAwal();
+              toast("Arsip dipulihkan: " + (j.ikon || 0) + " ikon, " + (j.suara || 0) + " suara.", true);
+            }).catch(function () { toast("Arsip tidak dapat dipulihkan.", false); });
+          });
           return;
         }
 
@@ -2576,19 +2613,21 @@
       if (!pageNow()) return;
       var isi = slotKeys()[S.idx];
       var nama = (isi && isi.label) || "Tombol";
-      if (!window.confirm('Hapus "' + nama + '" dari papan?')) return;
-      var hapusFolder = S.folder && !S.edFolder && pageNow().keys[S.idx] === S.folder;
-      slotKeys()[S.idx] = null;
-      if (hapusFolder) closeFolder();
-      if (S.edFolder) {
-        S.folder = S.edFolder;
-        renderFolder();
-      }
-      S.edFolder = null;
-      renderBoard(); renderTabs();
-      simpanDeck();
-      $("#kdDlgEditor").close();
-      toast("Tombol dihapus.", true);
+      tanya("Hapus tombol?", '"' + nama + '" akan dihapus dari papan ini.', "Hapus tombol").then(function (ya) {
+        if (!ya) return;
+        var hapusFolder = S.folder && !S.edFolder && pageNow().keys[S.idx] === S.folder;
+        slotKeys()[S.idx] = null;
+        if (hapusFolder) closeFolder();
+        if (S.edFolder) {
+          S.folder = S.edFolder;
+          renderFolder();
+        }
+        S.edFolder = null;
+        renderBoard(); renderTabs();
+        simpanDeck();
+        $("#kdDlgEditor").close();
+        toast("Tombol dihapus.", true);
+      });
     });
     $("#kdEdLabel").addEventListener("input", function () {
       S.draft.label = $("#kdEdLabel").value;
