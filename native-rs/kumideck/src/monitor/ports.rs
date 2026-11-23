@@ -110,7 +110,7 @@ fn dilindungi(pid: u32, nama: &str) -> bool {
     if pid <= 4 {
         return true;
     }
-    let n = nama.to_lowercase();
+    let n = nama.trim().to_lowercase();
     n.is_empty() || n == "tidak diketahui" || DILINDUNGI.iter().any(|d| *d == n)
 }
 
@@ -247,5 +247,29 @@ fn memori_proses(pid: u32) -> Option<u64> {
         } else {
             None
         }
+    }
+}
+
+#[cfg(test)]
+mod uji {
+    use super::dilindungi;
+
+    #[test]
+    fn proses_sistem_dilindungi() {
+        assert!(dilindungi(0, "System"));
+        assert!(dilindungi(4, "System"));
+    }
+
+    #[test]
+    fn nama_tak_terbaca_dilindungi() {
+        assert!(dilindungi(500, ""));
+        assert!(dilindungi(500, "tidak diketahui"));
+        assert!(dilindungi(500, "  "));
+    }
+
+    #[test]
+    fn aplikasi_biasa_boleh_diakiri() {
+        assert!(!dilindungi(5000, "chrome.exe"));
+        assert!(!dilindungi(5000, "notepad.exe"));
     }
 }

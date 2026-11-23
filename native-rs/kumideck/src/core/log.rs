@@ -34,3 +34,43 @@ pub fn warn(pesan: &str) {
 pub fn error(pesan: &str) {
     tulis("[galat]", pesan);
 }
+
+/// Panik di thread mana pun dicatat ke log sebelum proses mati. Tanpa ini exe
+/// rilis (tanpa konsol) hilang begitu saja tanpa jejak.
+pub fn pasang_penangkap_panik() {
+    std::panic::set_hook(Box::new(|info| {
+        let lokasi = info
+            .location()
+            .map(|l| format!("{}:{}", l.file(), l.line()))
+            .unwrap_or_else(|| "?".to_string());
+        let pesan = info
+            .payload()
+            .downcast_ref::<&str>()
+            .map(|s| s.to_string())
+            .or_else(|| info.payload().downcast_ref::<String>().cloned())
+            .unwrap_or_else(|| "panik tanpa pesan".to_string());
+        tulis("[panik]", &format!("{pesan} ({lokasi})"));
+    }));
+}
+
+#[cfg(test)]
+mod uji {
+    use super::*;
+
+    #[test]
+    fn panik_tertulis_ke_log() {
+        let berkas = std::env::temp_dir().join(format!(
+            "kd-uji-panik-{}.log",
+            uuid::Uuid::new_v4().simple()
+        ));
+        init(berkas.clone());
+        pasang_penangkap_panik();
+
+        let hasil = std::panic::catch_unwind(|| panic!("uji panik sengaja"));
+        assert!(hasil.is_err());
+
+        let isi = std::fs::read_to_string(&berkas).unwrap_or_default();
+        assert!(isi.contains("[panik] uji panik sengaja"), "isi log: {isi}");
+        let _ = std::fs::remove_file(&berkas);
+    }
+}

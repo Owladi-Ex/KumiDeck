@@ -265,6 +265,19 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
   atas menelan klik (`mousedown` menangkap judul lalu memulai geser), sehingga
   hanya tag ukuran yang berfungsi. Elemen `role="button"` kini dikecualikan,
   jadi klik judul membuka dialog Papan seperti yang dijanjikan.
+- **Kepala jendela memakai area geser asli Windows**: geser jendela tidak lagi
+  dijalankan lewat perintah IPC dari `mousedown`, melainkan lewat `app-region:
+  drag` milik WebView2 (dukungan non-client region dinyalakan wry). Judul, tab,
+  dan tombol ditandai `no-drag` sehingga tetap bisa diklik. Ini menghapus
+  sumber bug klik-tertelan, bukan menambalnya.
+- **Panik Rust dan galat JS tidak lagi senyap**: exe rilis tanpa konsol kini
+  mencatat panik ke `data/kumideck.log` (`[panik] pesan (berkas:baris)`), dan
+  halaman menampilkan toast untuk galat JS maupun janji yang ditolak. Sebelumnya
+  keduanya berakhir sebagai UI yang diam tanpa jejak.
+- **UI bisa diuji tanpa membangun ulang**: variabel lingkungan
+  `KUMIDECK_PUBLIK=<folder>` membuat exe rilis menyajikan `index.html`, CSS, dan
+  JS langsung dari folder itu, jadi suntingan tampil setelah muat ulang. Build
+  debug sudah melakukan ini sejak awal.
 
 ## [2.3.0] - 2026-11-16
 

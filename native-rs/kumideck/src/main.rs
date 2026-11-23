@@ -35,6 +35,7 @@ fn main() {
 
     let paths = Paths::init();
     core::log::init(paths.log_berkas());
+    core::log::pasang_penangkap_panik();
     core::log::info("KumiDeck 2.4.0 mulai");
 
     let store = Store::open(paths);

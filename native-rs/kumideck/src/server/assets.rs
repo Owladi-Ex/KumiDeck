@@ -12,15 +12,28 @@ use super::state::App;
 static PUBLIK: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../../public");
 
 /* Saat pengembangan, berkas dibaca dari folder `public/` supaya suntingan UI
-   langsung terlihat tanpa membangun ulang. Rilis tetap memakai berkas tertanam. */
+   langsung terlihat tanpa membangun ulang. Rilis tetap memakai berkas tertanam.
+   Build rilis bisa memakai folder yang sama lewat KUMIDECK_PUBLIK=<folder>. */
 fn isi(jalur: &str) -> Option<Vec<u8>> {
+    let dari_disk = |akar: &std::path::Path| -> Option<Vec<u8>> {
+        if !jalur_aman(jalur) {
+            return None;
+        }
+        let berkas = akar.join(jalur);
+        if !berkas.is_file() {
+            return None;
+        }
+        std::fs::read(&berkas).ok()
+    };
     if cfg!(debug_assertions) {
         let akar = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../public");
-        let berkas = akar.join(jalur);
-        if berkas.is_file() {
-            if let Ok(data) = std::fs::read(&berkas) {
-                return Some(data);
-            }
+        if let Some(data) = dari_disk(&akar) {
+            return Some(data);
+        }
+    }
+    if let Ok(akar) = std::env::var("KUMIDECK_PUBLIK") {
+        if let Some(data) = dari_disk(std::path::Path::new(&akar)) {
+            return Some(data);
         }
     }
     PUBLIK.get_file(jalur).map(|f| f.contents().to_vec())
@@ -101,6 +114,16 @@ fn ikon_pengguna(app: &App, id: &str) -> Response {
         .into_response()
 }
 
+fn jalur_aman(jalur: &str) -> bool {
+    use std::path::Component;
+    if jalur.is_empty() || jalur.contains(':') {
+        return false;
+    }
+    std::path::Path::new(jalur).components().all(|c| {
+        matches!(c, Component::Normal(_) | Component::CurDir)
+    })
+}
+
 fn mime(jalur: &str) -> &'static str {
     let ext = jalur.rsplit('.').next().unwrap_or("").to_lowercase();
     match ext.as_str() {
@@ -119,5 +142,27 @@ fn mime(jalur: &str) -> &'static str {
         "ttf" => "font/ttf",
         "txt" => "text/plain; charset=utf-8",
         _ => "application/octet-stream",
+    }
+}
+
+#[cfg(test)]
+mod uji {
+    use super::jalur_aman;
+
+    #[test]
+    fn jalur_relatif_diterima() {
+        assert!(jalur_aman("index.html"));
+        assert!(jalur_aman("assets/app.css"));
+        assert!(jalur_aman("assets\\app.css"));
+    }
+
+    #[test]
+    fn jalur_keluar_folder_ditolak() {
+        assert!(!jalur_aman(""));
+        assert!(!jalur_aman("../secret.json"));
+        assert!(!jalur_aman("assets/../../secret.json"));
+        assert!(!jalur_aman("C:/Windows/win.ini"));
+        assert!(!jalur_aman("/etc/passwd"));
+        assert!(!jalur_aman("\\\\server\\share\\x"));
     }
 }

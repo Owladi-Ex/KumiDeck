@@ -665,6 +665,28 @@
     toastTimer = setTimeout(function () { t.classList.remove("is-open"); }, 2600);
   };
 
+  /* Galat JS yang tak tertangkap dulu hanya membuat UI diam: tombol tidak
+     bereaksi tanpa penjelasan. Sekarang dicatat ke konsol dan diberitahukan
+     sekali per galat supaya bisa dilaporkan. */
+  var galatTerakhir = "";
+  var laporkanGalat = function (pesan, tempat) {
+    console.error("[KumiDeck]", pesan, tempat || "");
+    if (pesan === galatTerakhir) return;
+    galatTerakhir = pesan;
+    /* Saat galat terjadi sangat awal (sebelum DOM/skrip siap), toast sendiri
+       bisa ikut gagal. Jangan sampai penjaga galat yang bikin galat baru. */
+    try {
+      toast("Terjadi galat: " + pesan + ". Coba muat ulang halaman.", false);
+    } catch (_) {}
+  };
+  window.addEventListener("error", function (e) {
+    if (e && e.message) laporkanGalat(e.message, e.filename ? e.filename + ":" + e.lineno : "");
+  });
+  window.addEventListener("unhandledrejection", function (e) {
+    var r = e && e.reason;
+    laporkanGalat((r && (r.message || String(r))) || "janji ditolak", "");
+  });
+
   /* Konfirmasi bergaya aplikasi. window.confirm bawaan WebView2 muncul sebagai
      "127.0.0.1:4173 says" dengan tombol OK/Cancel berbahasa Inggris. */
   var tanya = function (judul, pesan, labelOk) {

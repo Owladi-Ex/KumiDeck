@@ -146,7 +146,13 @@ pwsh -File scripts\buat-installer.ps1
 
 Saat pengembangan, `cargo run` membaca `public/` langsung dari disk, jadi
 suntingan UI terlihat setelah halaman dimuat ulang. Rilis memakai berkas
-tertanam.
+tertanam, tetapi bisa ditunjuk ke folder lain tanpa membangun ulang:
+
+```powershell
+$env:KUMIDECK_PUBLIK = "D:\...\kumideck\public"; .\_rilis-exe\KumiDeck.exe
+```
+
+Tanpa variabel itu, exe rilis tetap memakai aset yang tertanam.
 
 ## Data & keamanan
 
