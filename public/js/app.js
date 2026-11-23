@@ -1088,6 +1088,12 @@
     var bilah = bar && !bar.hidden ? bar.offsetHeight + 10 : 0;
     var lebar = Math.round(rel + panel + padX + kotak.width);
     var tinggi = Math.round(kepala.offsetHeight + kaki.offsetHeight + padY + kotak.height + bilah);
+    /* Native mengunci rasio jendela dengan angka ini: krom UI tetap, kotak
+       papan yang membesar seragam. Jadi menyeret satu tepi tetap membuat ubin
+       persegi, bukan gepeng. */
+    ipc("isi:" + Math.round(rel + panel + padX) + ":" +
+      Math.round(kepala.offsetHeight + kaki.offsetHeight + padY + bilah) + ":" +
+      Math.round(kotak.width) + ":" + Math.round(kotak.height));
     var sisaLebar = Math.abs(lebar - window.innerWidth);
     var sisaTinggi = Math.abs(tinggi - window.innerHeight);
     /* Selisih beberapa piksel hanya pembulatan tata letak; jangan digerakkan. */

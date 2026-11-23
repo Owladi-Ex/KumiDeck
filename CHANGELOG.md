@@ -146,6 +146,13 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 - **Seret tepi jendela tanpa patahan**: ukuran ubin mengikuti lebar isi secara
   pecahan selama jendela diseret, lalu dibulatkan setelah seretan berhenti dan
   jendela dipasang ke papan.
+- **Jendela tidak bisa gepeng lagi**: papan memakai ubin persegi, jadi menyeret
+  satu tepi saja tidak lagi membuat ubin melar dan menyisakan pita kosong. Sisi
+  yang diseret menentukan, sisi lainnya menyusul dengan rasio kotak tombol yang
+  sama. Sumbu penentu dikunci sekali per seretan supaya kedua tepi tidak
+  tarik-menarik. UI mengirim ukuran krom dan kotak papan yang sebenarnya
+  (`isi:`), sehingga peta rasionya persis dan ikut berubah saat baris atau kolom
+  profil diganti.
 - **Pindah halaman papan lebih ringan**: papan masuk sebagai satu lapisan;
   animasi lama yang menjalankan belasan tombol sekaligus dengan jeda 16 ms per
   tombol dihapus. Garis bawah tab baru bergerak setelah papan selesai ditata.

@@ -2,7 +2,7 @@
 //! Tombol jendela ada di dalam UI dan mengirim perintah lewat IPC.
 
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use serde_json::{json, Value};
 use tao::dpi::{LogicalPosition, LogicalSize};
@@ -59,22 +59,59 @@ impl Default for Geometri {
     }
 }
 
+/// Jendela tidak bisa lebih kecil dari ini; papan masih terbaca di batasnya.
+const JENDELA_MIN: (f64, f64) = (720.0, 300.0);
+const JENDELA_MAKS: (f64, f64) = (2400.0, 2000.0);
+
+/// Sama dengan token --kd-rail-w. Di bawah 900 px rel menyempit.
+fn rel_untuk(lebar: f64) -> f64 {
+    if lebar <= 900.0 { 56.0 } else { 68.0 }
+}
+
+/// Lebar dan tinggi jendela saat papan belum pernah diukur UI: perkiraan dari
+/// profil. Angka pastinya datang dari UI lewat pesan `isi:`.
+const PANEL: f64 = 296.0;
+const TEPI: f64 = 28.0;
+const BINGKAI: f64 = 86.0; // kepala + kaki
+const JARAK: f64 = 8.0;
+
+fn ubin_untuk(kolom: f64, lebar: f64) -> f64 {
+    ((lebar - rel_untuk(lebar) - PANEL - TEPI - JARAK * (kolom - 1.0)) / kolom).max(1.0)
+}
+
+fn tinggi_untuk(kolom: f64, baris: f64, lebar: f64) -> f64 {
+    BINGKAI + TEPI + baris * ubin_untuk(kolom, lebar) + JARAK * (baris - 1.0)
+}
+
+fn lebar_untuk(kolom: f64, baris: f64, tinggi: f64) -> f64 {
+    let ubin = ((tinggi - BINGKAI - TEPI - JARAK * (baris - 1.0)) / baris).max(1.0);
+    let isi = PANEL + TEPI + kolom * ubin + JARAK * (kolom - 1.0);
+    let tebak = isi + 68.0;
+    if tebak <= 900.0 { isi + 56.0 } else { tebak }
+}
+
 /// Tinggi jendela yang pas dengan baris tombol, bukan ruang kosong di bawahnya.
 /// Lebar tetap seperti tersimpan; ubin persegi mengikuti lebar itu.
 fn tinggi_pas(app: &App, lebar: f64) -> f64 {
     let profil = app.store.deck().profile;
     let kolom = profil.columns.clamp(1, 12) as f64;
     let baris = profil.rows.clamp(1, 12) as f64;
-    // Sama dengan token --kd-rail-w/--kd-side-w. Panel kanan selalu tampil di
-    // bagian Papan, jadi lebarnya ikut dihitung di semua ukuran.
-    let rel = if lebar <= 900.0 { 56.0 } else { 68.0 };
-    let panel = 296.0;
-    let bingkai = 56.0 + 30.0; // kepala + kaki
-    let tepi = 28.0; // padding .kd-view kiri dan kanan
-    let jarak = 8.0;
-    let ubin = ((lebar - rel - panel - tepi - jarak * (kolom - 1.0)) / kolom)
-        .clamp(84.0, 168.0);
-    (bingkai + tepi + baris * ubin + jarak * (baris - 1.0)).max(300.0)
+    tinggi_untuk(kolom, baris, lebar).max(JENDELA_MIN.1)
+}
+
+/// Keadaan ukuran jendela yang dipasang sendiri, plus ukuran krom UI terakhir.
+/// `isi` = (lebar rel + panel + tepi, tinggi kepala + kaki + tepi, lebar papan,
+/// tinggi papan). Dipakai untuk memetakan satu sisi ke sisi lain persis, karena
+/// papan selalu membesar seragam (ubin persegi).
+#[derive(Debug, Default)]
+struct Rasio {
+    kirim: Option<(f64, f64)>,
+    akhir: Option<(f64, f64)>,
+    isi: Option<(f64, f64, f64, f64)>,
+    /// Sisi yang menentukan selama satu seretan: true = lebar. Dipilih sekali
+    /// per seretan supaya kedua tepi tidak saling tarik-menarik.
+    sumbu: Option<bool>,
+    waktu: Option<Instant>,
 }
 
 fn berkas_geometri(app: &App) -> std::path::PathBuf {
@@ -346,6 +383,8 @@ pub fn jalankan(app: Arc<App>) -> ! {
 
     let webview: Arc<Mutex<Option<WebView>>> = Arc::new(Mutex::new(None));
     let wv_untuk_ipc = webview.clone();
+    let rasio = Arc::new(Mutex::new(Rasio::default()));
+    let rasio_ipc = rasio.clone();
     let win_untuk_ipc = window.clone();
     let app_untuk_ipc = app.clone();
 
@@ -391,6 +430,19 @@ pub fn jalankan(app: Arc<App>) -> ! {
                     let _ = win_untuk_ipc.set_always_on_top(lain.ends_with('1'));
                 }
                 lain if lain.starts_with("warna:") => {}
+                // UI mengirim ukuran krom dan kotak papan yang sebenarnya; dari
+                // empat angka ini sisi jendela bisa dipetakan persis.
+                lain if lain.starts_with("isi:") => {
+                    let angka: Vec<f64> = lain
+                        .trim_start_matches("isi:")
+                        .split(':')
+                        .filter_map(|x| x.parse::<f64>().ok())
+                        .collect();
+                    if angka.len() == 4 && angka.iter().all(|v| v.is_finite() && *v > 0.0) {
+                        rasio_ipc.lock().unwrap().isi =
+                            Some((angka[0], angka[1], angka[2], angka[3]));
+                    }
+                }
                 lain if lain.starts_with("ukuran:") => {
                     // UI meminta jendela menyesuaikan isi papan. Saat jendela
                     // sedang dimaksimalkan, ukuran tidak boleh diubah.
@@ -402,10 +454,16 @@ pub fn jalankan(app: Arc<App>) -> ! {
                     if let (Some(w), Some(h)) = (bagian.next(), bagian.next()) {
                         if let (Ok(w), Ok(h)) = (w.parse::<f64>(), h.parse::<f64>()) {
                             if w.is_finite() && h.is_finite() {
-                                let _ = win_untuk_ipc.set_inner_size(LogicalSize::new(
-                                    w.clamp(720.0, 2400.0),
-                                    h.clamp(300.0, 2000.0),
-                                ));
+                                let w = w.clamp(JENDELA_MIN.0, JENDELA_MAKS.0);
+                                let h = h.clamp(JENDELA_MIN.1, JENDELA_MAKS.1);
+                                // Ukuran ini datang dari kita sendiri: jangan
+                                // dianggap seretan pengguna saat resize menyusul.
+                                let mut kunci = rasio_ipc.lock().unwrap();
+                                kunci.kirim = Some((w, h));
+                                kunci.sumbu = None;
+                                kunci.waktu = None;
+                                drop(kunci);
+                                let _ = win_untuk_ipc.set_inner_size(LogicalSize::new(w, h));
                             }
                         }
                     }
@@ -446,6 +504,77 @@ pub fn jalankan(app: Arc<App>) -> ! {
                 }
                 lain => crate::core::log::warn(&format!("menu baki tidak dikenal: {lain}")),
             },
+            Event::WindowEvent {
+                event: WindowEvent::Resized(size),
+                ..
+            } => {
+                // Ubin papan persegi, jadi jendela hanya boleh berubah
+                // proporsional: sisi yang bergerak paling jauh menentukan,
+                // sisi lain menyusul. Tanpa ini, menyeret satu tepi membuat
+                // papan gepeng dan menyisakan pita kosong.
+                let logis = size.to_logical::<f64>(window.scale_factor());
+                let (w, h) = (logis.width, logis.height);
+                let sekarang = Instant::now();
+                let mut kunci = rasio.lock().unwrap();
+                if kunci.kirim.take().is_some() {
+                    // Ini ukuran yang kita pasang sendiri, bukan seretan.
+                    kunci.akhir = Some((w, h));
+                    kunci.waktu = Some(sekarang);
+                    return;
+                }
+                let (aw, ah) = kunci.akhir.unwrap_or((w, h));
+                kunci.akhir = Some((w, h));
+                if window.is_maximized() {
+                    return;
+                }
+                let (dw, dh) = ((w - aw).abs(), (h - ah).abs());
+                if dw < 1.5 && dh < 1.5 {
+                    return;
+                }
+                /* Sumbu penentu dipilih sekali per seretan, bukan tiap peristiwa:
+                   seretan yang deltanya bergoyang bisa membalik pilihan dan
+                   membuat jendela tarik-menarik dengan dirinya sendiri. */
+                let seretan_baru = kunci
+                    .waktu
+                    .map(|t| sekarang.duration_since(t) > Duration::from_millis(320))
+                    .unwrap_or(true);
+                kunci.waktu = Some(sekarang);
+                let lebar_menentukan = if seretan_baru || kunci.sumbu.is_none() {
+                    let pilih = dw * ah >= dh * aw;
+                    kunci.sumbu = Some(pilih);
+                    pilih
+                } else {
+                    kunci.sumbu.unwrap_or(true)
+                };
+                let (pw, ph) = match kunci.isi {
+                    Some((kiri, atas, lebar_papan, tinggi_papan)) => {
+                        if lebar_menentukan {
+                            (w, atas + (w - kiri) / lebar_papan * tinggi_papan)
+                        } else {
+                            (kiri + (h - atas) / tinggi_papan * lebar_papan, h)
+                        }
+                    }
+                    None => {
+                        let profil = app.store.deck().profile;
+                        let kolom = profil.columns.clamp(1, 12) as f64;
+                        let baris = profil.rows.clamp(1, 12) as f64;
+                        if lebar_menentukan {
+                            (w, tinggi_untuk(kolom, baris, w))
+                        } else {
+                            (lebar_untuk(kolom, baris, h), h)
+                        }
+                    }
+                };
+                let pw = pw.clamp(JENDELA_MIN.0, JENDELA_MAKS.0);
+                let ph = ph.clamp(JENDELA_MIN.1, JENDELA_MAKS.1);
+                if (pw - w).abs() < 1.5 && (ph - h).abs() < 1.5 {
+                    return;
+                }
+                kunci.kirim = Some((pw, ph));
+                kunci.akhir = Some((pw, ph));
+                drop(kunci);
+                let _ = window.set_inner_size(LogicalSize::new(pw, ph));
+            }
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 ..
