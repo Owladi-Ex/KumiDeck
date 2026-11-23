@@ -1253,10 +1253,13 @@ body.kd-body {
   margin-bottom: 16px;
 }
 .kd-qr {
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 6px;
-  width: 188px; height: 188px;
+  width: 188px;
+  min-height: 188px;
   border: 1px dashed var(--line-strong);
   border-radius: var(--r-md);
   background: var(--bg-muted);

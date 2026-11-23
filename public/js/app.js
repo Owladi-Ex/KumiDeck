@@ -2253,7 +2253,7 @@
     /* geser jendela dari bilah atas, kecuali tombol dan tab */
     $(".kd-top").addEventListener("mousedown", function (e) {
       if (e.button !== 0) return;
-      if (e.target.closest("button, input, select, a, [role='tab']")) return;
+      if (e.target.closest("button, input, select, a, [role='tab'], [role='button']")) return;
       ipc("geser");
     });
 

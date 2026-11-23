@@ -258,6 +258,13 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
   memang terbaca. Suhu GPU tidak tersedia karena Windows tidak menyediakan
   penghitung PDH untuknya — kini ditulis sebagai ketiadaan, bukan seolah
   seluruh widget gagal.
+- **Alamat di bawah QR tidak lagi melimpah keluar kotak**: kotak QR memakai
+  tinggi minimum 188 px (bukan tinggi tetap), jadi gambar QR, keterangan, dan
+  alamat Remote tetap di dalam bingkai putus-putus.
+- **Judul papan benar-benar bisa diklik**: penanganan geser jendela di bilah
+  atas menelan klik (`mousedown` menangkap judul lalu memulai geser), sehingga
+  hanya tag ukuran yang berfungsi. Elemen `role="button"` kini dikecualikan,
+  jadi klik judul membuka dialog Papan seperti yang dijanjikan.
 
 ## [2.3.0] - 2026-11-16
 
