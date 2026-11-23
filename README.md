@@ -40,7 +40,8 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
 
 ## Fitur
 
-- Papan tombol berhalaman (kolom 3–6, baris 2–4) dengan ikon, warna, dan varian tombol.
+- Papan tombol berhalaman (kolom 1–8, baris 1–6) yang dapat diatur ukurannya
+  langsung dari UI desktop, lengkap dengan ikon, warna, dan varian tombol.
 - Aksi: pintasan papan ketik, mengetik teks, buka aplikasi/berkas/tautan,
   permintaan HTTP (dengan header tambahan), kontrol media, pindah halaman,
   urutan aksi, tindakan jendela, volume sistem, daya komputer, aksi bersyarat,

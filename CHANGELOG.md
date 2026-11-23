@@ -14,6 +14,22 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 
 ### Ditambahkan
 
+- **Pengaturan ukuran grid langsung di UI**: ukuran baris (1–6) dan kolom
+  (1–8) papan dapat disunting langsung dari desktop lewat dialog pengatur grid
+  (klik tag ukuran papan di samping judul atau tombol *Atur Ukuran Grid* di kartu
+  Setelan). Tombol preset instan: 5×3, 6×4, 4×3, dan 3×2. Slot halaman dinormalkan
+  secara otomatis dan tersinkronisasi ke server.
+- **Tata letak papan Remote seragam dan proporsional**:
+  - Tombol ubin aktif (`.kd-tile`) dan tombol kosong (`.kd-empty`) memiliki
+    aspect ratio 1:1 seragam dan tersusun simetris di tengah panggung ponsel
+    tanpa jeda kosong timpang.
+  - Penataan mendatar (landscape) menggabungkan pemutar media dan bilah volume
+    ke dalam strip horizontal bawah, mencegah overscroll vertikal pada perangkat
+    layar lebar.
+  - Perhitungan adaptif ubin papan (`pasPapan`) memutus siklus layout loop
+    sehingga ukuran tombol langsung pas saat orientasi diputar.
+  - Service worker cache diperbarui ke `kumideck-v46` agar aset CSS/JS remote
+    terbaru langsung aktif di semua klien PWA / WebView.
 - **Widget pemantauan**: tombol widget baru `cpu`, `ram`, `gpu`, dan `jaringan`.
   Angka besar di tengah, grafik area 60 detik (20 sampel) yang menskala sendiri,
   dan penanda `high` saat pemakaian 85% ke atas. Jaringan menampilkan kecepatan

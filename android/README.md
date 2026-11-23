@@ -34,7 +34,7 @@ Syarat:
 
 - JDK 17 (`javac`, `keytool`, dipakai juga oleh `d8` dan `apksigner`)
 - Android SDK dengan `build-tools` (aapt2, d8, zipalign, apksigner) dan
-  `platforms/android-35`
+  `platforms/android-34` atau `android-35`
 - Pustaka `android/libs/core-3.5.3.jar` (ZXing) — sudah disertakan di repositori
 
 Tidak perlu Gradle atau Android Studio. Skrip memakai `ANDROID_HOME` dan
