@@ -103,6 +103,24 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 
 ### Diperbaiki
 
+- **Daftar suara Remote akhirnya bergaya**: baris soundboard di ponsel memakai
+  kelas `kd-sb-item` yang tidak pernah ada di lembar gaya mana pun, sehingga
+  tampil sebagai tombol bawaan peramban — teks tebal menempel ("Terimakasih
+  AbangkuBerkas"), tanpa jarak, tanpa kartu. Markup kini memakai kelas desktop
+  yang sama (`kd-sb-row`, `kd-play`, `kd-sb-main`) dan `remote.css` hanya
+  menyesuaikan ukuran sentuh: baris 56 px, teks rata kiri, tombol putar 40 px.
+- **Target sentuh Remote minimal 44 px**: tombol kepala (layar penuh, muat
+  ulang), tab halaman, tombol putar di baris media, tab bawah, dan penggeser
+  volume di ponsel dinaikkan dari 30-32 px ke 44-48 px. Layar mendatar pendek
+  tetap memakai ukuran rapat supaya kepala tidak memakan papan. Diukur di
+  aplikasi terpasang: tidak ada lagi kontrol di bawah 44 px di tab Papan,
+  Suara, maupun Setelan.
+- **Ubin Remote tidak lagi mengecil sampai tak terbaca**: ukuran ubin dibatasi
+  64 px minimum dan 112 px maksimum. Di ponsel mendatar 844x390 ubin naik dari
+  51 px (label 8 px, kata terpotong "Terimakasi|h") menjadi 64 px; di tablet
+  820x1180 turun dari 150 px menjadi 112 px. Bila papan lebih tinggi dari ruang,
+  papan menggulir (`justify-content: safe center`) alih-alih mengecil, dan baris
+  teratas tetap terlihat.
 - **Tidak ada lagi jendela terminal**: exe rilis dibangun sebagai aplikasi
   jendela, jadi hanya KumiDeck yang muncul. Log tetap ditulis ke
   `data/kumideck.log`, dan perintah latar (curl, netsh, PowerShell, shutdown)

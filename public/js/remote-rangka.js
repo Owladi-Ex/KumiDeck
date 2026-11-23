@@ -330,7 +330,14 @@
     var celah = 6;
     var tw = (lebarMaks - celah * (kolom - 1)) / kolom;
     var th = (tinggiMaks - celah * (baris - 1)) / baris;
-    var tile = Math.floor(Math.min(tw, th));
+    /* Batas bawah 64 px: tombol lebih kecil dari itu sulit disentuh dan
+       labelnya pecah di tengah kata (mis. "Terimakasi|h" di ponsel mendatar).
+       Bila tidak cukup tinggi, papan menggulir alih-alih mengecil. */
+    var tile = Math.floor(Math.max(64, Math.min(tw, th)));
+    if (tile > tw) tile = Math.floor(tw);
+    /* Di tablet/ponsel mendatar, kolom 5 bisa jadi 150 px dan terlihat
+       kegemukan. 112 px sudah nyaman disentuh dan papan tetap terbaca. */
+    if (tile > 112) tile = 112;
     if (tile <= 0) return;
 
     var lebarPapan = Math.max(0, tile * kolom + celah * (kolom - 1));
@@ -391,10 +398,10 @@
     }
     if ($("#kdRmSuaraKosong")) $("#kdRmSuaraKosong").hidden = true;
     host.innerHTML = S.suara.map(function (s) {
-      return '<button class="kd-sb-item" type="button" data-suara="' + esc(s.id) + '">' +
-        '<span class="kd-sb-ico">' + ic("k-play") + '</span>' +
-        '<span class="kd-sb-teks"><b>' + esc(s.name || "Suara") + '</b>' +
-        '<span>' + esc(s.jenis === "tautan" ? "Tautan" : "Berkas") + '</span></span></button>';
+      return '<button class="kd-sb-row" type="button" data-suara="' + esc(s.id) + '">' +
+        '<span class="kd-play">' + ic("k-play") + '</span>' +
+        '<span class="kd-sb-main"><b>' + esc(s.name || "Suara") + '</b>' +
+        '<span class="kd-sb-meta">' + esc(s.jenis === "tautan" ? "Tautan" : "Berkas") + '</span></span></button>';
     }).join("");
   };
 

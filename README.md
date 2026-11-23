@@ -86,7 +86,9 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
   otomatis**, dan **profil otomatis** (halaman mengikuti jendela depan).
 - Klien Remote di ponsel/tablet (dipasangkan lewat kode QR) dengan halaman awal
   sendiri, mode kios, dan token per perangkat. Bisa dipasang sebagai **APK
-  KumiDeck Remote** atau sebagai PWA bila HTTPS aktif.
+  KumiDeck Remote** atau sebagai PWA bila HTTPS aktif. Tombol dan tab Remote
+  minimal 44 px, daftar suara tampil sebagai kartu, dan ukuran ubin dijaga
+  64-112 px supaya tetap terbaca di ponsel mendatar maupun tablet.
 - Jendela native: title bar sendiri (perkecil/perbesar/tutup), kepala aplikasi
   dipakai untuk menggeser jendela lewat area kosongnya. Ukuran jendela yang
   diseret pengguna dihormati: menyeret tepi horizontal maupun vertikal tidak
