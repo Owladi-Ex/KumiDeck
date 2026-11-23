@@ -575,8 +575,15 @@
       var d = ambil(e);
       if (d) { pasangPerangkat(d.devices || d); renderPerangkat(); renderSide(); }
     });
-    es.addEventListener("press", function () {
-      /* Aktivitas baru datang lewat `sync`; tidak perlu render tambahan. */
+    es.addEventListener("press", function (e) {
+      /* SSE press: satu aktivitas baru; perbarui riwayat langsung tanpa menunggu sync. */
+      var d = ambil(e);
+      if (!d) return;
+      var baru = satuRiwayat(d);
+      S.riwayat = [baru].concat(S.riwayat.filter(function (r) { return r.id !== baru.id; }));
+      if (S.riwayat.length > 60) S.riwayat.pop();
+      renderSide();
+      if (S.view === "riwayat") renderRiwayat();
     });
     /* Profil otomatis 2.3.0: halaman ikut jendela depan. */
     es.addEventListener("profil", function (e) {
@@ -2167,6 +2174,22 @@
     });
     $("#kdLkClose").addEventListener("click", function () { $("#kdDlgLink").close(); });
 
+    $("#kdSbEditClose").addEventListener("click", function () { $("#kdDlgSuaraEdit").close(); });
+    $("#kdSbEditSave").addEventListener("click", function () {
+      var id = $("#kdSbEditId").value;
+      var nama = $("#kdSbEditNama").value.trim();
+      var vol = Math.max(0, Math.min(100, Number($("#kdSbEditVol").value) || 100));
+      if (!nama) { $("#kdSbEditNama").focus(); toast("Nama tidak boleh kosong.", false); return; }
+      var item = (S.deck && S.deck.soundboard || []).filter(function (s) { return s.id === id; })[0];
+      if (!item) { $("#kdDlgSuaraEdit").close(); return; }
+      simpanSuara({ id: id, name: nama, sumber: item.sumber, jenis: item.jenis, volume: vol }).then(function (ok) {
+        if (!ok) return;
+        $("#kdDlgSuaraEdit").close();
+        renderSuara();
+        toast("Suara diperbarui.", true);
+      });
+    });
+
     $("#kdSbBody").addEventListener("click", function (e) {
       var play = e.target.closest("[data-mainkan]");
       if (play) {
@@ -2198,6 +2221,19 @@
             renderSuara();
             toast("Suara dihapus.", true);
           }).catch(function () { toast("Suara tidak dapat dihapus.", false); });
+        return;
+      }
+      var ubah = e.target.closest("[data-ubahsuara]");
+      if (ubah) {
+        var idUbah = ubah.dataset.ubahsuara;
+        var itemUbah = S.suara.filter(function (s) { return s.id === idUbah; })[0];
+        if (!itemUbah) return;
+        var srcItem = (S.deck && S.deck.soundboard || []).filter(function (s) { return s.id === idUbah; })[0] || {};
+        $("#kdSbEditId").value = idUbah;
+        $("#kdSbEditNama").value = itemUbah.nama || "";
+        $("#kdSbEditVol").value = srcItem.volume != null ? srcItem.volume : 100;
+        $("#kdDlgSuaraEdit").showModal();
+        setTimeout(function () { $("#kdSbEditNama").focus(); }, 40);
         return;
       }
       var up = e.target.closest("[data-unggah]");

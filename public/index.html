@@ -827,6 +827,29 @@
   </div>
 </dialog>
 
+<dialog class="kd-dlg kd-dlg-sm" id="kdDlgSuaraEdit" aria-labelledby="kdSbEditTitle">
+  <div class="dlg-head">
+    <h2 id="kdSbEditTitle">Ubah suara</h2>
+    <button class="icon-btn dlg-close" type="button" id="kdSbEditClose" aria-label="Tutup dialog">
+      <svg class="icon" aria-hidden="true"><use href="#k-close"></use></svg>
+    </button>
+  </div>
+  <div class="dlg-body">
+    <div class="field">
+      <label for="kdSbEditNama">Nama suara</label>
+      <input id="kdSbEditNama" maxlength="32" autocomplete="off" placeholder="Contoh: Bel pintu">
+    </div>
+    <div class="field">
+      <label for="kdSbEditVol">Volume (%)</label>
+      <input type="number" id="kdSbEditVol" min="0" max="100" value="100">
+    </div>
+  </div>
+  <div class="dlg-foot">
+    <input type="hidden" id="kdSbEditId">
+    <button class="btn btn-sm btn-primary" type="button" id="kdSbEditSave">Simpan</button>
+  </div>
+</dialog>
+
 <dialog class="kd-dlg kd-dlg-sm" id="kdDlgGrid" aria-labelledby="kdGdTitle">
   <div class="dlg-head">
     <h2 id="kdGdTitle">Ukuran papan</h2>
