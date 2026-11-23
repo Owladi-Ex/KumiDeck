@@ -62,7 +62,9 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
   RAM, GPU, dan jaringan** dalam bentuk grafik 60 detik.
 - **Layar Port dan proses**: port yang sedang mendengar beserta proses
   pemiliknya, dan tombol hentikan proses setelah konfirmasi.
-- **Folder tombol** bertingkat, dengan tombol kembali dan jumlah isi.
+- **Folder tombol** bertingkat, dengan tombol kembali dan jumlah isi; folder bisa
+  dihapus beserta isinya dari kepala panel folder.
+- **Halaman** bisa ditambah dan dihapus (tombol tempat sampah di kepala papan).
 - **Label bervariabel** (`%jam%`, `%volume%`, `%lagu%`, `%halaman%`, …).
 - **Tambah cepat**, daftar aplikasi terpasang, perekam pintasan.
 - **Seret tombol antar halaman** dan **salin/tempel tombol** lewat klik kanan

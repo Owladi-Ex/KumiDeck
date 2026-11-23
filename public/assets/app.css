@@ -252,6 +252,9 @@ body.kd-body {
   font-size: 12.5px;
 }
 .kd-tabs .tab::after { display: none; }
+/* Hover tab: hanya teks yang menyala, latar tetap bening. */
+.kd-tabs .tab:hover,
+.kd-tabs .tab[aria-selected="true"]:hover { background: transparent; color: var(--text-1); }
 .kd-tab-lbl { white-space: nowrap; }
 
 /* Garis bawah yang meluncur mengikuti tab aktif */
@@ -280,6 +283,7 @@ body.kd-body {
   color: var(--text-3);
 }
 .kd-tab-add:hover { background: var(--bg-hover); color: var(--text-1); border-color: var(--line); }
+.kd-tab-add.kd-tab-del:hover { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 30%, var(--line)); color: var(--danger); }
 .kd-tab-add .icon { width: 15px; height: 15px; }
 
 .kd-top-right {
@@ -349,6 +353,7 @@ body.kd-body {
 }
 .kd-ghost-btn .icon { width: 17px; height: 17px; }
 .kd-ghost-btn:hover { background: var(--bg-hover); color: var(--text-1); border-color: var(--line); }
+.kd-ghost-danger:hover { background: var(--danger-soft); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 30%, var(--line)); }
 .kd-ghost-btn[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand-soft-2); color: var(--brand-text); }
 .kd-ghost-btn:active { transform: scale(0.96); }
 .kd-ghost-xs { width: 26px; height: 26px; }

@@ -56,6 +56,11 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 - **Mulai otomatis dan profil otomatis** dipindahkan ke inti Rust: kunci
   `HKCU\...\CurrentVersion\Run` yang sama, dan perpindahan halaman mengikuti
   jendela depan lewat peristiwa `profil` pada SSE.
+- **Hapus halaman**: tombol tempat sampah di samping tombol tambah halaman.
+  Halaman aktif beserta seluruh tombolnya dihapus setelah konfirmasi; tombol
+  nonaktif saat hanya tersisa satu halaman, karena papan wajib punya satu.
+- **Hapus folder**: tombol tempat sampah di kepala panel folder. Folder dan
+  seluruh isinya dilepas dari slot papan setelah konfirmasi.
 
 ### Diubah
 
@@ -199,6 +204,9 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
   (`volume suara × slider / 100`), sedangkan pemutaran dari papan dan Remote
   tetap memakai volume suara itu saja. Label kedua kolom diperjelas: "Volume
   pemutaran" di kepala halaman dan "Volume suara (%)" di dialog ubah.
+- **Hover tab halaman tidak lagi berupa blok**: hanya teks tab yang menyala,
+  latar tetap bening, jadi garis bawah tab aktif tetap jadi satu-satunya
+  penanda.
 
 ## [2.3.0] - 2026-11-16
 

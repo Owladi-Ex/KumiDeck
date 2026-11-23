@@ -1225,6 +1225,10 @@
     var onBoard = S.view === "papan";
     $("#kdTabs").style.display = onBoard ? "" : "none";
     $("#kdAddPage").style.display = onBoard ? "" : "none";
+    if ($("#kdDelPage")) {
+      $("#kdDelPage").style.display = onBoard ? "" : "none";
+      $("#kdDelPage").disabled = (((S.deck && S.deck.pages) || []).length <= 1);
+    }
     $("#kdTitleTag").style.display = onBoard ? "" : "none";
     $("#kdEdit").style.display = onBoard ? "" : "none";
     $(".kd-top-sep").style.display = onBoard ? "" : "none";
@@ -1981,6 +1985,19 @@
       if (idx < 0) return;
       openEditor(idx);
     });
+    $("#kdFolderHapus").addEventListener("click", function () {
+      if (!S.folder) return;
+      var keys = pageNow().keys;
+      var idx = keys.indexOf(S.folder);
+      if (idx < 0) return;
+      var label = S.folder.label || "Folder";
+      if (!window.confirm('Hapus folder "' + label + '" beserta ' + (S.folder.keys || []).length + " tombol isinya?")) return;
+      keys[idx] = null;
+      closeFolder();
+      renderBoard(); renderTabs();
+      simpanDeck();
+      toast("Folder " + label + " dihapus.", true);
+    });
 
     /* halaman */
     $("#kdTabs").addEventListener("click", function (e) {
@@ -1992,6 +2009,23 @@
       $("#kdPgName").value = "";
       $("#kdDlgPage").showModal();
       setTimeout(function () { $("#kdPgName").focus(); }, 40);
+    });
+    $("#kdDelPage").addEventListener("click", function () {
+      var pages = (S.deck && S.deck.pages) || [];
+      if (pages.length <= 1) { toast("Minimal satu halaman harus ada.", false); return; }
+      var p = pageById(S.pageId);
+      if (!p) return;
+      var isi = p.keys.filter(Boolean).length;
+      if (!window.confirm('Hapus halaman "' + p.name + '"' + (isi ? " beserta " + isi + " tombolnya" : "") + "?")) return;
+      S.deck.pages = pages.filter(function (x) { return x.id !== p.id; });
+      S.folder = null;
+      S.edFolder = null;
+      try { localStorage.removeItem("kumideck-halaman"); } catch (e) { /* penyimpanan UI tidak wajib */ }
+      S.pageId = halamanAwal(S.deck);
+      try { localStorage.setItem("kumideck-halaman", S.pageId); } catch (e) { /* penyimpanan UI tidak wajib */ }
+      renderTabs(); renderBoard(); renderHeader(); staggerBoard();
+      simpanDeck();
+      toast("Halaman " + p.name + " dihapus.", true);
     });
     $("#kdPgSave").addEventListener("click", function () {
       var nama = $("#kdPgName").value.trim();
