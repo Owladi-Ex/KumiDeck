@@ -140,19 +140,17 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 - **Ukuran jendela langsung pas setelah seret, kedua arah**: begitu tepi jendela
   dilepas, lebar dan tingginya langsung dipasang ke ukuran kotak tombol, jadi
   tidak ada pita kosong di bawah maupun di samping papan dan tidak ada animasi
-  yang harus dikejar. Satu koreksi kecil menyusul hanya bila pembulatan tata
-  letak menyisakan selisih. Ukuran jendela yang tersimpan juga dipasang sekali
-  saat aplikasi dibuka, jadi sisa ruang dari profil lama tidak terbawa.
+  yang harus dikejar. Seretan mouse mengalir bebas tanpa intervensi ukuran di
+  tengah jalan sehingga tidak berkedip. Satu koreksi kecil menyusul setelah
+  dilepas hanya bila pembulatan tata letak menyisakan selisih. Ukuran jendela
+  yang tersimpan juga dipasang sekali saat aplikasi dibuka, jadi sisa ruang dari
+  profil lama tidak terbawa.
+- **Shadow cangkang jendela Windows dihapus**: bayangan DWM di sekeliling
+  jendela tanpa dekorasi dinonaktifkan (`DWMNCRP_DISABLED`), sehingga jendela
+  bersih menempel rata ke layar.
 - **Seret tepi jendela tanpa patahan**: ukuran ubin mengikuti lebar isi secara
   pecahan selama jendela diseret, lalu dibulatkan setelah seretan berhenti dan
   jendela dipasang ke papan.
-- **Jendela tidak bisa gepeng lagi**: papan memakai ubin persegi, jadi menyeret
-  satu tepi saja tidak lagi membuat ubin melar dan menyisakan pita kosong. Sisi
-  yang diseret menentukan, sisi lainnya menyusul dengan rasio kotak tombol yang
-  sama. Sumbu penentu dikunci sekali per seretan supaya kedua tepi tidak
-  tarik-menarik. UI mengirim ukuran krom dan kotak papan yang sebenarnya
-  (`isi:`), sehingga peta rasionya persis dan ikut berubah saat baris atau kolom
-  profil diganti.
 - **Pindah halaman papan lebih ringan**: papan masuk sebagai satu lapisan;
   animasi lama yang menjalankan belasan tombol sekaligus dengan jeda 16 ms per
   tombol dihapus. Garis bawah tab baru bergerak setelah papan selesai ditata.
