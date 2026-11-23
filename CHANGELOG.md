@@ -207,6 +207,43 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 - **Hover tab halaman tidak lagi berupa blok**: hanya teks tab yang menyala,
   latar tetap bening, jadi garis bawah tab aktif tetap jadi satu-satunya
   penanda.
+- **Tab halaman tidak lagi hilang di baris kedua**: tabstip dipaksa satu baris
+  dan digeser mendatar, tab aktif otomatis dibawa ke pandangan. Sebelumnya tab
+  keempat dan seterusnya terpotong di luar kepala jendela sehingga halamannya
+  tidak bisa dibuka. Panah kiri/kanan kini berpindah tab seperti tablist.
+- **Judul papan tidak terpotong**: wadah judul tidak lagi menyusut karena tab,
+  jadi "Meja Kerja" tetap utuh sampai lebar 640 px.
+- **Hapus tombol minta konfirmasi**: sama seperti hapus halaman dan folder;
+  satu klik tidak lagi langsung melenyapkan tombol.
+- **Tombol dengan suara terhapus ditandai**: ubin bergaris putus-putus dengan
+  ikon peringatan, dan pilihan suara di editor menampilkan "Suara tidak
+  ditemukan — pilih ulang" alih-alih diam-diam memasang suara lain.
+- **Proses sistem tidak bisa diakhiri**: PID 0–4 dan proses tanpa nama kini
+  dilindungi di inti Rust, bukan hanya lewat daftar nama proses. "Akhiri" tampil
+  nonaktif sebagai "Dilindungi".
+- **Alamat Remote tidak lagi bertentangan dengan QR**: QR memakai HTTP dan
+  alamat di bawahnya ditulis persis seperti isi QR; tautan HTTPS ditampilkan
+  terpisah bila menyala.
+- **Halaman dan folder kosong punya keterangan**: halaman tanpa tombol
+  menampilkan ajakan "Tambah tombol" (bukan dua puluh slot "+"), folder kosong
+  menjelaskan cara mengisinya.
+- **Toast "Akhiri proses" tidak lagi tertimpa**: penyegaran daftar port
+  berjalan diam-diam, jadi pesan sukses tetap terbaca.
+- **Keterangan ukuran halaman mengikuti grid aktif**: dialog halaman baru
+  menulis "5 × 4 slot" sesuai ukuran sebenarnya, bukan 5 × 3 yang tetap; preset
+  cepat mendapat pilihan 5 × 4.
+- **Target sentuh diperbesar ke 32 px**: tombol tambah/hapus halaman, tombol
+  jendela, salin alamat, sunting/hapus suara, chip saringan, swatch aksen,
+  preset grid, dan tombol Akhiri proses.
+- **Sakelar mati terbaca di tema gelap**: jalur sakelar diberi kontras terhadap
+  kartu, tidak lagi nyaris menyatu.
+- **Dialog besar lebih lega**: isi dialog dapat memakai tinggi layar sampai
+  sisa 190 px, jadi kolom Ukuran/Widget/Aksi tidak lagi terkunci di 250 px.
+- **Panel Ringkasan tidak lagi menghimpit di layar sempit**: panel kanan
+  disembunyikan di bawah 900 px sehingga papan memakai seluruh lebar. Di layar
+  lebar Soundboard tampil dua kolom mulai 1200 px.
+- **Panel folder benar-benar modal**: Tab berputar di dalam panel, tidak lagi
+  lolos ke tombol di belakangnya.
 
 ## [2.3.0] - 2026-11-16
 

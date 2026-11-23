@@ -416,7 +416,7 @@
           <div class="kd-set">
 
             <section class="kd-set-card">
-              <header><b>Tampilan</b><p>Tema, warna aksi, dan kepadatan.</p></header>
+              <header><b>Tampilan</b><p>Tema dan warna aksi.</p></header>
               <div class="kd-set-rows">
                 <div class="kd-set-row">
                   <div><span class="kd-set-lbl">Tema</span><span class="kd-set-hint">Terang, gelap, atau mengikuti Windows.</span></div>
@@ -741,7 +741,7 @@
 <dialog class="kd-dlg kd-dlg-sm" id="kdDlgPage" aria-labelledby="kdPgTitle">
   <div class="dlg-head">
     <h2 id="kdPgTitle">Halaman baru</h2>
-    <p>Halaman berisi 5 × 3 slot kosong. Slot bisa diisi tombol atau folder.</p>
+    <p id="kdPgSlots">Halaman berisi 5 × 3 slot kosong. Slot bisa diisi tombol atau folder.</p>
     <button class="icon-btn dlg-close" type="button" id="kdPgClose" aria-label="Tutup dialog">
       <svg class="icon" aria-hidden="true"><use href="#k-close"></use></svg>
     </button>
@@ -881,6 +881,7 @@
       <label>Preset cepat</label>
       <div class="kd-seg" id="kdGdPresets" style="width:100%">
         <button type="button" data-c="5" data-r="3">5 × 3</button>
+        <button type="button" data-c="5" data-r="4">5 × 4</button>
         <button type="button" data-c="6" data-r="4">6 × 4</button>
         <button type="button" data-c="4" data-r="3">4 × 3</button>
         <button type="button" data-c="3" data-r="2">3 × 2</button>

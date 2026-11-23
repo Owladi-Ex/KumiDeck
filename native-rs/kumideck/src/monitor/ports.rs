@@ -59,7 +59,7 @@ pub fn daftar() -> Vec<PortRow> {
             alamat: alamat_dari(baris.dwLocalAddr),
             status: status_tcp(baris.dwState),
             pid: baris.dwOwningPid,
-            dilindungi: dilindungi(&proses),
+            dilindungi: dilindungi(baris.dwOwningPid, &proses),
             proses,
             memori: mem,
         });
@@ -76,7 +76,7 @@ pub fn daftar() -> Vec<PortRow> {
             alamat: alamat_dari(baris.dwLocalAddr),
             status: "Dengarkan".into(),
             pid: baris.dwOwningPid,
-            dilindungi: dilindungi(&proses),
+            dilindungi: dilindungi(baris.dwOwningPid, &proses),
             proses,
             memori: mem,
         });
@@ -92,7 +92,7 @@ pub fn akhiri(pid: u32) -> Result<(), String> {
         return Err("PID tidak valid.".into());
     }
     let nama = nama_proses(pid);
-    if dilindungi(&nama) {
+    if dilindungi(pid, &nama) {
         return Err("Proses ini dilindungi dan tidak boleh diakhiri.".into());
     }
     unsafe {
@@ -104,9 +104,14 @@ pub fn akhiri(pid: u32) -> Result<(), String> {
     }
 }
 
-fn dilindungi(nama: &str) -> bool {
+fn dilindungi(pid: u32, nama: &str) -> bool {
+    /* PID 0-4 adalah proses sistem (System, Idle, smss) yang namanya sering tak
+       terbaca; jangan bergantung pada nama saja. */
+    if pid <= 4 {
+        return true;
+    }
     let n = nama.to_lowercase();
-    DILINDUNGI.iter().any(|d| *d == n)
+    n.is_empty() || n == "tidak diketahui" || DILINDUNGI.iter().any(|d| *d == n)
 }
 
 fn tcp_rows() -> Vec<windows::Win32::NetworkManagement::IpHelper::MIB_TCPROW_OWNER_PID> {

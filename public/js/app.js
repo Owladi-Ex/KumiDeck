@@ -421,13 +421,6 @@
     return (pilih || home || pages[0] || {}).id || "";
   };
 
-  var alamatRemote = function () {
-    if (S.https && S.httpsPort) {
-      return "https://" + S.lan + ":" + S.httpsPort + "/remote";
-    }
-    return "http://" + S.lan + ":" + S.port + "/remote";
-  };
-
   var unduh = function (jalur) {
     var a = document.createElement("a");
     a.href = jalur;
@@ -511,21 +504,24 @@
     if (j.port) S.port = j.port;
     if (j.httpsPort != null) S.httpsPort = Number(j.httpsPort) || 0;
     var url = alamatRemote();
+    var urlHttp = j.url || ("http://" + S.lan + ":" + S.port + "/remote");
+    var urlHttps = j.urlHttps || "";
     if ($("#kdRemoteUrl")) $("#kdRemoteUrl").textContent = url;
+    /* QR selalu memakai tautan HTTP (sertifikat lokal belum dipercaya ponsel).
+       Alamat di bawah QR ditulis persis seperti isi QR; tautan HTTPS, kalau ada,
+       ditampilkan terpisah supaya tidak tertukar. */
     if ($("#kdPairUrlNote")) {
-      $("#kdPairUrlNote").innerHTML = 'Alamat Remote: <code class="kd-mono">' + esc(url) + "</code>";
+      $("#kdPairUrlNote").innerHTML = 'Alamat Remote: <code class="kd-mono">' + esc(urlHttp) + "</code>" +
+        (urlHttps ? '<br>https: <code class="kd-mono">' + esc(urlHttps) + "</code>" : "");
     }
     if ($("#kdSetAlamat")) $("#kdSetAlamat").textContent = url.replace(/^https?:\/\//, "");
     var img = $("#kdQrImg");
-    /* Tautan HTTP selalu dipakai untuk QR: sertifikat HTTPS lokal belum tentu
-       dipercaya ponsel, dan halaman peringatan sertifikat membuat pemindaian
-       tampak gagal. */
     var qr = j.qrUrl || j.qrUrlHttps;
     if (img && qr) {
       img.src = qr;
       img.hidden = false;
-      if ($("#kdQrNote")) $("#kdQrNote").textContent = "Pindai dengan kamera ponsel";
-      if ($("#kdQrAddr")) $("#kdQrAddr").textContent = url.replace(/^https?:\/\//, "");
+      if ($("#kdQrNote")) $("#kdQrNote").textContent = "Pindai dengan kamera ponsel (HTTP)";
+      if ($("#kdQrAddr")) $("#kdQrAddr").textContent = urlHttp.replace(/^https?:\/\//, "");
     }
   };
 
@@ -938,6 +934,14 @@
 
     var label = esc(resolve(key.label) || "Tanpa nama");
     var cond = key.kondisi ? '<span class="kd-tile-cond" title="Bersyarat"></span>' : "";
+    /* Suara yang sudah dihapus dari soundboard: tandai di papan supaya tidak
+       terlihat normal sampai tombolnya ditekan. */
+    var suaraHilang = !!(key.action && key.action.type === "suara" && key.action.soundId &&
+      !((S.deck && S.deck.soundboard) || []).some(function (s) { return s.id === key.action.soundId; }));
+    if (suaraHilang) {
+      attrs = attrs.replace('class="kd-tile"', 'class="kd-tile kd-tile--rusak"');
+      cond = '<span class="kd-tile-warn" title="Suara tidak ditemukan di soundboard">' + ic("k-alert") + "</span>" + cond;
+    }
     var badge = key.folder ? '<span class="kd-tile-badge">' + (key.keys || []).length + '</span>' : "";
     var grip = '<span class="kd-tile-grip" aria-hidden="true">' + ic("k-more") + '</span>';
 
@@ -949,7 +953,7 @@
       }
     }
 
-    return '<button type="button" ' + attrs + ' aria-label="' + label + (key.folder ? ", folder" : "") + '">' +
+    return '<button type="button" ' + attrs + ' aria-label="' + label + (key.folder ? ", folder" : "") + (suaraHilang ? ", suara tidak ditemukan" : "") + '">' +
       '<span class="kd-tile-ico">' + ic(ikon(key.icon)) + '</span>' +
       '<span class="kd-tile-label">' + label + '</span>' +
       cond + badge + grip + '</button>';
@@ -987,6 +991,11 @@
         '<div style="display:flex;gap:8px;margin-top:2px"><button class="btn btn-sm" type="button" data-retry="1">Coba lagi</button>' +
         '<button class="btn btn-sm" type="button" data-pulihkan="1">Pulihkan cadangan</button></div></div>';
     }
+    if (kind === "halaman") {
+      return '<div class="kd-empty-state" ' + span + '><div class="empty"><span class="glyph">' + ic("k-grid") + '</span>' +
+        '<h4>Halaman ini masih kosong</h4><p>Tambahkan tombol atau folder untuk mulai mengisi halaman ini.</p>' +
+        '<button class="btn btn-sm btn-primary" type="button" data-add="0">Tambah tombol</button></div></div>';
+    }
     return '<div class="kd-empty-state" ' + span + '><div class="empty"><span class="glyph">' + ic("k-grid") + '</span>' +
       '<h4>Papan ini belum punya tombol</h4><p>Tambahkan tombol pertama, atau pulihkan papan dari cadangan.</p>' +
       '<div style="display:flex;gap:8px;justify-content:center"><button class="btn btn-sm btn-primary" type="button" data-add="0">Tambah tombol</button>' +
@@ -1006,9 +1015,10 @@
     } else if (S.dataState === "kosong") {
       board.innerHTML = boardMessage("kosong");
     } else {
-      board.innerHTML = boardKeys(page).map(function (key, i) {
-        return key ? tileHTML(key, i) : emptyHTML(i);
-      }).join("");
+      var keys = boardKeys(page);
+      board.innerHTML = !S.editing && !keys.some(Boolean)
+        ? boardMessage("halaman")
+        : keys.map(function (key, i) { return key ? tileHTML(key, i) : emptyHTML(i); }).join("");
     }
     fitBoard();
   };
@@ -1156,6 +1166,12 @@
     var ink = inkEl(host, kind, tone);
     var active = host.querySelector(activeSel || '.tab[aria-selected="true"]');
     if (!active || !active.getBoundingClientRect().width) { ink.classList.remove("is-on"); return; }
+    /* Tab aktif selalu terlihat: geser tabstip horizontal bila ia di luar. */
+    if (kind === "underline" && active.offsetLeft < host.scrollLeft) {
+      host.scrollLeft = Math.max(0, active.offsetLeft - 16);
+    } else if (kind === "underline" && active.offsetLeft + active.offsetWidth > host.scrollLeft + host.clientWidth) {
+      host.scrollLeft = active.offsetLeft + active.offsetWidth - host.clientWidth + 16;
+    }
     var r = host.getBoundingClientRect();
     var a = active.getBoundingClientRect();
     var x = a.left - r.left - host.clientLeft + host.scrollLeft;
@@ -1349,9 +1365,10 @@
     if (!key) return;
     var isi = (key.keys || []);
     $("#kdFolderTitle").textContent = key.label;
-    $("#kdFolderMeta").textContent = S.editing
-      ? isi.length + " tombol · ketuk untuk menyunting, slot kosong untuk menambah"
-      : isi.length + " tombol · ketuk untuk menjalankan";
+    $("#kdFolderMeta").textContent = !isi.length ? "kosong"
+      : S.editing
+        ? isi.length + " tombol · ketuk untuk menyunting, slot kosong untuk menambah"
+        : isi.length + " tombol · ketuk untuk menjalankan";
     $("#kdFolderEdit").hidden = !S.editing;
     var html = isi.map(function (c, i) {
       if (!c) {
@@ -1359,7 +1376,9 @@
       }
       return tileHTML(c, -1).replace('class="kd-tile"', 'class="kd-tile" data-fidx="' + i + '"');
     }).join("");
-    if (isi.length === 0 && S.editing) {
+    if (!isi.length && !S.editing) {
+      html = '<div class="kd-folder-kosong">Folder ini masih kosong. Aktifkan Mode sunting, lalu buka folder untuk menambah tombol.</div>';
+    } else if (isi.length === 0 && S.editing) {
       html += '<button class="kd-empty" type="button" data-fadd="0" aria-label="Tambah isi folder">' + ic("k-plus") + '</button>';
     } else if (S.editing && isi.every(Boolean)) {
       html += '<button class="kd-empty" type="button" data-fadd="' + isi.length + '" aria-label="Tambah isi folder">' + ic("k-plus") + '</button>';
@@ -1666,9 +1685,12 @@
         return '<option value="' + p.id + '"' + (v === p.id ? " selected" : "") + '>' + esc(p.name) + '</option>';
       }).join("") + '</select>';
     } else if (f.t === "sounds") {
-      control = '<select id="' + id + '" data-ak="' + f.k + '" data-kind="' + kind + '">' + S.suara.map(function (s) {
-        return '<option value="' + s.id + '"' + (v === s.id ? " selected" : "") + '>' + esc(s.nama) + '</option>';
-      }).join("") + '</select>';
+      var adaSuara = S.suara.some(function (s) { return s.id === v; });
+      control = '<select id="' + id + '" data-ak="' + f.k + '" data-kind="' + kind + '">' +
+        (v && !adaSuara ? '<option value="' + esc(v) + '" selected>Suara tidak ditemukan — pilih ulang</option>' : "") +
+        S.suara.map(function (s) {
+          return '<option value="' + s.id + '"' + (v === s.id ? " selected" : "") + '>' + esc(s.nama) + '</option>';
+        }).join("") + '</select>';
     } else {
       control = '<input id="' + id + '" type="' + (f.t === "number" ? "number" : "text") + '" data-ak="' + f.k + '" data-kind="' + kind + '" value="' + esc(v) + '" placeholder="' + esc(f.ph || "") + '" spellcheck="false">';
     }
@@ -1998,6 +2020,17 @@
       simpanDeck();
       toast("Folder " + label + " dihapus.", true);
     });
+    /* Panel folder berperan sebagai dialog modal: Tab berputar di dalamnya. */
+    $("#kdFolder").addEventListener("keydown", function (e) {
+      if (e.key !== "Tab") return;
+      var f = $$("#kdFolder button:not([hidden]):not(.kd-folder-scrim)").filter(function (el) {
+        return el.offsetParent !== null && !el.disabled;
+      });
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
 
     /* halaman */
     $("#kdTabs").addEventListener("click", function (e) {
@@ -2005,7 +2038,22 @@
       if (!t) return;
       switchPage(t.dataset.page);
     });
+    /* Tab halaman: panah kiri/kanan berpindah seperti tablist standar. */
+    $("#kdTabs").addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      var tabs = $$("#kdTabs .tab");
+      var i = tabs.indexOf(document.activeElement);
+      if (i < 0) return;
+      e.preventDefault();
+      var next = tabs[(i + (e.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length];
+      next.focus();
+      switchPage(next.dataset.page);
+    });
     $("#kdAddPage").addEventListener("click", function () {
+      var kolom = (S.deck && S.deck.profile && S.deck.profile.columns) || 5;
+      var baris = (S.deck && S.deck.profile && S.deck.profile.rows) || 3;
+      if ($("#kdPgSlots")) $("#kdPgSlots").textContent =
+        "Halaman berisi " + kolom + " × " + baris + " slot kosong. Slot bisa diisi tombol atau folder.";
       $("#kdPgName").value = "";
       $("#kdDlgPage").showModal();
       setTimeout(function () { $("#kdPgName").focus(); }, 40);
@@ -2341,7 +2389,7 @@
           $("#kdPrSave").disabled = false;
           $("#kdDlgProses").close();
           if (!j.ok) { toast(j.message || "Proses tidak dapat diakhiri.", false); return; }
-          muatPort();
+          muatPort(true);
           toast(r.proses + " diakhiri, port dilepas.", true);
         }).catch(function () {
           $("#kdPrSave").disabled = false;
@@ -2526,6 +2574,9 @@
     $("#kdEdSave").addEventListener("click", saveEditor);
     $("#kdEdDelete").addEventListener("click", function () {
       if (!pageNow()) return;
+      var isi = slotKeys()[S.idx];
+      var nama = (isi && isi.label) || "Tombol";
+      if (!window.confirm('Hapus "' + nama + '" dari papan?')) return;
       var hapusFolder = S.folder && !S.edFolder && pageNow().keys[S.idx] === S.folder;
       slotKeys()[S.idx] = null;
       if (hapusFolder) closeFolder();

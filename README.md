@@ -61,10 +61,13 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
 - **Widget**: jam, tanggal, lagu yang sedang diputar, serta **pemantauan CPU,
   RAM, GPU, dan jaringan** dalam bentuk grafik 60 detik.
 - **Layar Port dan proses**: port yang sedang mendengar beserta proses
-  pemiliknya, dan tombol hentikan proses setelah konfirmasi.
+  pemiliknya, dan tombol hentikan proses setelah konfirmasi. Proses sistem
+  (PID 0–4, tanpa nama) ditandai **Dilindungi** dan tidak bisa diakhiri.
 - **Folder tombol** bertingkat, dengan tombol kembali dan jumlah isi; folder bisa
   dihapus beserta isinya dari kepala panel folder.
-- **Halaman** bisa ditambah dan dihapus (tombol tempat sampah di kepala papan).
+- **Halaman** bisa ditambah dan dihapus (tombol tempat sampah di kepala papan);
+  tabstip satu baris dengan gulir mendatar dan navigasi panah, halaman kosong
+  menampilkan ajakan "Tambah tombol".
 - **Label bervariabel** (`%jam%`, `%volume%`, `%lagu%`, `%halaman%`, …).
 - **Tambah cepat**, daftar aplikasi terpasang, perekam pintasan.
 - **Seret tombol antar halaman** dan **salin/tempel tombol** lewat klik kanan

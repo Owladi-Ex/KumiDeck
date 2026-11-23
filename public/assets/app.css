@@ -9,7 +9,7 @@
 :root {
   --kd-rail-w: 68px;
   --kd-top-h: 56px;
-  --kd-foot-h: 30px;
+  --kd-foot-h: 36px;
   --kd-side-w: 296px;
   --kd-gap: 8px;
 
@@ -196,6 +196,7 @@ body.kd-body {
   align-items: center;
   gap: 8px;
   min-width: 0;
+  flex: none;
   align-self: center;
 }
 .kd-title {
@@ -236,6 +237,7 @@ body.kd-body {
 .kd-tabs {
   position: relative;
   display: flex;
+  flex-wrap: nowrap;
   align-items: stretch;
   gap: 2px;
   min-width: 0;
@@ -275,7 +277,7 @@ body.kd-body {
   display: grid;
   place-items: center;
   align-self: center;
-  width: 28px; height: 28px;
+  width: 32px; height: 32px;
   flex: none;
   border: 1px solid transparent;
   border-radius: var(--r-xs);
@@ -356,8 +358,8 @@ body.kd-body {
 .kd-ghost-danger:hover { background: var(--danger-soft); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 30%, var(--line)); }
 .kd-ghost-btn[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand-soft-2); color: var(--brand-text); }
 .kd-ghost-btn:active { transform: scale(0.96); }
-.kd-ghost-xs { width: 26px; height: 26px; }
-.kd-ghost-xs .icon { width: 14px; height: 14px; }
+.kd-ghost-xs { width: 32px; height: 32px; }
+.kd-ghost-xs .icon { width: 15px; height: 15px; }
 
 .kd-win {
   display: flex;
@@ -370,7 +372,7 @@ body.kd-body {
 .kd-win-btn {
   display: grid;
   place-items: center;
-  width: 30px; height: 30px;
+  width: 32px; height: 32px;
   border: 0;
   border-radius: 7px;
   background: transparent;
@@ -477,6 +479,21 @@ body.kd-body {
   overflow: hidden;
   text-wrap: balance;
 }
+
+/* Tombol yang menunjuk suara terhapus: garis putus-putus + ikon peringatan,
+   tanpa mengubah warna latar pilihan pengguna. */
+.kd-tile--rusak { border-style: dashed; border-color: color-mix(in srgb, var(--danger) 55%, var(--line)); }
+.kd-tile-warn {
+  position: absolute;
+  top: 6px; left: 6px;
+  display: grid;
+  place-items: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.kd-tile-warn .icon { width: 12px; height: 12px; }
 
 .kd-tile[data-variant="tint"] {
   --tile-bg: var(--brand-soft);
@@ -721,8 +738,9 @@ body.kd-body {
 /* Mode sunting */
 .kd-editbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 6px 10px;
   padding: 6px 8px 6px 12px;
   border: 1px solid var(--brand-soft-2);
   border-radius: var(--r-md);
@@ -733,6 +751,7 @@ body.kd-body {
 }
 .kd-editbar[hidden] { display: none; }
 .kd-editbar .icon { width: 15px; height: 15px; }
+.kd-editbar > span { white-space: nowrap; }
 .kd-editbar-hint { color: var(--text-2); font-weight: 500; }
 .kd-editbar-spacer { flex: 1; }
 .kd-editbar .btn { background: var(--bg-card); }
@@ -797,6 +816,16 @@ body.kd-body {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--kd-gap);
 }
+.kd-folder-kosong {
+  grid-column: 1 / -1;
+  padding: 18px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-md);
+  color: var(--text-3);
+  font-size: 12.5px;
+  line-height: 18px;
+  text-align: center;
+}
 @keyframes kd-fade { from { opacity: 0; } }
 @keyframes kd-pop { from { opacity: 0; transform: translateY(6px) scale(0.985); } }
 
@@ -849,8 +878,11 @@ body.kd-body {
 .kd-block-head b { font: 600 13px/18px var(--font-sans); }
 .kd-block-head .count { margin-left: 1px; }
 .kd-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
   margin-left: auto;
-  padding: 0;
+  padding: 0 2px;
   border: 0;
   background: transparent;
   color: var(--brand-text);
@@ -909,7 +941,7 @@ body.kd-body {
 }
 .kd-foot-btn {
   display: grid; place-items: center;
-  width: 22px; height: 22px;
+  width: 32px; height: 32px;
   border: 0; border-radius: 5px;
   background: transparent;
   color: var(--text-3);
@@ -943,7 +975,7 @@ body.kd-body {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 20px;
+  height: 32px;
   margin: 0;
   background: transparent;
   cursor: pointer;
@@ -1086,7 +1118,7 @@ body.kd-body {
 .kd-seg button {
   position: relative;
   z-index: 1;
-  height: 26px;
+  height: 32px;
   padding: 0 10px;
   border: 0;
   border-radius: 7px;
@@ -1119,7 +1151,7 @@ body.kd-body {
 
 .kd-swatches { display: flex; gap: 6px; }
 .kd-swatch {
-  width: 24px; height: 24px;
+  width: 32px; height: 32px;
   border-radius: 50%;
   border: 2px solid var(--bg-card);
   box-shadow: 0 0 0 1px var(--line-strong);
@@ -1195,7 +1227,7 @@ body.kd-body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 26px;
+  height: 32px;
   padding: 0 9px;
   font-size: 11.5px;
 }
@@ -1452,7 +1484,7 @@ dialog.kd-dlg-sm { width: min(480px, calc(100vw - 32px)); }
   border-top: 1px solid var(--line);
 }
 .kd-dlg .dlg-head { padding: 16px 18px 12px; }
-.kd-dlg .dlg-body { max-height: calc(100dvh - 250px); overflow-y: auto; padding: 14px 18px 20px; }
+.kd-dlg .dlg-body { max-height: calc(100dvh - 190px); overflow-y: auto; padding: 14px 18px 20px; }
 .kd-dlg .dlg-body {
   background:
     linear-gradient(var(--bg-card) 40%, color-mix(in srgb, var(--bg-card) 0%, transparent)) top / 100% 20px no-repeat local,
@@ -1628,7 +1660,19 @@ input[type="color"]:hover { border-color: var(--line-strong); }
 
 .kd-toast-icon { display: grid; place-items: center; }
 
+.kd-table-toolbar .chip, .filters .chip, .kd-set-ctl .chip { height: 32px; }
+
+/* Sakelar mati di tema gelap: track Rangka hampir menyatu dengan kartu. */
+[data-theme="dark"] .switch:not([aria-checked="true"]) {
+  background: color-mix(in srgb, var(--text-3) 60%, var(--bg-card));
+  border-color: var(--line-strong);
+}
+
 /* --------------------------------------------------------- 13. Menyesuaikan */
+@media (min-width: 1200px) {
+  .kd-sb { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: none; }
+}
+
 @media (max-width: 1180px) {
   .kd-conn span.kd-conn-lbl { display: none; }
 }
@@ -1640,6 +1684,9 @@ input[type="color"]:hover { border-color: var(--line-strong); }
 
 @media (max-width: 900px) {
   :root { --kd-rail-w: 56px; }
+  /* Panel Ringkasan memakan 296 px; di layar sempit isinya sudah ada di rail. */
+  .kd-content { grid-template-columns: minmax(0, 1fr); }
+  .kd-side { display: none; }
   .kd-view { padding: 12px; }
   .kd-rail-logo { width: 34px; height: 34px; }
   .kd-rail-btn { width: 36px; height: 36px; }
