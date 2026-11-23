@@ -165,17 +165,23 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
   cangkang Windows pada jendela tanpa dekorasi dinonaktifkan bersih lewat
   `with_undecorated_shadow(false)` bawaan runtime jendela. Jendela menempel
   rata ke layar tanpa lis biru muda di tepi.
-- **Resize halus tanpa kedip dan tanpa nyangkut**: mouse saat seret mengalir
-  bebas tanpa intervensi `set_inner_size` di tengah jalan sehingga tidak ada
-  kedipan berulang. Perapatan proporsional dua arah (`pasIsi`) dipicu langsung
-  oleh peristiwa pelepasan mouse native Windows (`WM_EXITSIZEMOVE`), bukan lagi
-  timer debounce, sehingga menyeret jendela selama apa pun tidak pernah
-  terpotong atau nyangkut di tengah jalan.
-- **Ukuran jendela langsung pas setelah seret, kedua arah**: begitu tepi jendela
-  dilepas, lebar dan tingginya langsung dipasang ke ukuran kotak tombol, jadi
-  tidak ada pita kosong di bawah maupun di samping papan dan tidak ada animasi
-  yang harus dikejar. Ukuran jendela yang tersimpan juga dipasang sekali saat
-  aplikasi dibuka, jadi sisa ruang dari profil lama tidak terbawa.
+- **Resize halus, tanpa jendela yang melompat balik**: dua penyebab patahan
+  ditemukan lewat pengukuran di aplikasi terpasang dan keduanya dihapus.
+  Pertama, `app-region: drag` pada kepala jendela (jalur non-client WebView2)
+  membuat seretan tepi hanya menghasilkan 1-3 perubahan lebar dari 23 langkah
+  kursor; tanpa properti itu 23 dari 23 langkah mulus. Kepala kini kembali
+  memakai `mousedown` -> IPC `geser` -> `drag_window()` native. Kedua, `pasIsi`
+  dipanggil setiap tepi jendela dilepas sehingga jendela yang baru saja
+  dilebarkan langsung menyusut balik ke lebar papan (terukur 1434 -> 873 px);
+  panggilan itu dihapus dari jalur seret dan dari pembukaan aplikasi. `pasIsi`
+  sekarang hanya berjalan saat ukuran papan diubah dari dialog Papan.
+  `WM_EXITSIZEMOVE` tetap dipakai, tetapi hanya untuk membulatkan ukuran ubin.
+- **Ukuran jendela pilihan pengguna dihormati**: aplikasi tidak lagi memasang
+  ulang jendela ke ukuran papan saat dibuka atau saat masuk ke Papan, jadi
+  lebar yang sudah diatur tidak berubah sendiri. Papan tetap dirapikan ke dalam
+  jendela oleh `fitBoard`.
+- **Seret tepi jendela tanpa patahan**: ukuran ubin mengikuti lebar isi secara
+  pecahan selama jendela diseret, lalu dibulatkan setelah seretan berhenti.
 - **Seret tepi jendela tanpa patahan**: ukuran ubin mengikuti lebar isi secara
   pecahan selama jendela diseret, lalu dibulatkan setelah seretan berhenti dan
   jendela dipasang ke papan.

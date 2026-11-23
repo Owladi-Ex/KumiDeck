@@ -88,7 +88,9 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
   sendiri, mode kios, dan token per perangkat. Bisa dipasang sebagai **APK
   KumiDeck Remote** atau sebagai PWA bila HTTPS aktif.
 - Jendela native: title bar sendiri (perkecil/perbesar/tutup), kepala aplikasi
-  dipakai untuk menggeser jendela.
+  dipakai untuk menggeser jendela lewat area kosongnya. Ukuran jendela yang
+  diseret pengguna dihormati: menyeret tepi horizontal maupun vertikal tidak
+  lagi dibalikkan ke lebar papan setelah dilepas.
 - Mode terang/gelap, riwayat aktivitas, daftar perangkat.
 
 ## Syarat

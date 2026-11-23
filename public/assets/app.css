@@ -181,17 +181,12 @@ body.kd-body {
   border-bottom: 1px solid var(--line);
   background: var(--bg-shell);
   min-width: 0;
-  /* WebView2 non-client region (wry menyalakannya): kepala jendela jadi area
-     geser asli, jadi klik di area kosong tidak lagi tertukar dengan seret. */
-  app-region: drag;
-  -webkit-app-region: drag;
 }
-/* Semua yang bisa diklik harus dilepas dari area geser, kalau tidak kliknya
-   ditelan Windows sebelum sampai ke halaman. */
-.kd-top :is(button, h1, a, input, select, label) {
-  app-region: no-drag;
-  -webkit-app-region: no-drag;
-}
+/* Kepala jendela TIDAK memakai app-region: drag. Terukur di aplikasi
+   terpasang, area non-client WebView2 membuat seretan tepi jendela patah
+   (1-3 dari 23 langkah kursor yang menghasilkan perubahan lebar, sisanya
+   diam lalu melompat) sedangkan tanpa itu 23 dari 23 mulus. Geser jendela
+   tetap ditangani `mousedown` -> IPC `geser` -> `drag_window()` native. */
 
 .kd-top-left {
   display: flex;

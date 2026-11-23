@@ -1099,8 +1099,8 @@
   /* Jendela dipasang langsung ke ukuran papan, tanpa animasi: satu perintah,
      satu ukuran. Perapatan langkah demi langkah tidak pernah benar-benar halus
      karena Windows hanya memasang sekitar empat puluh ukuran per detik, jadi
-     lebih baik tepinya langsung rapi. Dipanggil setelah seretan tepi berhenti,
-     saat masuk ke Papan, dan sekali setelah tampilan pertama siap. */
+     lebih baik tepinya langsung rapi. Dipanggil hanya saat ukuran papan diubah
+     dari dialog Papan; seretan tepi jendela tidak lagi memicunya. */
   var animasiUkuranId = 0;
   var animasiJendela = false;
   var jedaSelesai = 0;
@@ -1188,9 +1188,9 @@
     pasangUkuran(lebar, tinggi);
   };
 
-  /* Menyeret tepi jendela tidak mengubah ukuran yang dipilih pengguna selama
-     seretan; setelah dilepas, lebarnya dan tingginya dirapatkan ke isi papan
-     oleh pasIsi. */
+  /* Menyeret tepi jendela tidak mengubah ukuran yang dipilih pengguna dan
+     tidak dirapatkan ulang setelahnya: jendela dibiarkan sebesar yang diseret.
+     Hanya ukuran ubin yang dibulatkan (lihat sinyal 'selesai-seret'). */
 
   /* --------------------------------------------------- penanda geser aktif */
   var inkEl = function (host, kind, tone) {
@@ -1662,11 +1662,6 @@
     if (view === "soundboard") renderSuara();
     if (onBoard) {
       fitBoard();
-      /* Masuk ke Papan dari bagian lain: jendela dirapatkan sekali ke papan,
-         dengan gerakan yang sama seperti setelah seretan tepi. */
-      requestAnimationFrame(function () {
-        if (S.view === "papan") pasIsi();
-      });
     }
     if (prev !== view) animateView($("#view-" + view));
     moveRailInk();
@@ -2886,13 +2881,15 @@
 
     /* Perapatan proporsional hanya dipicu saat seretan Windows selesai dilepas
        (sinyal 'selesai-seret' dari WM_EXITSIZEMOVE native lewat IPC).
-       Dengan ini, seretan selama apa pun tidak pernah terpotong timer di tengah jalan. */
+       Hanya pembulatan ubin yang dijalankan: jendela tidak digerakkan lagi,
+       karena memasang ulang ukurannya di sini membuat tepi yang baru saja
+       diseret melompat balik ke lebar papan — terasa patah, terutama saat
+       menyeret ke samping. */
     if (window.__kdJendela) {
       window.__kdJendela.addEventListener("message", function (ev) {
         if (ev && ev.data === "selesai-seret") {
           if (animasiJendela) return;
           rapikanTata(false);
-          pasIsi();
         }
       });
     }
@@ -3107,15 +3104,13 @@
       monMasuk(j && j.monitor ? j.monitor : j);
     }).catch(function () { /* monitor menyusul lewat SSE */ });
     if (S.sw.update) cekPembaruan(false);
-    /* Ukuran tersimpan bisa berasal dari profil atau halaman yang berbeda,
-       jadi jendela dipasang sekali ke papan setelah tampilan pertama benar-benar
-       terpasang. Tanpa ini, sisa ruang kosong dari ukuran lama ikut terbawa
-       sampai pengguna mengubah ukuran jendela. */
+    /* Papan dirapikan ke ukuran jendela yang tersimpan. Jendela TIDAK
+       dipasang ulang ke ukuran papan: itu yang membuat lebar pilihan pengguna
+       menyusut balik setiap aplikasi dibuka atau tepi selesai diseret. */
     setTimeout(function () {
       if (S.view !== "papan" || !S.deck) return;
       if (animasiJendela) return;
       fitBoard();
-      pasIsi();
     }, 420);
   });
 })();
