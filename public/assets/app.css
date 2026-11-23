@@ -371,16 +371,14 @@ body.kd-body {
 .kd-content {
   position: relative;
   display: grid;
-  /* Lebar kolom panel diisi app.js per bingkai (--kd-side-live) selama panel
-     meluncur. Tidak memakai transisi CSS: nilainya digerakkan dari skrip pada
-     setiap bingkai, jadi panel dan papan berbagi satu jam dan tidak ada yang
-     tertinggal. */
-  grid-template-columns: minmax(0, 1fr) var(--kd-side-live, var(--kd-side-w));
+  /* Kolom panel selebar tetap. Panel tidak bisa disembunyikan, jadi tidak ada
+     lebar yang digerakkan dari skrip: satu nilai, satu tata letak. */
+  grid-template-columns: minmax(0, 1fr) var(--kd-side-w);
   min-height: 0;
   min-width: 0;
 }
 .kd-content[data-panel="off"] {
-  grid-template-columns: minmax(0, 1fr) var(--kd-side-live, 0px);
+  grid-template-columns: minmax(0, 1fr) 0px;
 }
 
 .kd-view {
@@ -416,28 +414,6 @@ body.kd-body {
   padding: 14px;
 }
 .kd-view--papan > .kd-board { margin-inline: auto; }
-
-.kd-panel-open {
-  position: absolute;
-  z-index: 6;
-  top: 14px;
-  right: 0;
-  display: none;
-  place-items: center;
-  width: 22px; height: 62px;
-  border: 1px solid var(--line);
-  border-right: 0;
-  border-radius: var(--r-xs) 0 0 var(--r-xs);
-  background: var(--bg-card);
-  color: var(--text-3);
-  box-shadow: var(--shadow-paper);
-}
-.kd-content[data-panel="off"][data-view="papan"] .kd-panel-open { display: grid; }
-/* Saat panel sedang meluncur, tombol pembuka belum ditampilkan supaya tidak
-   menumpuk di atas panel yang belum selesai pergi. */
-.kd-content.is-geser[data-view="papan"] .kd-panel-open { display: none; }
-.kd-panel-open:hover { color: var(--text-1); background: var(--bg-hover); }
-.kd-panel-open .icon { width: 13px; height: 13px; }
 
 /* ------------------------------------------------------------- 5. Papan */
 .kd-board {
@@ -821,18 +797,10 @@ body.kd-body {
   border-left: 1px solid var(--line);
   background: var(--bg-muted);
 }
-/* Isi panel tetap selebar 296 px dan digeser bersama kolomnya, jadi saat
-   panel dibuka/ditutup isinya meluncur keluar alih-alih terhimpit dan
-   membungkus ulang teks di setiap bingkai. */
+/* Isi panel selebar 296 px. Kolomnya selebar tetap dan tidak pernah mengecil,
+   jadi isinya tidak pernah terhimpit atau membungkus ulang teks. */
 .kd-side-head,
 .kd-side-body { width: var(--kd-side-w); }
-/* Selama panel meluncur, isinya digeser ke kiri sebesar sisa jalurnya: sisi
-   kanan tetap menempel di tepi jendela, jadi panel tampak keluar dari tepi
-   itu, bukan terpotong di tengah teks. */
-.kd-content.is-geser .kd-side-head,
-.kd-content.is-geser .kd-side-body {
-  transform: translateX(calc(var(--kd-side-live, 0px) - var(--kd-side-w)));
-}
 .kd-content[data-panel="off"] .kd-side { pointer-events: none; border-left-color: transparent; }
 
 .kd-side-head {
@@ -845,7 +813,6 @@ body.kd-body {
   border-bottom: 1px solid var(--line);
 }
 .kd-side-head b { font: 600 12.5px/18px var(--font-sans); letter-spacing: 0.02em; text-transform: uppercase; color: var(--text-3); }
-.kd-side-head .kd-ghost-btn { margin-left: auto; }
 
 .kd-side-body {
   display: flex;
@@ -1659,12 +1626,7 @@ input[type="color"]:hover { border-color: var(--line-strong); }
 }
 
 @media (max-width: 900px) {
-  :root { --kd-rail-w: 56px; --kd-side-w: 0px; }
-  .kd-content { grid-template-columns: minmax(0, 1fr) 0px; }
-  .kd-side { display: none; }
-  /* Panel tidak tersedia pada jendela sempit, jadi tombol pembukanya ikut
-     disembunyikan daripada menawarkan sesuatu yang tidak bisa dibuka. */
-  .kd-panel-open { display: none !important; }
+  :root { --kd-rail-w: 56px; }
   .kd-view { padding: 12px; }
   .kd-rail-logo { width: 34px; height: 34px; }
   .kd-rail-btn { width: 36px; height: 36px; }

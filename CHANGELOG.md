@@ -43,10 +43,10 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 
 ### Diubah
 
-- **Antarmuka Rangka**: rel ikon ringkas, kepala papan, dan panel kanan yang
-  bisa dilipat. Setelan menjadi satu daftar vertikal yang mengisi sampai tepi
-  kanan, penggeser dan pemilih dibuat ulang, dan semua gerak memakai token
-  Rangka (120-320 ms).
+- **Antarmuka Rangka**: rel ikon ringkas, kepala papan, dan panel kanan tetap
+  yang selalu tampil di bagian Papan. Setelan menjadi satu daftar vertikal yang
+  mengisi sampai tepi kanan, penggeser dan pemilih dibuat ulang, dan semua gerak
+  memakai token Rangka (120-320 ms).
 - **Papan mengisi seluruh jendela**: latar kanvas ungu dan sudut membulat dari
   prototipe dihapus, jadi tidak ada bingkai berwarna di sekeliling aplikasi.
 - **HTTPS**: berkas `data/tls/kumideck.pfx` 2.3.0 tetap dipakai lewat SChannel,
@@ -108,10 +108,9 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 - **Warna ungu dihapus dari seluruh permukaan**: token permukaan diganti netral
   terang (`#F5F5F6`/`#F7F7F8`) dan netral gelap, termasuk kanvas papan.
 - **Jendela mengikuti isi papan**: tinggi awal dihitung dari baris dan kolom
-  profil, jadi tidak ada ruang kosong besar di bawah tombol. Saat panel ringkasan
-  ditutup atau jendela diubah ukurannya, lebar dan tinggi dirapatkan ke kotak
-  tombol, dan membuka panel kembali melebarkan jendela secukupnya. Setelah
-  seretan tepi berhenti, tinggi dirapatkan lagi ke papan.
+  profil, jadi tidak ada ruang kosong besar di bawah tombol. Saat jendela diubah
+  ukurannya, lebar dan tinggi dipasang ke kotak tombol, jadi papan selalu
+  menempel rapat di tengah jendela.
 - **Setelan berbahasa Indonesia**: baris "Bahasa antarmuka" dan "Tombol jendela"
   dihapus, sehingga tidak ada lagi teks English atau versi 2.3.0 di Setelan.
 - **Widget jam dan media dipoles**: jam memakai pemisah titik dua dan angka
@@ -132,28 +131,21 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 - **Ikon Android tidak terpotong**: lapisan depan ikon adaptif diperkecil ke
   zona aman 66 dp, jadi keempat sudutnya utuh di bawah topeng bulat peluncur;
   ikon lama juga memakai sudut putih, bukan gelap.
-- **Ukuran jendela bergerak halus**: panel Ringkasan tidak lagi meluncur
-  bersama jendela yang dianimasikan langkah demi langkah — Windows hanya
-  memasang sekitar tiga puluh ukuran per detik, jadi tepi jendela terlihat
-  patah. Sekarang, saat panel dibuka, jendela langsung menyediakan jalur
-  selebar panel lalu isi panel meluncur masuk dari tepi kanan pada 60 bingkai
-  per detik; saat ditutup, panel meluncur keluar lebih dulu, baru jalurnya
-  dibuang. Papan dikunci di posisinya selama gerakan, jadi kotak tombol tidak
-  bergeser, berubah ukuran, atau bergetar. Isi panel tetap selebar aslinya dan
-  digeser bersama jalurnya, jadi teksnya tidak terhimpit atau terpotong di
-  tengah kata.
-- **Jendela merapat ke papan setelah seret, kedua arah**: begitu tepi jendela
-  dilepas, lebar dan tingginya dirapatkan ke kotak tombol, jadi tidak ada pita
-  kosong di bawah maupun di samping papan. Perapatan itu berjalan dalam langkah
-  sepuluh piksel yang sama besar mengikuti irama Windows (~20 ms per ukuran),
-  jadi tepi jendela mengalir ke tempatnya alih-alih melompat. Papan tidak ikut
-  bergerak; hanya tepi jendela yang menyusul. Ukuran jendela yang tersimpan juga
-  dirapatkan sekali saat aplikasi dibuka, jadi sisa ruang dari profil atau panel
-  lama tidak terbawa.
+- **Panel Ringkasan selalu tampil**: tombol buka dan tutup di panel dihapus, dan
+  kolomnya kini selebar tetap 296 px di bagian Papan pada semua ukuran jendela.
+  Karena panel tidak pernah dibuka atau ditutup, tidak ada lebar yang harus
+  digerakkan: papan tidak bergeser, tidak berubah ukuran, dan tidak bergetar saat
+  masuk atau keluar dari Papan. Tinggi minimum jendela diturunkan ke 300 px
+  supaya papan tetap menempel rapat sampai ukuran terkecil.
+- **Ukuran jendela langsung pas setelah seret, kedua arah**: begitu tepi jendela
+  dilepas, lebar dan tingginya langsung dipasang ke ukuran kotak tombol, jadi
+  tidak ada pita kosong di bawah maupun di samping papan dan tidak ada animasi
+  yang harus dikejar. Satu koreksi kecil menyusul hanya bila pembulatan tata
+  letak menyisakan selisih. Ukuran jendela yang tersimpan juga dipasang sekali
+  saat aplikasi dibuka, jadi sisa ruang dari profil lama tidak terbawa.
 - **Seret tepi jendela tanpa patahan**: ukuran ubin mengikuti lebar isi secara
-  pecahan selama jendela diseret, lalu dibulatkan setelah seretan berhenti.
-  Penataan digabung menjadi satu per bingkai, dan lebar jendela pilihan
-  pengguna tidak lagi dirapatkan sendiri setelah seret.
+  pecahan selama jendela diseret, lalu dibulatkan setelah seretan berhenti dan
+  jendela dipasang ke papan.
 - **Pindah halaman papan lebih ringan**: papan masuk sebagai satu lapisan;
   animasi lama yang menjalankan belasan tombol sekaligus dengan jeda 16 ms per
   tombol dihapus. Garis bawah tab baru bergerak setelah papan selesai ditata.

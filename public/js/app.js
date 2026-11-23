@@ -111,7 +111,6 @@
     pageId: "",
     view: "papan",
     editing: false,
-    panel: true,
     dataState: "memuat",
     tema: "light",
     aksen: "",
@@ -1032,9 +1031,11 @@
     board.style.maxWidth = "100%";
   };
 
-  /* Jendela mengikuti isi papan: lebar dan tinggi dihitung dari kotak tombol
-     yang sudah dipas, bukan dari ruang kosong yang tersisa. Dipanggil saat
-     panel kanan dibuka/ditutup dan saat kembali ke bagian Papan. */
+  /* Jendela dipasang langsung ke ukuran papan, tanpa animasi: satu perintah,
+     satu ukuran. Perapatan langkah demi langkah tidak pernah benar-benar halus
+     karena Windows hanya memasang sekitar empat puluh ukuran per detik, jadi
+     lebih baik tepinya langsung rapi. Dipanggil setelah seretan tepi berhenti,
+     saat masuk ke Papan, dan sekali setelah tampilan pertama siap. */
   var animasiUkuranId = 0;
   var animasiJendela = false;
   var jedaSelesai = 0;
@@ -1043,93 +1044,24 @@
     ipc("ukuran:" + Math.round(w) + ":" + Math.round(h));
   };
 
-  /* Jendela digeser dalam langkah piksel yang lebarnya sama, satu langkah untuk
-     tiap ukuran yang benar-benar terpasang. Windows memasang satu ukuran tiap
-     ~20 ms; langkah seragam pada irama itu terlihat sebagai gerakan rata,
-     sedangkan kurva waktu membuat sebagian langkah 2 px dan sebagian 40 px
-     sehingga terasa patah. */
-  var langkahJendela = null;
-  var geserJendela = function (w, h, opsi) {
-    opsi = opsi || {};
+  var pasangUkuran = function (w, h) {
     w = Math.round(w);
     h = Math.round(h);
-    var dariW = window.innerWidth;
-    var dariH = window.innerHeight;
     var id = ++animasiUkuranId;
-    var usai = false;
-    var jaga = 0;
-    var tutup = function () {
-      if (usai) return;
-      usai = true;
-      langkahJendela = null;
-      clearTimeout(jaga);
+    if (Math.abs(w - window.innerWidth) < 2 && Math.abs(h - window.innerHeight) < 2) return;
+    animasiJendela = true;
+    kirimUkuran(w, h);
+    /* Satu pemeriksaan setelah ukuran benar-benar terpasang: ubin dibulatkan
+       ke ukuran baru, lalu ukurannya dicek sekali lagi. Bila ternyata masih
+       meleset (misalnya layar tidak cukup), satu permintaan susulan dikirim. */
+    setTimeout(function () {
+      if (id !== animasiUkuranId) return;
       animasiJendela = false;
       jedaSelesai = Date.now();
-      if (opsi.selesai) opsi.selesai();
-    };
-    var jarak = Math.max(Math.abs(w - dariW), Math.abs(h - dariH));
-    if (jarak < 2) {
-      tutup();
-      return;
-    }
-    var kurangi = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (kurangi) {
-      kirimUkuran(w, h);
-      setTimeout(function () {
-        if (id === animasiUkuranId) fitBoard();
-      }, 140);
-      tutup();
-      return;
-    }
-    animasiJendela = true;
-    /* Sekitar 10 px per langkah: cukup kecil supaya tepi jendela terlihat
-       mengalir, bukan melompat. */
-    var n = Math.max(4, Math.min(56, Math.round(jarak / 10)));
-    var i = 0;
-    var dikirimW = dariW;
-    var dikirimH = dariH;
-    var menunggu = false;
-    var maju = function () {
-      if (usai || id !== animasiUkuranId) return;
-      i++;
-      if (i >= n) {
-        menunggu = false;
-        kirimUkuran(w, h);
-        tutup();
-        /* Setelah ukuran akhir benar-benar terpasang, ubin dirapikan dan
-           ukuran diperiksa sekali lagi. */
-        setTimeout(function () {
-          if (id !== animasiUkuranId || S.view !== "papan") return;
-          fitBoard();
-          pasIsi();
-        }, 170);
-        return;
-      }
-      dikirimW = Math.round(dariW + ((w - dariW) * i) / n);
-      dikirimH = Math.round(dariH + ((h - dariH) * i) / n);
-      menunggu = true;
-      kirimUkuran(dikirimW, dikirimH);
-      /* Jaring pengaman: kalau peristiwa resize tidak datang (misalnya ukuran
-         tertahan layar), langkah tetap maju. */
-      clearTimeout(jaga);
-      jaga = setTimeout(function () {
-        menunggu = false;
-        maju();
-      }, 80);
-    };
-    /* Dipanggil dari penangan resize setiap kali ukuran baru terpasang. Satu
-       ukuran kadang memicu lebih dari satu peristiwa; yang datang setelah
-       langkah berikutnya dikirim tidak dihitung dua kali. */
-    langkahJendela = function () {
-      if (!menunggu || usai) return;
-      /* Ukuran yang benar-benar terpasang bisa meleset satu piksel dari yang
-         dikirim karena pembulatan jendela. */
-      if (Math.abs(window.innerWidth - dikirimW) > 2 || Math.abs(window.innerHeight - dikirimH) > 2) return;
-      menunggu = false;
-      clearTimeout(jaga);
-      maju();
-    };
-    maju();
+      if (S.view !== "papan") return;
+      fitBoard();
+      pasIsi();
+    }, 180);
   };
 
   /* Ukuran jendela dirapatkan ke isi papan pada kedua arah: lebar dari rel,
@@ -1169,69 +1101,7 @@
     var kunci = lebar + "x" + tinggi + "@" + window.innerWidth + "x" + window.innerHeight;
     if (kunci === kunciMinta) return;
     kunciMinta = kunci;
-    geserJendela(lebar, tinggi);
-  };
-
-  /* Kolom panel selama dibuka/ditutup meluncur sendiri pada 60 bingkai per
-     detik, dari tepi kanan. Lebar jendela tidak ikut dianimasikan langkah demi
-     langkah; ia hanya menambah atau membuang satu jalur selebar panel, lalu
-     panelnya mengisi jalur itu. Satu gerakan, satu jam, jadi tidak patah. */
-  var geserSisi = null;
-  var sisiAnimId = 0;
-  var tungguSisi = null;
-  var jedaSisi = 0;
-  var mulaiSisi = function () {
-    if (!tungguSisi) return;
-    var jalan = tungguSisi;
-    tungguSisi = null;
-    clearTimeout(jedaSisi);
-    jalan();
-  };
-  var perbaruiSisi = function () {
-    if (!geserSisi) return;
-    var rel = document.querySelector(".kd-rail");
-    var relSekarang = rel ? rel.offsetWidth : 68;
-    var sisa = window.innerWidth - relSekarang - geserSisi.area;
-    var lebar = Math.max(0, Math.min(geserSisi.nilai, sisa));
-    geserSisi.isi.style.setProperty("--kd-side-live", Math.round(lebar) + "px");
-  };
-  var animasiSisi = function (ke, selesai) {
-    var id = ++sisiAnimId;
-    var dari = geserSisi ? geserSisi.nilai : 0;
-    var t0 = 0;
-    var durasi = 230;
-    var langkah = function (sekarang) {
-      if (id !== sisiAnimId || !geserSisi) return;
-      if (!t0) t0 = sekarang;
-      var p = Math.min(1, (sekarang - t0) / durasi);
-      /* Kuadrat: mulai dan berhenti pelan, tanpa hentakan di ujung. */
-      var e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
-      geserSisi.nilai = dari + (ke - dari) * e;
-      perbaruiSisi();
-      if (p < 1) {
-        requestAnimationFrame(langkah);
-        return;
-      }
-      geserSisi.nilai = ke;
-      perbaruiSisi();
-      if (selesai) selesai();
-    };
-    requestAnimationFrame(langkah);
-  };
-  var akhiriGeser = function () {
-    ++sisiAnimId;
-    tungguSisi = null;
-    clearTimeout(jedaSisi);
-    geserSisi = null;
-    var isi = $("#kdContent");
-    if (!isi) return;
-    isi.classList.remove("is-geser");
-    isi.style.removeProperty("--kd-side-live");
-    var board = $("#kdBoard");
-    if (board) {
-      board.style.marginLeft = "";
-      board.style.marginRight = "";
-    }
+    pasangUkuran(lebar, tinggi);
   };
 
   /* Menyeret tepi jendela tidak mengubah ukuran yang dipilih pengguna selama
@@ -1680,8 +1550,7 @@
       $("#view-" + v).hidden = v !== view;
     });
     var onBoard = view === "papan";
-    akhiriGeser();
-    $("#kdContent").dataset.panel = onBoard && S.panel ? "open" : "off";
+    $("#kdContent").dataset.panel = onBoard ? "open" : "off";
     $("#kdContent").dataset.view = view;
     $("#kdEdit").hidden = !onBoard;
     renderHeader();
@@ -2112,77 +1981,9 @@
     });
     $("#kdPgClose").addEventListener("click", function () { $("#kdDlgPage").close(); });
 
-    /* panel kanan */
-    var lepasPapan = 0;
-    var setPanel = function (open) {
-      if (S.panel === open) return;
-      S.panel = open;
-      var isi = $("#kdContent");
-      var view = $("#view-papan");
-      var board = $("#kdBoard");
-      var lama = isi.dataset.panel === "open";
-      var baru = open && S.view === "papan";
-      if (S.view !== "papan" || lama === baru) {
-        isi.dataset.panel = baru ? "open" : "off";
-        akhiriGeser();
-        return;
-      }
-      var sisi = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--kd-side-w"));
-      if (!isFinite(sisi) || !sisi) sisi = 296;
-      var rel = document.querySelector(".kd-rail");
-      var relSekarang = rel ? rel.offsetWidth : 68;
-      /* Lebar kolom papan dikunci pada nilai sekarang, jadi papan tidak
-         bergeser dan tidak ditata ulang selama panel meluncur. Nilainya harus
-         dibaca SEBELUM status panel diubah; sesudahnya kolom sudah menyempit
-         sendiri. */
-      var area = view ? view.clientWidth : 0;
-      clearTimeout(lepasPapan);
-      akhiriGeser();
-      if (board && view) {
-        isi.classList.add("is-geser");
-        var gaya = getComputedStyle(view);
-        var isiKiri = view.getBoundingClientRect().left + (parseFloat(gaya.borderLeftWidth) || 0) + (parseFloat(gaya.paddingLeft) || 0);
-        var kiri = Math.round(board.getBoundingClientRect().left - isiKiri);
-        board.style.marginLeft = Math.max(0, kiri) + "px";
-        board.style.marginRight = "0px";
-      }
-      var lebarKini = window.innerWidth;
-      var tinggiKini = window.innerHeight;
-      var lebarBaru = lebarKini + (open ? sisi : -sisi);
-      /* Rel menyempit di bawah 900 px. Imbangi selisihnya supaya ukuran ubin
-         tidak berubah hanya karena panel dibuka atau ditutup. */
-      var relBaru = lebarBaru > 900 ? 68 : 56;
-      var lebarJendela = lebarBaru + (relBaru - relSekarang);
-      var tutupGeser = function () {
-        lepasPapan = setTimeout(function () {
-          akhiriGeser();
-          if (S.view === "papan") rapikanTata(false);
-        }, 70);
-      };
-      if (open) {
-        /* Jendela langsung menyediakan jalur kosong selebar panel, lalu panel
-           mengisi jalur itu dari tepi kanan. */
-        geserSisi = { isi: isi, nilai: 0, area: area };
-        perbaruiSisi();
-        isi.dataset.panel = "open";
-        kirimUkuran(lebarJendela, tinggiKini);
-        tungguSisi = function () {
-          animasiSisi(sisi, tutupGeser);
-        };
-        /* Kalau peristiwa resize tidak datang, jalur sudah dianggap siap. */
-        jedaSisi = setTimeout(mulaiSisi, 130);
-      } else {
-        /* Panel meluncur keluar lebih dulu, baru jalurnya dibuang. */
-        geserSisi = { isi: isi, nilai: sisi, area: area };
-        animasiSisi(0, function () {
-          isi.dataset.panel = "off";
-          kirimUkuran(lebarJendela, tinggiKini);
-          tutupGeser();
-        });
-      }
-    };
-    $("#kdSideClose").addEventListener("click", function () { setPanel(false); });
-    $("#kdPanelOpen").addEventListener("click", function () { setPanel(true); });
+    /* Panel kanan tidak punya tombol buka/tutup: ia selalu tampil di bagian
+       Papan dan kolomnya selebar tetap, jadi tidak ada lebar yang digerakkan
+       dan papan tidak pernah bergeser. */
 
     /* folder */
     $("#kdFolderBack").addEventListener("click", closeFolder);
@@ -2779,17 +2580,14 @@
       placeInk($("#kdThemeSeg"), "pill", 'button[aria-pressed="true"]', "");
     };
     window.addEventListener("resize", function () {
-      /* Panel yang sedang meluncur mengikuti tepi jendela tiap kali ukuran
-         baru benar-benar terpasang. */
-      perbaruiSisi();
-      mulaiSisi();
-      if (langkahJendela) langkahJendela();
-      if (geserSisi || animasiJendela || Date.now() - jedaSelesai < 320) return;
+      /* Selama jendela masih dipasang ke ukuran papan, jangan menghitung
+         ulang: peristiwa resize itu sendiri yang memicu pemasangan. */
+      if (animasiJendela || Date.now() - jedaSelesai < 120) return;
       /* Setelah seretan berhenti, ukuran ubin dibulatkan lagi dan ukuran
-         jendela dirapatkan ke papan pada kedua arah. */
+         jendela dipasang ke papan pada kedua arah. */
       clearTimeout(tataReda);
       tataReda = setTimeout(function () {
-        if (geserSisi || animasiJendela) return;
+        if (animasiJendela) return;
         rapikanTata(false);
         pasIsi();
       }, 140);
@@ -2797,7 +2595,7 @@
       tataTerjadwal = true;
       requestAnimationFrame(function () {
         tataTerjadwal = false;
-        if (geserSisi || animasiJendela) return;
+        if (animasiJendela) return;
         rapikanTata(true);
       });
     });
@@ -2997,13 +2795,13 @@
       monMasuk(j && j.monitor ? j.monitor : j);
     }).catch(function () { /* monitor menyusul lewat SSE */ });
     if (S.sw.update) cekPembaruan(false);
-    /* Ukuran tersimpan bisa berasal dari profil, halaman, atau panel yang
-       berbeda, jadi jendela dirapatkan sekali ke papan setelah tampilan
-       pertama benar-benar terpasang. Tanpa ini, sisa ruang kosong dari ukuran
-       lama ikut terbawa sampai pengguna mengubah ukuran jendela. */
+    /* Ukuran tersimpan bisa berasal dari profil atau halaman yang berbeda,
+       jadi jendela dipasang sekali ke papan setelah tampilan pertama benar-benar
+       terpasang. Tanpa ini, sisa ruang kosong dari ukuran lama ikut terbawa
+       sampai pengguna mengubah ukuran jendela. */
     setTimeout(function () {
       if (S.view !== "papan" || !S.deck) return;
-      if (animasiJendela || geserSisi) return;
+      if (animasiJendela) return;
       fitBoard();
       pasIsi();
     }, 420);

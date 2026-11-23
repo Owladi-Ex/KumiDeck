@@ -65,15 +65,16 @@ fn tinggi_pas(app: &App, lebar: f64) -> f64 {
     let profil = app.store.deck().profile;
     let kolom = profil.columns.clamp(1, 12) as f64;
     let baris = profil.rows.clamp(1, 12) as f64;
-    // Sama dengan token --kd-rail-w/--kd-side-w; di bawah 900 px panel kanan
-    // dilipat oleh media query, jadi lebarnya ikut hilang.
-    let (rel, panel) = if lebar <= 900.0 { (56.0, 0.0) } else { (68.0, 296.0) };
+    // Sama dengan token --kd-rail-w/--kd-side-w. Panel kanan selalu tampil di
+    // bagian Papan, jadi lebarnya ikut dihitung di semua ukuran.
+    let rel = if lebar <= 900.0 { 56.0 } else { 68.0 };
+    let panel = 296.0;
     let bingkai = 56.0 + 30.0; // kepala + kaki
     let tepi = 28.0; // padding .kd-view kiri dan kanan
     let jarak = 8.0;
     let ubin = ((lebar - rel - panel - tepi - jarak * (kolom - 1.0)) / kolom)
         .clamp(84.0, 168.0);
-    (bingkai + tepi + baris * ubin + jarak * (baris - 1.0)).max(480.0)
+    (bingkai + tepi + baris * ubin + jarak * (baris - 1.0)).max(300.0)
 }
 
 fn berkas_geometri(app: &App) -> std::path::PathBuf {
@@ -103,7 +104,7 @@ fn muat_geometri(app: &App) -> Geometri {
     let tinggi = if versi < 2 {
         tinggi_pas(app, lebar)
     } else {
-        ambil("tinggi", 760.0).max(480.0)
+        ambil("tinggi", 760.0).max(300.0)
     };
     Geometri {
         x: ambil("x", 120.0),
@@ -336,7 +337,7 @@ pub fn jalankan(app: Arc<App>) -> ! {
             .with_window_icon(ikon_jendela)
             .with_inner_size(LogicalSize::new(geo.lebar, geo.tinggi))
             .with_position(LogicalPosition::new(geo.x, geo.y))
-            .with_min_inner_size(LogicalSize::new(720.0, 480.0))
+            .with_min_inner_size(LogicalSize::new(720.0, 300.0))
             .build(&event_loop)
             .expect("jendela KumiDeck tidak bisa dibuat"),
     );
@@ -403,7 +404,7 @@ pub fn jalankan(app: Arc<App>) -> ! {
                             if w.is_finite() && h.is_finite() {
                                 let _ = win_untuk_ipc.set_inner_size(LogicalSize::new(
                                     w.clamp(720.0, 2400.0),
-                                    h.clamp(480.0, 2000.0),
+                                    h.clamp(300.0, 2000.0),
                                 ));
                             }
                         }
