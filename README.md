@@ -72,7 +72,8 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
 - **Pemeriksa bentrok pintasan**: editor memperingatkan kombinasi yang dipakai
   lebih dari satu tombol.
 - Kunci tata letak, impor/ekspor papan (JSON), **arsip zip** semua data.
-- **Pencarian tombol Ctrl+K**, duplikat halaman/tombol.
+- **Duplikat halaman dan tombol**. (Pintasan pencarian `Ctrl+K` dari 2.3.0
+  belum dipindahkan ke antarmuka Rangka.)
 - **Cadangan otomatis** 10 versi terakhir + pulihkan, serta unduh log.
 - **Warna aksen** tema dan **skala tombol per halaman** (100–140%).
 - **Pintasan global** untuk menampilkan atau menyembunyikan papan, **mulai

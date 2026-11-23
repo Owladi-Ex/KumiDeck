@@ -90,6 +90,9 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 - **Panel templat papan** dan **pemilih aplikasi terpasang** di UI. Endpoint
   `/api/apps` tetap ada untuk klien lama, dan aksi "Buka aplikasi atau alamat"
   kini memakai kolom target seperti di editor 2.3.0.
+- **Pencarian tombol Ctrl+K** dari 2.3.0: belum dipindahkan ke antarmuka Rangka,
+  jadi tidak lagi disebut di README. Pencarian per halaman tetap ada di daftar
+  tombol editor.
 - Paket desain `public/kumi/` beserta `public/css/` dan JS 2.3.0 (`core.js`,
   `desktop.js`, `remote.js`, `bahasa.js`, `bahasa-tambahan.js`).
 
@@ -177,6 +180,13 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
 - **Tanpa batang gulir**: batang gulir disembunyikan di semua bagian dan di tab
   halaman, sehingga lebar isi tidak berubah 15–18 px saat guliran muncul atau
   hilang.
+- **Soundboard bisa disunting**: tombol pensil di tiap suara kini membuka dialog
+  ubah nama dan volume; sebelumnya tombolnya ada tetapi tidak melakukan apa pun.
+  Perubahan langsung tersimpan ke papan dan berlaku saat suara diputar.
+- **Riwayat aktivitas langsung terisi**: peristiwa `press` dari server dipakai
+  apa adanya oleh desktop, jadi entri baru muncul seketika di panel Ringkasan
+  dan di layar Riwayat tanpa menunggu sinkronisasi papan berikutnya. Sebelumnya
+  peristiwa itu diabaikan dan riwayat hanya terisi setelah halaman dimuat ulang.
 
 ## [2.3.0] - 2026-11-16
 
