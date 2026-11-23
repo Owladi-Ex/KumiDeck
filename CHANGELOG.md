@@ -121,6 +121,23 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
   820x1180 turun dari 150 px menjadi 112 px. Bila papan lebih tinggi dari ruang,
   papan menggulir (`justify-content: safe center`) alih-alih mengecil, dan baris
   teratas tetap terlihat.
+- **Layar penuh Remote mengisi seluruh layar**: bingkai ponsel 640 px tidak lagi
+  berlaku saat kios, jadi papan tidak lagi mengambang kecil di tengah latar
+  kosong. Baris dibagi rata, ubin boleh melebar (hingga 240 px), ikon dan label
+  ikut membesar, dan tombol keluar naik ke 44 px dengan cincin supaya terbaca di
+  atas ubin. Diukur di aplikasi terpasang: 1320x608 -> ubin 254x191 mengisi
+  1320x608 tanpa gulir, 915x412 -> 173x125.
+- **Kepala Remote dirapatkan di layar 608 px tinggi**: ambang tata letak rapat
+  dinaikkan dari `max-height: 560px` ke 680 px. Layar 1320x608 tadinya menyisakan
+  295 px chrome dan papan 261 px; sekarang chrome 154 px dan papan 440 px, ubin
+  83 -> 112 px, tanpa gulir.
+- **Baris terakhir papan Remote tidak lagi terpotong**: `pasPapan` membuang
+  padding stage dari hitungan, mengecilkan celah 6 -> 3 px lalu ubin sampai
+  56 px sebelum membiarkan papan menggulir. Terukur: 844x390 tidak lagi
+  menggulir (ubin 63 px), 740x360 ubin 54 px tanpa potongan.
+- **Label ubin Remote tidak pecah di tengah kata**: ukuran label minimum turun
+  ke 8 px dan padding/jeda ubin diskalakan dengan lebar ubin (`cqi`), jadi
+  "Terimakasih" utuh di ubin 63 px dan 78 px.
 - **Tidak ada lagi jendela terminal**: exe rilis dibangun sebagai aplikasi
   jendela, jadi hanya KumiDeck yang muncul. Log tetap ditulis ke
   `data/kumideck.log`, dan perintah latar (curl, netsh, PowerShell, shutdown)

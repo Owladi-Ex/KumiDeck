@@ -266,7 +266,6 @@
     host.style.setProperty("--kd-cols-rm", kolom);
     host.dataset.kolom = kolom;
     host.dataset.baris = baris;
-
     if (S.folder) {
       if (barFolder) {
         barFolder.hidden = false;
@@ -325,25 +324,64 @@
     });
     var gapBody = parseFloat(getComputedStyle(body).rowGap) || 0;
     var tinggiMaks = Math.max(60, bodyH - bodyPad - saudaraH - (gapBody * hitungSaudara));
-    var lebarMaks = stage.clientWidth || (body.clientWidth - 16);
+    /* clientWidth/clientHeight sudah termasuk padding stage, jadi padding itu
+       harus dibuang dulu. Tanpa ini papan melebar beberapa piksel dan baris
+       terakhir terpotong (terukur di kios 1320x608: 195 px ubin, 3 baris
+       butuh 609 px di ruang 593 px). */
+    var stageCs = getComputedStyle(stage);
+    var stagePadX = (parseFloat(stageCs.paddingLeft) || 0) + (parseFloat(stageCs.paddingRight) || 0);
+    var stagePadY = (parseFloat(stageCs.paddingTop) || 0) + (parseFloat(stageCs.paddingBottom) || 0);
+    tinggiMaks = Math.max(60, tinggiMaks - stagePadY);
+    var lebarMaks = Math.max(60, (stage.clientWidth || (body.clientWidth - 16)) - stagePadX);
 
     var celah = 6;
+    host.style.setProperty("--kd-gap", celah + "px");
     var tw = (lebarMaks - celah * (kolom - 1)) / kolom;
     var th = (tinggiMaks - celah * (baris - 1)) / baris;
-    /* Batas bawah 64 px: tombol lebih kecil dari itu sulit disentuh dan
-       labelnya pecah di tengah kata (mis. "Terimakasi|h" di ponsel mendatar).
-       Bila tidak cukup tinggi, papan menggulir alih-alih mengecil. */
+    /* Batas bawah 64 px: tombol lebih kecil dari itu labelnya pecah di tengah
+       kata (mis. "Terimakasi|h" di ponsel mendatar). Bila tidak cukup tinggi,
+       papan menggulir alih-alih mengecil. */
     var tile = Math.floor(Math.max(64, Math.min(tw, th)));
     if (tile > tw) tile = Math.floor(tw);
     /* Di tablet/ponsel mendatar, kolom 5 bisa jadi 150 px dan terlihat
-       kegemukan. 112 px sudah nyaman disentuh dan papan tetap terbaca. */
-    if (tile > 112) tile = 112;
+       kegemukan. 112 px sudah nyaman disentuh dan papan tetap terbaca.
+       Mode layar penuh memakai 240 px: seluruh layar jadi papan, dan ubin
+       112 px di layar 1320 px hanya memakai sepertiga lebarnya. */
+    var akar = $("#kdRm");
+    var batas = akar && akar.classList.contains("is-kiosk") ? 240 : 112;
+    if (tile > batas) tile = batas;
+
+    /* Jaring pengaman: apa pun hasil hitungan saudara/gap, papan tidak boleh
+       melebihi tinggi stage. Selisih 1-2 px dari pembulatan sudah cukup
+       membuat baris terakhir terpotong (terukur di kios 1320x608).
+       Urutan korbannya: celah dulu, lalu ubin sampai 56 px (masih di atas
+       ambang sentuh 44 px), baru papan dibiarkan menggulir. */
+    var sisaTinggi = (stage.clientHeight - stagePadY - celah * (baris - 1)) / baris;
+    if (tile > sisaTinggi && sisaTinggi >= 64) tile = Math.floor(sisaTinggi);
+    var ruang = stage.clientHeight - stagePadY;
+    while (tile > 56 && (tile * baris + celah * (baris - 1)) > ruang) tile--;
+    while (celah > 3 && (tile * baris + celah * (baris - 1)) > ruang) {
+      celah--;
+      host.style.setProperty("--kd-gap", celah + "px");
+    }
     if (tile <= 0) return;
 
     var lebarPapan = Math.max(0, tile * kolom + celah * (kolom - 1));
     host.style.width = lebarPapan + "px";
     host.style.maxWidth = "100%";
     host.style.marginInline = "auto";
+    /* Layar penuh: papan mengisi stage, tapi ubin tidak boleh jangkung. Di
+       potret 5 kolom hanya memberi 78 px lebar; meregangkan tinggi ke 960 px
+       membuat ubin 78x308 (rasio 1:4) yang jelek dan sulit dijangkau jempol.
+       Tinggi ubin dibatasi 1.4x lebarnya, lalu papan ditengahkan. */
+    if (akar && akar.classList.contains("is-kiosk")) {
+      var lebarUbin = (lebarMaks - celah * (kolom - 1)) / kolom;
+      var tinggiUbin = Math.min((tinggiMaks - celah * (baris - 1)) / baris, lebarUbin * 1.4);
+      host.style.width = Math.round(lebarMaks) + "px";
+      host.style.height = Math.round(tinggiUbin * baris + celah * (baris - 1)) + "px";
+    } else {
+      host.style.height = "";
+    }
   };
 
   var renderBoard = function () {

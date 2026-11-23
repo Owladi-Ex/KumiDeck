@@ -88,7 +88,10 @@ Lihat rilis terbaru: https://github.com/Owladi-Ex/KumiDeck/releases/latest
   sendiri, mode kios, dan token per perangkat. Bisa dipasang sebagai **APK
   KumiDeck Remote** atau sebagai PWA bila HTTPS aktif. Tombol dan tab Remote
   minimal 44 px, daftar suara tampil sebagai kartu, dan ukuran ubin dijaga
-  64-112 px supaya tetap terbaca di ponsel mendatar maupun tablet.
+  64-112 px supaya tetap terbaca di ponsel mendatar maupun tablet. Mode layar
+  penuh mengisi seluruh layar (ubin membesar sampai 240 px, ikon dan label ikut
+  skala), dan papan dirapatkan di layar pendek seperti 1320x608 sehingga baris
+  terakhir tidak terpotong.
 - Jendela native: title bar sendiri (perkecil/perbesar/tutup), kepala aplikasi
   dipakai untuk menggeser jendela lewat area kosongnya. Ukuran jendela yang
   diseret pengguna dihormati: menyeret tepi horizontal maupun vertikal tidak
