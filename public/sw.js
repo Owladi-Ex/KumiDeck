@@ -8,7 +8,7 @@
    - /api/ TIDAK PERNAH disentuh: termasuk aliran SSE /api/events yang harus
      tetap mengalir langsung dari server.
    Naikkan CACHE_VERSION setiap kali aset statis berubah. */
-const CACHE_VERSION = "kumideck-v46";
+const CACHE_VERSION = "kumideck-v47";
 const PRA_CACHE = [
   "/favicon.svg",
   "/manifest.webmanifest",
@@ -84,41 +84,67 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
 
-  /* HTML: selalu jaringan, tidak pernah disimpan di cache. */
-  if (request.mode === "navigate" || url.pathname === "/remote" || url.pathname === "/") {
+  /* Hanya halaman Remote yang boleh dilayani dari cache. Desktop (/index.html
+     dan "/") adalah klien lokal yang selalu satu mesin dengan servernya, jadi
+     berkasnya harus datang langsung dari server: cache di sini pernah menyajikan
+     app.js lama sampai fitur baru tampak "tidak ada". */
+  const remotePath = (p) => p === "/remote" || p === "/remote.html" || p.startsWith("/remote/");
+  if (!remotePath(url.pathname)) {
+    if (request.mode === "navigate") {
+      event.respondWith(fetch(request));
+      return;
+    }
+    if (!event.clientId) return;
+    event.respondWith(
+      (async () => {
+        try {
+          const klien = await self.clients.get(event.clientId);
+          if (!klien || !remotePath(new URL(klien.url).pathname)) return fetch(request);
+        } catch (err) {
+          return fetch(request);
+        }
+        return ambilBolehCache(event, request, url);
+      })()
+    );
+    return;
+  }
+
+  /* HTML Remote: selalu jaringan, tidak pernah disimpan di cache. */
+  if (request.mode === "navigate") {
     event.respondWith(fetch(request));
     return;
   }
 
   if (!bolehCache(url)) return;
-
-  event.respondWith(
-    (async () => {
-      const cache = await caches.open(CACHE_VERSION);
-      const tersimpan = await cache.match(request, { ignoreSearch: false });
-
-      /* Ambil salinan baru di latar belakang (stale-while-revalidate): papan
-         tetap terbuka cepat dari cache, tetapi aset yang berubah ikut terpakai
-         pada pembukaan berikutnya tanpa harus menaikkan CACHE_VERSION. */
-      const segarkan = fetch(request)
-        .then((respons) => {
-          if (respons && respons.ok && !adalahHtml(request, respons)) {
-            cache.put(request, respons.clone()).catch(() => null);
-          }
-          return respons;
-        })
-        .catch(() => null);
-
-      if (tersimpan) {
-        event.waitUntil(segarkan);
-        return tersimpan;
-      }
-
-      const respons = await segarkan;
-      return respons || Response.error();
-    })()
-  );
+  event.respondWith(ambilBolehCache(event, request, url));
 });
+
+function ambilBolehCache(event, request, url) {
+  return (async () => {
+    const cache = await caches.open(CACHE_VERSION);
+    const tersimpan = await cache.match(request, { ignoreSearch: false });
+
+    /* Ambil salinan baru di latar belakang (stale-while-revalidate): papan
+       tetap terbuka cepat dari cache, tetapi aset yang berubah ikut terpakai
+       pada pembukaan berikutnya tanpa harus menaikkan CACHE_VERSION. */
+    const segarkan = fetch(request)
+      .then((respons) => {
+        if (respons && respons.ok && !adalahHtml(request, respons)) {
+          cache.put(request, respons.clone()).catch(() => null);
+        }
+        return respons;
+      })
+      .catch(() => null);
+
+    if (tersimpan) {
+      event.waitUntil(segarkan);
+      return tersimpan;
+    }
+
+    const respons = await segarkan;
+    return respons || Response.error();
+  })();
+}
 
 
 

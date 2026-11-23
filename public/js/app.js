@@ -2891,6 +2891,21 @@
   };
 
   /* ------------------------------------------------------------------ start */
+  /* Desktop tidak boleh dilayani service worker: halaman ini satu mesin dengan
+     servernya, dan cache Remote pernah menyajikan app.js lama di sini. Lepaskan
+     registrasi yang terlanjur ada supaya berkas selalu datang dari server. */
+  if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+    navigator.serviceWorker.getRegistrations().then(function (daftar) {
+      daftar.forEach(function (r) { r.unregister(); });
+      if (window.caches && caches.keys) {
+        caches.keys().then(function (kunci) {
+          kunci.forEach(function (k) { caches.delete(k); });
+        });
+      }
+      if (navigator.serviceWorker.controller) location.reload();
+    }).catch(function () { /* tanpa service worker pun aplikasi tetap jalan */ });
+  }
+
   var tema = "light";
   try { tema = localStorage.getItem("kumideck-tema") || "light"; } catch (e) { /* penyimpanan UI tidak wajib */ }
   applyTheme(tema, true);

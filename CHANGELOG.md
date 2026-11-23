@@ -187,6 +187,12 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
   apa adanya oleh desktop, jadi entri baru muncul seketika di panel Ringkasan
   dan di layar Riwayat tanpa menunggu sinkronisasi papan berikutnya. Sebelumnya
   peristiwa itu diabaikan dan riwayat hanya terisi setelah halaman dimuat ulang.
+- **Service worker tidak lagi mengunci desktop pada versi lama**: cache Remote
+  hanya melayani halaman `/remote`, dan desktop melepas registrasi yang
+  terlanjur ada. Inilah sebab fitur baru (ukuran grid, sunting soundboard)
+  tampak "tidak ada" di aplikasi terpasang meski sudah ikut ke dalam exe:
+  `app.js` lama tersaji dari cache dengan stale-while-revalidate. Versi cache
+  naik ke `kumideck-v47`.
 
 ## [2.3.0] - 2026-11-16
 
