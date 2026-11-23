@@ -137,17 +137,21 @@ menggantikan 2.3.0 di tempat, tanpa menghapus `data/`. Versi APK Remote: 2.4.0
   digerakkan: papan tidak bergeser, tidak berubah ukuran, dan tidak bergetar saat
   masuk atau keluar dari Papan. Tinggi minimum jendela diturunkan ke 300 px
   supaya papan tetap menempel rapat sampai ukuran terkecil.
+- **Tanpa list biru dan tanpa shadow cangkang**: bayangan dan batas aksen
+  cangkang Windows pada jendela tanpa dekorasi dinonaktifkan bersih lewat
+  `with_undecorated_shadow(false)` bawaan runtime jendela. Jendela menempel
+  rata ke layar tanpa lis biru muda di tepi.
+- **Resize halus tanpa kedip dan tanpa nyangkut**: mouse saat seret mengalir
+  bebas tanpa intervensi `set_inner_size` di tengah jalan sehingga tidak ada
+  kedipan berulang. Perapatan proporsional dua arah (`pasIsi`) dipicu langsung
+  oleh peristiwa pelepasan mouse native Windows (`WM_EXITSIZEMOVE`), bukan lagi
+  timer debounce, sehingga menyeret jendela selama apa pun tidak pernah
+  terpotong atau nyangkut di tengah jalan.
 - **Ukuran jendela langsung pas setelah seret, kedua arah**: begitu tepi jendela
   dilepas, lebar dan tingginya langsung dipasang ke ukuran kotak tombol, jadi
   tidak ada pita kosong di bawah maupun di samping papan dan tidak ada animasi
-  yang harus dikejar. Seretan mouse mengalir bebas tanpa intervensi ukuran di
-  tengah jalan sehingga tidak berkedip. Satu koreksi kecil menyusul setelah
-  dilepas hanya bila pembulatan tata letak menyisakan selisih. Ukuran jendela
-  yang tersimpan juga dipasang sekali saat aplikasi dibuka, jadi sisa ruang dari
-  profil lama tidak terbawa.
-- **Shadow cangkang jendela Windows dihapus**: bayangan DWM di sekeliling
-  jendela tanpa dekorasi dinonaktifkan (`DWMNCRP_DISABLED`), sehingga jendela
-  bersih menempel rata ke layar.
+  yang harus dikejar. Ukuran jendela yang tersimpan juga dipasang sekali saat
+  aplikasi dibuka, jadi sisa ruang dari profil lama tidak terbawa.
 - **Seret tepi jendela tanpa patahan**: ukuran ubin mengikuti lebar isi secara
   pecahan selama jendela diseret, lalu dibulatkan setelah seretan berhenti dan
   jendela dipasang ke papan.

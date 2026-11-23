@@ -1060,8 +1060,27 @@
       jedaSelesai = Date.now();
       if (S.view !== "papan") return;
       fitBoard();
-      pasIsi();
-    }, 180);
+      /* Panggil pasIsi hanya jika masih ada selisih nyata (> 2px) */
+      var view = $("#view-papan");
+      var board = $("#kdBoard");
+      if (!view || !board) return;
+      var kb = board.getBoundingClientRect();
+      var gaya = getComputedStyle(view);
+      var px = (parseFloat(gaya.paddingLeft) || 14) + (parseFloat(gaya.paddingRight) || 14);
+      var py = (parseFloat(gaya.paddingTop) || 14) + (parseFloat(gaya.paddingBottom) || 14);
+      var kepala = document.querySelector(".kd-top");
+      var kaki = document.querySelector(".kd-foot");
+      var rail = document.querySelector(".kd-rail");
+      var rel = rail ? rail.offsetWidth : 68;
+      var panel = $("#kdContent").dataset.panel === "open" ? (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--kd-side-w")) || 0) : 0;
+      var bar = $("#kdEditbar");
+      var bilah = bar && !bar.hidden ? bar.offsetHeight + 10 : 0;
+      var targetW = Math.round(rel + panel + px + kb.width);
+      var targetH = Math.round((kepala ? kepala.offsetHeight : 56) + (kaki ? kaki.offsetHeight : 30) + py + kb.height + bilah);
+      if (Math.abs(targetW - window.innerWidth) >= 3 || Math.abs(targetH - window.innerHeight) >= 3) {
+        pasIsi();
+      }
+    }, 200);
   };
 
   /* Ukuran jendela dirapatkan ke isi papan pada kedua arah: lebar dari rel,
@@ -2582,15 +2601,7 @@
     window.addEventListener("resize", function () {
       /* Selama jendela masih dipasang ke ukuran papan, jangan menghitung
          ulang: peristiwa resize itu sendiri yang memicu pemasangan. */
-      if (animasiJendela || Date.now() - jedaSelesai < 120) return;
-      /* Setelah seretan berhenti, ukuran ubin dibulatkan lagi dan ukuran
-         jendela dipasang ke papan pada kedua arah. */
-      clearTimeout(tataReda);
-      tataReda = setTimeout(function () {
-        if (animasiJendela) return;
-        rapikanTata(false);
-        pasIsi();
-      }, 140);
+      if (animasiJendela || Date.now() - jedaSelesai < 160) return;
       if (tataTerjadwal) return;
       tataTerjadwal = true;
       requestAnimationFrame(function () {
@@ -2599,6 +2610,19 @@
         rapikanTata(true);
       });
     });
+
+    /* Perapatan proporsional hanya dipicu saat seretan Windows selesai dilepas
+       (sinyal 'selesai-seret' dari WM_EXITSIZEMOVE native lewat IPC).
+       Dengan ini, seretan selama apa pun tidak pernah terpotong timer di tengah jalan. */
+    if (window.__kdJendela) {
+      window.__kdJendela.addEventListener("message", function (ev) {
+        if (ev && ev.data === "selesai-seret") {
+          if (animasiJendela) return;
+          rapikanTata(false);
+          pasIsi();
+        }
+      });
+    }
   };
 
   var salin = function (teks) {

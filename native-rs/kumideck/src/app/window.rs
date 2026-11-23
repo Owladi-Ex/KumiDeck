@@ -8,15 +8,13 @@ use serde_json::{json, Value};
 use tao::dpi::{LogicalPosition, LogicalSize};
 use tao::event::{Event, WindowEvent};
 use tao::event_loop::{ControlFlow, EventLoopBuilder, EventLoopProxy};
-use tao::platform::windows::WindowExtWindows;
+use tao::platform::windows::{WindowBuilderExtWindows, WindowExtWindows};
 use tao::window::{Window, WindowBuilder};
 use tray_icon::{
     menu::{Menu, MenuEvent, MenuItem, PredefinedMenuItem},
     Icon, TrayIcon, TrayIconBuilder,
 };
-use windows::Win32::Graphics::Dwm::{
-    DwmSetWindowAttribute, DWMNCRP_DISABLED, DWMWA_NCRENDERING_POLICY,
-};
+use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::DataExchange::{
     CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData,
 };
@@ -24,8 +22,9 @@ use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_ALT, MOD_CONTROL, MOD_SHIFT, MOD_WIN,
 };
+use windows::Win32::UI::Shell::{DefSubclassProc, SetWindowSubclass};
 use windows::Win32::UI::WindowsAndMessaging::{
-    DispatchMessageW, PeekMessageW, TranslateMessage, MSG, PM_REMOVE, WM_HOTKEY,
+    DispatchMessageW, PeekMessageW, TranslateMessage, MSG, PM_REMOVE, WM_EXITSIZEMOVE, WM_HOTKEY,
 };
 use wry::{WebView, WebViewBuilder};
 
@@ -36,6 +35,7 @@ use crate::server::state::App;
 pub enum Pesan {
     Pintasan,
     Menu(String),
+    SelesaiSeret,
 }
 
 const ID_PINTASAN: i32 = 0x4B44;
@@ -179,6 +179,21 @@ const SKRIP_JENDELA: &str = r#"
   });
 })();
 "#;
+
+unsafe extern "system" fn subclass_jendela(
+    hwnd: HWND,
+    msg: u32,
+    wparam: WPARAM,
+    lparam: LPARAM,
+    _uid: usize,
+    refdata: usize,
+) -> LRESULT {
+    if msg == WM_EXITSIZEMOVE {
+        let proxy = &*(refdata as *const EventLoopProxy<Pesan>);
+        let _ = proxy.send_event(Pesan::SelesaiSeret);
+    }
+    DefSubclassProc(hwnd, msg, wparam, lparam)
+}
 
 fn urai_pintasan(teks: &str) -> Option<(HOT_KEY_MODIFIERS, u32)> {
     let mut mods = HOT_KEY_MODIFIERS(0);
@@ -358,6 +373,7 @@ pub fn jalankan(app: Arc<App>) -> ! {
         WindowBuilder::new()
             .with_title("KumiDeck")
             .with_decorations(false)
+            .with_undecorated_shadow(false)
             .with_resizable(true)
             .with_always_on_top(teratas)
             .with_window_icon(ikon_jendela)
@@ -368,15 +384,15 @@ pub fn jalankan(app: Arc<App>) -> ! {
             .expect("jendela KumiDeck tidak bisa dibuat"),
     );
 
-    // Hilangkan efek shadow cangkang jendela Windows di sekeliling jendela.
+    // Tangkap WM_EXITSIZEMOVE agar tahu persis kapan seretan jendela berhenti dilepas pengguna.
+    let proxy_seret = Box::new(event_loop.create_proxy());
     unsafe {
-        let hwnd = windows::Win32::Foundation::HWND(window.hwnd() as *mut _);
-        let nonaktif = DWMNCRP_DISABLED.0 as i32;
-        let _ = DwmSetWindowAttribute(
+        let hwnd = HWND(window.hwnd() as *mut _);
+        let _ = SetWindowSubclass(
             hwnd,
-            DWMWA_NCRENDERING_POLICY,
-            &nonaktif as *const _ as *const _,
-            std::mem::size_of::<i32>() as u32,
+            Some(subclass_jendela),
+            1001,
+            Box::into_raw(proxy_seret) as usize,
         );
     }
 
@@ -485,6 +501,13 @@ pub fn jalankan(app: Arc<App>) -> ! {
                 }
                 lain => crate::core::log::warn(&format!("menu baki tidak dikenal: {lain}")),
             },
+            Event::UserEvent(Pesan::SelesaiSeret) => {
+                if let Some(w) = webview.lock().unwrap().as_ref() {
+                    let _ = w.evaluate_script(
+                        "window.__kdJendela && window.__kdJendela.__emit('selesai-seret');",
+                    );
+                }
+            }
             Event::WindowEvent {
                 event: WindowEvent::Resized(_size),
                 ..
