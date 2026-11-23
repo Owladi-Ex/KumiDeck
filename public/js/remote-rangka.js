@@ -301,27 +301,47 @@
     if ($("#kdRmJudul")) $("#kdRmJudul").textContent = (S.deck.profile && S.deck.profile.name) || "KumiDeck";
   };
 
-  /* Papan Remote selalu muat di layar: lebar dibatasi oleh ruang tegak yang
-     tersedia, jadi posisi mendatar tidak lagi memaksa papan tergulung. */
+  /* Papan Remote selalu muat di layar: ukuran dihitung dari ruang tegak dan
+     lebar nyata tanpa memicu overflow, diposisikan di tengah. */
   var pasPapan = function () {
     var host = $("#kdRmBoard");
     if (!host) return;
     var stage = host.parentElement;
-    if (!stage) return;
+    var body = host.closest(".kd-phone-body");
+    if (!stage || !body) return;
     var kolom = Number(host.dataset.kolom) || 5;
     var baris = Number(host.dataset.baris) || 3;
-    var tinggi = stage.clientHeight;
-    var lebar = stage.clientWidth;
-    if (!tinggi || !lebar) return;
+
+    var bodyH = body.clientHeight;
+    var bodyPad = (parseFloat(getComputedStyle(body).paddingTop) || 0) +
+      (parseFloat(getComputedStyle(body).paddingBottom) || 0);
+    var saudaraH = 0;
+    var hitungSaudara = 0;
+    Array.from(body.children).forEach(function (ch) {
+      if (ch !== stage && !ch.hidden && getComputedStyle(ch).display !== "none") {
+        saudaraH += ch.offsetHeight;
+        hitungSaudara++;
+      }
+    });
+    var gapBody = parseFloat(getComputedStyle(body).rowGap) || 0;
+    var tinggiMaks = Math.max(60, bodyH - bodyPad - saudaraH - (gapBody * hitungSaudara));
+    var lebarMaks = stage.clientWidth || (body.clientWidth - 16);
+
     var celah = 6;
-    var tinggiTile = (tinggi - celah * (baris - 1)) / baris;
-    var lebarMaks = tinggiTile * 1.05 * kolom + celah * (kolom - 1);
-    host.style.maxWidth = Math.max(0, Math.min(lebar, Math.round(lebarMaks))) + "px";
+    var tw = (lebarMaks - celah * (kolom - 1)) / kolom;
+    var th = (tinggiMaks - celah * (baris - 1)) / baris;
+    var tile = Math.floor(Math.min(tw, th));
+    if (tile <= 0) return;
+
+    var lebarPapan = Math.max(0, tile * kolom + celah * (kolom - 1));
+    host.style.width = lebarPapan + "px";
+    host.style.maxWidth = "100%";
+    host.style.marginInline = "auto";
   };
 
   var renderBoard = function () {
     renderBoardIsi();
-    pasPapan();
+    requestAnimationFrame(pasPapan);
   };
 
   var renderMedia = function () {

@@ -215,6 +215,14 @@ body.kd-body {
   border: 1px solid var(--line);
   border-radius: 5px;
   background: var(--bg-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: color var(--m-1) var(--e-out), background-color var(--m-1) var(--e-out), border-color var(--m-1) var(--e-out);
+}
+.kd-title-tag:hover {
+  color: var(--text-1);
+  border-color: var(--line-strong);
+  background: var(--bg-hover);
 }
 
 .kd-top-sep {

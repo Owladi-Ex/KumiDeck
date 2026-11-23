@@ -1214,6 +1214,7 @@
     var names = { papan: nama, soundboard: "KumiDeck", riwayat: "KumiDeck", proses: "KumiDeck", perangkat: "KumiDeck", setelan: "KumiDeck" };
     $("#kdTitle").textContent = names[S.view];
     $("#kdTitleTag").textContent = cols + " × " + rows;
+    if ($("#kdSetGridVal")) $("#kdSetGridVal").textContent = cols + " × " + rows;
     var onBoard = S.view === "papan";
     $("#kdTabs").style.display = onBoard ? "" : "none";
     $("#kdAddPage").style.display = onBoard ? "" : "none";
@@ -1999,6 +2000,67 @@
       toast("Halaman " + nama + " ditambahkan.", true);
     });
     $("#kdPgClose").addEventListener("click", function () { $("#kdDlgPage").close(); });
+
+    /* Ukuran grid papan (kolom × baris) */
+    var bukaDialogGrid = function () {
+      var dlg = $("#kdDlgGrid");
+      if (!dlg) return;
+      var cols = (S.deck && S.deck.profile && S.deck.profile.columns) || 5;
+      var rows = (S.deck && S.deck.profile && S.deck.profile.rows) || 3;
+      $("#kdGdCols").value = cols;
+      $("#kdGdRows").value = rows;
+      $$("#kdGdPresets button").forEach(function (b) {
+        var aktif = Number(b.dataset.c) === cols && Number(b.dataset.r) === rows;
+        b.setAttribute("aria-pressed", String(aktif));
+      });
+      dlg.showModal();
+    };
+
+    var ubahUkuranGrid = function (kolomBaru, barisBaru) {
+      kolomBaru = Math.max(1, Math.min(8, Number(kolomBaru) || 5));
+      barisBaru = Math.max(1, Math.min(6, Number(barisBaru) || 3));
+      if (!S.deck) return;
+      if (!S.deck.profile) S.deck.profile = { name: "Meja Kerja", columns: 5, rows: 3 };
+      var lamaC = S.deck.profile.columns;
+      var lamaR = S.deck.profile.rows;
+      if (lamaC === kolomBaru && lamaR === barisBaru) return;
+
+      var totalBaru = kolomBaru * barisBaru;
+      S.deck.profile.columns = kolomBaru;
+      S.deck.profile.rows = barisBaru;
+      (S.deck.pages || []).forEach(function (p) {
+        if (!Array.isArray(p.keys)) p.keys = [];
+        while (p.keys.length < totalBaru) p.keys.push(null);
+        if (p.keys.length > totalBaru) p.keys.length = totalBaru;
+      });
+
+      renderHeader();
+      renderBoard();
+      simpanDeck();
+      pasIsi();
+      toast("Ukuran papan diubah menjadi " + kolomBaru + " × " + barisBaru + ".", true);
+    };
+
+    if ($("#kdTitleTag")) $("#kdTitleTag").addEventListener("click", bukaDialogGrid);
+    if ($("#kdSetGridBtn")) $("#kdSetGridBtn").addEventListener("click", bukaDialogGrid);
+    if ($("#kdGdClose")) $("#kdGdClose").addEventListener("click", function () { $("#kdDlgGrid").close(); });
+    if ($("#kdGdBatal")) $("#kdGdBatal").addEventListener("click", function () { $("#kdDlgGrid").close(); });
+    if ($("#kdGdSimpan")) {
+      $("#kdGdSimpan").addEventListener("click", function () {
+        var c = $("#kdGdCols").value;
+        var r = $("#kdGdRows").value;
+        $("#kdDlgGrid").close();
+        ubahUkuranGrid(c, r);
+      });
+    }
+    $$("#kdGdPresets button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        $("#kdGdCols").value = b.dataset.c;
+        $("#kdGdRows").value = b.dataset.r;
+        $$("#kdGdPresets button").forEach(function (x) { x.setAttribute("aria-pressed", "false"); });
+        b.setAttribute("aria-pressed", "true");
+      });
+    });
 
     /* Panel kanan tidak punya tombol buka/tutup: ia selalu tampil di bagian
        Papan dan kolomnya selebar tetap, jadi tidak ada lebar yang digerakkan

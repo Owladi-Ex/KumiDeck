@@ -183,7 +183,7 @@
         <div class="kd-top-left">
           <div class="kd-title-wrap">
             <h1 class="kd-title" id="kdTitle">Meja Kerja</h1>
-            <span class="kd-title-tag" id="kdTitleTag">5 × 3</span>
+            <button type="button" class="kd-title-tag" id="kdTitleTag" title="Klik untuk mengubah ukuran tombol papan">5 × 3</button>
           </div>
           <span class="kd-top-sep" aria-hidden="true"></span>
           <div class="kd-tabs tabs" id="kdTabs" role="tablist" aria-label="Halaman papan"></div>
@@ -436,6 +436,10 @@
             <section class="kd-set-card">
               <header><b>Papan</b><p>Perilaku tombol dan tata letak.</p></header>
               <div class="kd-set-rows">
+                <div class="kd-set-row">
+                  <div><span class="kd-set-lbl">Ukuran tombol papan</span><span class="kd-set-hint">Jumlah kolom dan baris tombol di seluruh halaman (1–8 kolom × 1–6 baris).</span></div>
+                  <div class="kd-set-ctl"><button class="btn btn-sm" type="button" id="kdSetGridBtn">Ubah ukuran (<span id="kdSetGridVal">5 × 3</span>)</button></div>
+                </div>
                 <div class="kd-set-row">
                   <div><span class="kd-set-lbl">Kunci tata letak</span><span class="kd-set-hint">Mencegah tombol bergeser tanpa sengaja saat dipakai.</span></div>
                   <div class="kd-set-ctl"><button class="switch" type="button" role="switch" id="kdSetLock" aria-checked="false" aria-label="Kunci tata letak"></button></div>
@@ -820,6 +824,42 @@
   </div>
   <div class="dlg-foot">
     <button class="btn btn-sm btn-primary" type="button" id="kdLkSave">Tambah</button>
+  </div>
+</dialog>
+
+<dialog class="kd-dlg kd-dlg-sm" id="kdDlgGrid" aria-labelledby="kdGdTitle">
+  <div class="dlg-head">
+    <h2 id="kdGdTitle">Ukuran papan</h2>
+    <p>Atur jumlah kolom dan baris tombol untuk seluruh halaman.</p>
+    <button class="icon-btn dlg-close" type="button" id="kdGdClose" aria-label="Tutup dialog">
+      <svg class="icon" aria-hidden="true"><use href="#k-close"></use></svg>
+    </button>
+  </div>
+  <div class="dlg-body">
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px">
+      <div class="field" style="flex:1">
+        <label for="kdGdCols">Kolom (1–8)</label>
+        <input type="number" id="kdGdCols" min="1" max="8" value="5">
+      </div>
+      <span style="font-weight:600;font-size:16px;color:var(--text-3);padding-top:18px">×</span>
+      <div class="field" style="flex:1">
+        <label for="kdGdRows">Baris (1–6)</label>
+        <input type="number" id="kdGdRows" min="1" max="6" value="3">
+      </div>
+    </div>
+    <div class="field">
+      <label>Preset cepat</label>
+      <div class="kd-seg" id="kdGdPresets" style="width:100%">
+        <button type="button" data-c="5" data-r="3">5 × 3</button>
+        <button type="button" data-c="6" data-r="4">6 × 4</button>
+        <button type="button" data-c="4" data-r="3">4 × 3</button>
+        <button type="button" data-c="3" data-r="2">3 × 2</button>
+      </div>
+    </div>
+  </div>
+  <div class="dlg-foot">
+    <button class="btn btn-sm" type="button" id="kdGdBatal">Batal</button>
+    <button class="btn btn-sm btn-primary" type="button" id="kdGdSimpan">Terapkan</button>
   </div>
 </dialog>
 
