@@ -373,7 +373,6 @@ pub fn jalankan(app: Arc<App>) -> ! {
         WindowBuilder::new()
             .with_title("KumiDeck")
             .with_decorations(false)
-            .with_undecorated_shadow(false)
             .with_resizable(true)
             .with_always_on_top(teratas)
             .with_window_icon(ikon_jendela)
